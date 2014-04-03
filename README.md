@@ -1,10 +1,11 @@
 picopter
 ========
 
-"Raspberry-Pi Powered Hexacopter"
+*Raspberry-Pi Powered Hexacopter*
+
 A project to automatically control a hexacopter using a Raspberry Pi.
 
-++HOW TO USE GITHUB
+###HOW TO USE GITHUB
 Github is a fancy online implementation of a system called git. Git is known as a 'version control'
 system. Simply:
 	- Github holds a folder containing the entire project.
@@ -18,6 +19,6 @@ system. Simply:
 Github remembers every single change anybody has ever made. It does fancy things like show you
 timelines of changes, and lets you roll back at any time. It's pretty easy to pick up.
 
-++TODO LIST
-	1) Modularise the code
-	2) Obtain the required header files
+###TODO LIST
+1. Modularise the code
+2. Obtain the required header files
