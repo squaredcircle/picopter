@@ -12,6 +12,7 @@ A project to automatically control a hexacopter using a Raspberry Pi.
 ###HOW TO USE GITHUB
 Github is a fancy online implementation of a system called git. Git is known as a 'version control'
 system. Simply:
+
 1. Github holds a folder containing the entire project.
 2. You tell git to sync the project to your computer, it copies it over.
 3. You change one of the files.
