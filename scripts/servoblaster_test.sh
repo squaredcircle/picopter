@@ -18,6 +18,3 @@ cd ~/PiBits/ServoBlaster/user
 
 echo p1-15=100 > /dev/servoblaster
 echo p1-11=50% > /dev/servoblaster
-
-
-# pointless comment
