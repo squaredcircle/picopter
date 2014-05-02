@@ -8,7 +8,7 @@
 
 static int fileDes;
 static int numberOfFields;
-static int[] gpsData;
+static int gpsData[200];	//Arbitartly large size
 
 int main() {
 	
@@ -24,10 +24,11 @@ int main() {
 		printf("GPS initiated. Port value is: %i\n", fileDes);
 		
 		int numberOfFields = serialDataAvail(fileDes);	//Total number of dtat fields available. Returns -1 on error
-		if (numberOfFields != -1) {
-			gpsData = (0, numberOfFields)
-			for (int i = 0; i < count; ++i) {
-				gpsData[i] = serialGetChar(fileDes);
+		if ( numberOfFields != -1) {
+			int gpsData[numberOfFields];
+			for (int i = 0; i < numberOfFields; ++i) {
+				gpsData[i] = serialGetchar(fileDes);
+				printf("GPS location is: %i\n", gpsData[i]);
 			}
 		}
 	}
