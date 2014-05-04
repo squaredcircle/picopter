@@ -1,10 +1,10 @@
-//Compile with flags : -Wall -Werror -lwirngPi
+//Compile with flags : -Wall -Werror -lwiringPi
 
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>
 #include <wiringSerial.h>
-#include </usr/local/include/wiringPi.h>
+#include <wiringPi.h>
 
 static int fileDes;
 static int numberOfFields;
