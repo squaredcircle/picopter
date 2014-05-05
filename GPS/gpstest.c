@@ -6,9 +6,9 @@
 #include <wiringSerial.h>
 #include <wiringPi.h>
 
-static int fileDes;
-static int numberOfFields;
-static int gpsData[200];	//Arbitartly large size
+int fileDes;
+int numberOfFields;
+int gpsData[200];	//Arbitartly large size
 
 int main() {
 	
@@ -24,7 +24,8 @@ int main() {
 		printf("GPS initiated. Port value is: %i\n", fileDes);
 		
 		int numberOfFields = serialDataAvail(fileDes);	//Total number of dtat fields available. Returns -1 on error
-		if ( numberOfFields != -1) {
+		printf("Number of Fields is: %i\n", numberOfFields);
+		if (numberOfFields != -1) {
 			int gpsData[numberOfFields];
 			for (int i = 0; i < numberOfFields; ++i) {
 				gpsData[i] = serialGetchar(fileDes);
