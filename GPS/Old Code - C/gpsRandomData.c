@@ -25,6 +25,7 @@ int main() {
 	fileDes = serialOpen("/dev/ttyACM0", 115200);	//Format serialOpen(char <device address>, int <baud rate>). May need to be changed.
 	if (fileDes == -1) {
 		printf("Error setting up GPS: %s\n", strerror(errno));
+		printf("Check that the GPS has an adequate signal (orange light is fully on).\n");
 	}
 	else {
 		int gpsInt = 0;

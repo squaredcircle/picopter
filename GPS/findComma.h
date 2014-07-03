@@ -7,4 +7,4 @@
 #include "wiringSerial.h"
 #include "wiringPi.h"
 
-std::string gpsDataStream(int);
+int findComma(std::string, int);
