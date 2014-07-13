@@ -10,7 +10,6 @@
 #include <cstdio>
 #include <string>
 
-#include "errno.h"
 #include "wiringSerial.h"
 #include "wiringPi.h"
 #include "gpsDataStream.h"
@@ -19,13 +18,12 @@
 
 int fileDes;
 int gpsInt;
-std::string gpsStr;
 
 int main() {
 	
 	wiringPiSetup();
 	
-	fileDes = serialOpen("/dev/ttyACM0", 115200);	//Format serialOpen(char <device address>, int <baud rate>). May need to be changed.
+	fileDes = serialOpen("/dev/ttyUSB0", 1000000);	//Format serialOpen(char <device address>, int <baud rate>). May need to be changed.
 	if (fileDes == -1) {
 		std::cout << "Error setting up GPS. This may be due to:\n";
 		std::cout << "\t-A weak GPS signal\n";
@@ -36,8 +34,7 @@ int main() {
 		std::string gpsStr;
 		std::cout << "GPS data is: \n";
 		for (int i = 1; i <= dataLength; i++) {
-			gpsStr = gpsDataStream(fileDes);
-			std::cout << gpsStr;
+			std::cout << gpsDataStream(fileDes);
 		}
 	}
 	serialClose(fileDes);

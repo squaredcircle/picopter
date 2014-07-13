@@ -10,28 +10,30 @@
 #include <cstdio>
 #include <string>
 
-#include "errno.h"
 #include "wiringSerial.h"
 #include "wiringPi.h"
 
 #include "gpsDataStream.h"
 #include "findComma.h"
 
-#define header_length 6 	//First few characters in GPS data that determine it's type
-#define lat_comma 2			//Postion of latitude data	
-#define lon_comma 4			//Postion of longitude data	
-#define dataLength 20		//Number of lines of GPS data to read
-#define position "$GPGGA"	//Header for data stream containing location data	
+#define address "/dev/ttyACM0"	//Default address of Qstarz GPS.
+//#define address "/dev/ttyUSB0"	//Default address of Piksi GPS.
+#define baud_rate 115200		//Rate at which data read from GPS. Left at maximum
+#define header_length 6 		//First few characters in GPS data that determine it's type
+#define lat_comma 2				//Postion of latitude data	
+#define lon_comma 4				//Postion of longitude data	
+#define dataLength 20			//Number of lines of GPS data to read
+#define position "$GPGGA"		//Header for data stream containing location data	
 
 int fileDes;
 int gpsInt;
 std::string gpsStr;
 std::string gpsHeader;
 
-extern int latStart;
-extern int latLen;
-extern int lonStart;
-extern int lonLen;
+int latStart;
+int latLen;
+int lonStart;
+int lonLen;
 int dummy;
 
 struct gpsData 
@@ -42,20 +44,15 @@ struct gpsData
 
 int main() {
 	
-	printf("Starting...\n");
 	wiringPiSetup();
-	printf("wiringPi has been set up\n");
-	
-	fileDes = serialOpen("/dev/ttyACM0", 115200);	//Format serialOpen(char <device address>, int <baud rate>). May need to be changed.
+	int fileDes = serialOpen(address, baud_rate);
 	if (fileDes == -1) {
-		printf("Error setting up GPS. This may be due to:\n");
-		printf("\t-A weak GPS signal\n");
-		printf("\t-The incorrect Data Port being opened\n");
-		printf("\t-Insufficient GPS Power\n");
+		std::cout << "Error setting up GPS. This may be due to:\n";
+		std::cout << "\t-A weak GPS signal\n";
+		std::cout << "\t-The incorrect Data Port being opened\n";
+		std::cout << "\t-Insufficient GPS Power\n";
 	}
 	else {
-		printf("GPS initiated. Port value is: %i\n", fileDes);
-		
 		std::string gpsStr;
 		std::string gpsHeader;
 		gpsData.lat = "unknown";
@@ -80,6 +77,5 @@ int main() {
 		std::cout << "Longitude: " << gpsData.lon << "\n";
 	}
 	serialClose(fileDes);
-	printf("Ending...\n");
 	return 0;
 }

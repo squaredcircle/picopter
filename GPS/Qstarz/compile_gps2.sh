@@ -1,4 +1,4 @@
-#Author:	Omid Targhagh <20750454@student.uwa.edu.au>
+c#Author:	Omid Targhagh <20750454@student.uwa.edu.au>
 #Date:		20-6-14
 #Version:	v1
 
@@ -20,12 +20,12 @@ g++ -Wall -Werror	gpsRandomData.cpp \
 					-o gpsrandom\
 					-I/usr/local/include -L/usr/local/lib -lwiringPi
 					
-echo getPosition compiled...
+echo gpsrandom compiled...
 
 g++ -Wall -Werror	getPosition.cpp \
 					gpsDataStream.h gpsDataStream.cpp \
 					findComma.h findComma.cpp \
-					-o gpsrandom\
+					-o getPosition\
 					-I/usr/local/include -L/usr/local/lib -lwiringPi
 					
 echo getPosition compiled...
