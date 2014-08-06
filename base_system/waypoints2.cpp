@@ -20,7 +20,7 @@ using namespace std;
 #define sin2(x) (sin(x)*sin(x))
 
 #define SPEED_LIMIT 40
-#define WAYPOINT_RADIUS 2	//2m;
+#define WAYPOINT_RADIUS 2	//5m;
 
 #define FILTER_LENGTH 5
 #define FILTER_PERIOD 100		//Inverse of filter sampling frequency.  Easier to use in thus form.  In ms.

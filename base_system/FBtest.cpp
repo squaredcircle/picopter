@@ -70,6 +70,6 @@ int main(int argc, char* argv[]) {
 		} else {	//not first time
 			delay(PAUSE_DURATION);
 		}
-		
 	}
+    return 0;
 }

@@ -13,14 +13,12 @@ using namespace std;
 #include "gps_qstarz.h"
 
 
-#define GPS_DATA_FILE "waypoints_list.txt"
-
 #define PI 3.14159265359
 #define RADIUS_OF_EARTH 6364.963	//km
 #define sin2(x) (sin(x)*sin(x))
 
-#define SPEED_LIMIT 40
-#define WAYPOINT_RADIUS 2	//2m;
+#define SPEED 40
+#define PAUSE_DURATION 50
 
 #define FILTER_LENGTH 5
 #define FILTER_PERIOD 100		//Inverse of filter sampling frequency.  Easier to use in thus form.  In ms.
@@ -28,16 +26,17 @@ using namespace std;
 #define DIRECTION_TEST_SPEED 30
 #define DIRECTION_TEST_DURATION 3000
 
-#define Kp 20		//proportional controller constant
-
-#define WAIT_AT_WAYPOINTS 3000
-#define MAIN_LOOP_DELAY 20
-
 
 typedef struct{		//These are in radians.  These are in radians. These are in radians.  I've said it three times now.
 	double lat;
 	double lon;
 } Pos;
+
+typedef struct{
+	string description;
+	FB_Data command;
+}	Movement;
+
 
 class Filter {		//filters should have their own file... Ain't nobody got no time for dat.
 public:
@@ -57,12 +56,10 @@ private:
 
 
 
-void populate_waypoints_list(vector<Pos>*);
+
 double calculate_distance(Pos, Pos);
 double calculate_bearing(Pos, Pos);
-double nmea2radians(double);
-void checkAutoMode(void);
-void setCourse(FB_Data*, double, double, double);
+void rotate(FB_Data*, double);
 
 
 int main(int argc, char* argv[]) {
@@ -77,18 +74,7 @@ int main(int argc, char* argv[]) {
 	ftr.start();
 	delay(2*FILTER_LENGTH*FILTER_PERIOD); 	//get some data going in filter
 	
-	//----------------------------
-	//Read in the waypoints
-	//
-	vector<Pos> waypoints_list;
-	populate_waypoints_list(&waypoints_list);
-	cout << "Waypoint list populated:" << endl;
-	
-	for(size_t i = 0; i< waypoints_list.size(); i++) {
-		cout << "Waypoint " << i+1 << "\t";
-		cout << "lat: " << waypoints_list[i].lat * 180 / PI << "\t";
-		cout << "lon: " << waypoints_list[i].lon * 180 / PI << endl;
-	}
+
 	
 	//----------------------------
 	//Get bearing (by moving forwards a bit)
@@ -113,74 +99,70 @@ int main(int argc, char* argv[]) {
 	
 	yaw = calculate_bearing(direction_test_start, direction_test_end);	//Work out which direction we went.
 	
+	//----------------------------
+	//I want to have to put the copter into standby mode to move on.
+	//
+	
+	cout << "Please put copter into standy mode to proceed" << endl;
+	while(gpio::isAutoMode()) delay(100);								//Wait until put into auto mode
+	
+	
 	
 	
 	//----------------------------
 	//Time to start main loop!
 	//
-	cout << "Bearing found: starting waypoint navigation" << endl;
+	cout << "Starting directional test:" << endl;
+	
+	Movement north =		{"North", 	{0, SPEED, 0, 0}};
+	Movement south =        {"South",   {0,-SPEED, 0, 0}};
+	Movement west =			{"West", 	{-SPEED, 0, 0, 0}};
+	Movement east =         {"East", 	{ SPEED, 0, 0, 0}};
+	
+    rotate(&north.command);
+    rotate(&south.command);
+    rotate(&west.command);
+    rotate(&east.command);
+    
+	Movement instructions[4] = {north, south, east, west};
 	
 	
-	size_t waypoint_iterator = 0;	//secretly an unsiged int			//Initialise loop counter
-	Pos currentPos = {-1, -1};											//Somewhere to save things
-	double distaceToNextWaypoint;
-	double bearingToNextWaypoint;
-	FB_Data course = {0, 0, 0, 0};										//We can reuse this struct throughout the main loop
+	cout << "This program is a direction test" << endl;
+	cout << "Each time the copter is switched into auto mode, it will move in a basic direction, until taken out of auto mode" << endl;
+    
+	cout << "Standby" << endl;
+	fb.setFB_Data(&stop);
+	
+	
+	int i=0;
+	bool firstTime = true;
+	bool previousMode = false;
 	while(true) {
-		try {
-			checkAutoMode();	//note: this function throws an			//Check if we're in auto mode.
-								//error if not in auto mode.
-								//Is caught below.
-			
-			
-			ftr.getPos(&currentPos);									//First get our current position
-			if(currentPos.lat == -1) cout << "error getting position" << endl;
-			
-			
-			
-			distaceToNextWaypoint = calculate_distance(currentPos, waypoints_list[waypoint_iterator]);
-			if(distaceToNextWaypoint < WAYPOINT_RADIUS) {				//Are we at a waypoint?  Waypoints are circles now.
-				fb.setFB_Data(&stop);									//We're at the waypoint!!  We'll stop an wait a bit;
-				cout << "At waypoint.  Stopping." << endl;
-				for(int i=0; i<9; i++) {
-					delay(WAIT_AT_WAYPOINTS/10);
-					checkAutoMode();									//Keep checking we're stil in auto mode.
-				}
-				waypoint_iterator++;									//Next waypoint.
-				if(waypoint_iterator == waypoints_list.size()) waypoint_iterator = 0;
-				
-				
-				cout << "Moving to next waypoint." << " Waypoint no. " << waypoint_iterator+1 << endl;
-				delay(WAIT_AT_WAYPOINTS/10);
-				
-				
-			} else {
-																		//Not at a waypoint yet.  Find bearing.
-				bearingToNextWaypoint = calculate_bearing(currentPos, waypoints_list[waypoint_iterator]);
-																		//Set a Course
-				setCourse(&course, distaceToNextWaypoint, bearingToNextWaypoint, yaw);
-				fb.setFB_Data(&course);									//Give command to flight board
-				
-				cout << "Moving to waypoint." << endl;
-				
-				cout << "Current lat: " << std::setprecision(6) << currentPos.lat * 180 / PI << "\t";
-				cout << "Current lon: " << std::setprecision(7) << currentPos.lon * 180 / PI << endl;
-				cout << "Waypoint lat: " << std::setprecision(6) << waypoints_list[waypoint_iterator].lat * 180 / PI << "\t";
-				cout << "Waypoint lon: " << std::setprecision(7) << waypoints_list[waypoint_iterator].lon * 180 / PI << endl;
-				cout << "Distance = " << std::setprecision(7) << distaceToNextWaypoint << "\t";
-				cout << "Bearing = " << std::setprecision(5) << bearingToNextWaypoint << endl;
-				cout << endl;
-				
-				checkAutoMode();										// Fly for a bit
-				delay(MAIN_LOOP_DELAY);
-			}
+		
+		
+		if(previousMode != gpio::isAutoMode()) {
+			firstTime = true;
 		}
-		catch(...) {
-			fb.setFB_Data(&stop);
-			while(!gpio::isAutoMode()) {
-				delay(50);												//Keep checking.  Will go back to start of for loop on return
+		previousMode = gpio::isAutoMode();
+		
+		if(firstTime) {
+			firstTime = false;
+			
+			if(gpio::isAutoMode()) {
+				cout << instructions[i].description << endl;
+				fb.setFB_Data(&(instructions[i].command));
+			} else {	//not auto mode
+				i++;
+				if(i==(sizeof(instructions)/sizeof(instructions[0]))) i=0;
+				
+				cout << "Standby - next instruction is: " << instructions[i].description << endl;
+				fb.setFB_Data(&stop);
 			}
+			
+		} else {	//not first time
+			delay(PAUSE_DURATION);
 		}
+		
 	}
 	return 0;
 }
@@ -189,34 +171,7 @@ int main(int argc, char* argv[]) {
 
 
 //----------------------------------------------------------------------
-void populate_waypoints_list(vector<Pos> *list) {
-	
-	Pos waypoint;
-	ifstream waypointsFile(GPS_DATA_FILE);
-	string word;
-	string line;
-	char delimiter = ',';
-	while(getline(waypointsFile, line)) {
-		stringstream iss(line);
-		getline(iss, word, delimiter);
-		waypoint.lat = nmea2radians(boost::lexical_cast<double>(word));
-		getline(iss, word, delimiter);
-		if(boost::lexical_cast<char>(word) == 'S') waypoint.lat = -waypoint.lat;
-		getline(iss, word, delimiter);
-		waypoint.lon = nmea2radians(boost::lexical_cast<double>(word));
-		getline(iss, word);
-		if(boost::lexical_cast<char>(word) == 'W') waypoint.lon = -waypoint.lon;
-		list->push_back(waypoint);
-	}
-	waypointsFile.close();
-}
 
-double nmea2radians(double nmea) {
-	int degrees = (int)(nmea)/100;
-	double minutes = nmea - degrees*100;
-	double radians = (degrees + minutes/60) * PI / 180;
-	return radians;
-}
 
 double calculate_distance(Pos pos1, Pos pos2) {
 	double h = sin2((pos1.lat-pos2.lat)/2) + cos(pos1.lat)*cos(pos2.lat) * sin2((pos2.lon-pos1.lon)/2);
@@ -233,23 +188,13 @@ double calculate_bearing(Pos pos1, Pos pos2) {
 	return bearing;
 }
 
-void checkAutoMode() {
-	if(!gpio::isAutoMode()) {
-		throw("Standby");
-		cout << "Standby" << endl;
-	}
+void rotate(&FB_Data, yaw) {
+    double north = FB_Data->elevator;
+    double east = FB_DATA->aileron;
+    FB_Data->elevator = -sin(yaw)*north + cos(yaw)*east;
+    FB_Data->aileron = cos(yaw)*north + sin(yaw)*east;
+    
 }
-
-void setCourse(FB_Data *instruction, double distance, double bearing, double yaw) {
-	double speed = Kp * distance;
-	if(speed > SPEED_LIMIT) {											//P controler with limits.
-		speed = SPEED_LIMIT;
-	}
-	instruction->aileron = (int) (speed * sin(bearing - yaw));
-	instruction->elevator = (int) (speed * cos(bearing - yaw));
-	instruction->rudder = 0;
-	instruction->gimble = 0;
-}	
 
 
 //======================================================================
