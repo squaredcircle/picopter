@@ -1,7 +1,5 @@
-//Note: this code hasn't been tested yet (4/8/2014).
-
-
 #include <iostream>
+#include <iomanip>
 #include <fstream>
 #include <cmath>
 #include <string>
@@ -15,14 +13,14 @@ using namespace std;
 #include "gps_qstarz.h"
 
 
-#define GPS_DATA_FILE "waypoints.txt"
+#define GPS_DATA_FILE "waypoints_list.txt"
 
 #define PI 3.14159265359
-#define RADIUS_OF_EARTH 6364.963 * 1000	//m
+#define RADIUS_OF_EARTH 6364.963	//km
 #define sin2(x) (sin(x)*sin(x))
 
 #define SPEED_LIMIT 40
-#define WAYPOINT_RADIUS 0.5	//0.5m;
+#define WAYPOINT_RADIUS 5	//5m;
 
 #define FILTER_LENGTH 5
 #define FILTER_PERIOD 100		//Inverse of filter sampling frequency.  Easier to use in thus form.  In ms.
@@ -86,6 +84,11 @@ int main(int argc, char* argv[]) {
 	populate_waypoints_list(&waypoints_list);
 	cout << "Waypoint list populated:" << endl;
 	
+	for(size_t i = 0; i< waypoints_list.size(); i++) {
+		cout << "Waypoint " << i+1 << "\t";
+		cout << "lat: " << waypoints_list[i].lat * 180 / PI << "\t";
+		cout << "lon: " << waypoints_list[i].lon * 180 / PI << endl;
+	}
 	
 	//----------------------------
 	//Get bearing (by moving forwards a bit)
@@ -139,13 +142,16 @@ int main(int argc, char* argv[]) {
 			if(distaceToNextWaypoint < WAYPOINT_RADIUS) {				//Are we at a waypoint?  Waypoints are circles now.
 				fb.setFB_Data(&stop);									//We're at the waypoint!!  We'll stop an wait a bit;
 				cout << "At waypoint.  Stopping." << endl;
-				for(int i=0; i<10; i++) {
+				for(int i=0; i<9; i++) {
 					delay(WAIT_AT_WAYPOINTS/10);
 					checkAutoMode();									//Keep checking we're stil in auto mode.
 				}
 				waypoint_iterator++;									//Next waypoint.
-				cout << "Moving to next waypoint." << endl;
 				if(waypoint_iterator == waypoints_list.size()) waypoint_iterator = 0;
+				
+				
+				cout << "Moving to next waypoint." << " Waypoint no. " << waypoint_iterator+1 << endl;
+				delay(WAIT_AT_WAYPOINTS/10);
 				
 				
 			} else {
@@ -155,9 +161,15 @@ int main(int argc, char* argv[]) {
 				setCourse(&course, distaceToNextWaypoint, bearingToNextWaypoint, yaw);
 				fb.setFB_Data(&course);									//Give command to flight board
 				
-				cout << "Moving to next waypoint.";
-				cout << "distance = " << distaceToNextWaypoint << "\t";
-				cout << "bearing = " << bearingToNextWaypoint << endl;
+				cout << "Moving to waypoint." << endl;
+				
+				cout << "Current lat: " << std::setprecision(6) << currentPos.lat * 180 / PI << "\t";
+				cout << "Current lon: " << std::setprecision(7) << currentPos.lon * 180 / PI << endl;
+				cout << "Waypoint lat: " << std::setprecision(6) << waypoints_list[waypoint_iterator].lat * 180 / PI << "\t";
+				cout << "Waypoint lon: " << std::setprecision(7) << waypoints_list[waypoint_iterator].lon * 180 / PI << endl;
+				cout << "Distance = " << std::setprecision(7) << distaceToNextWaypoint << "\t";
+				cout << "Bearing = " << std::setprecision(5) << bearingToNextWaypoint << endl;
+				cout << endl;
 				
 				checkAutoMode();										// Fly for a bit
 				delay(MAIN_LOOP_DELAY);
@@ -184,7 +196,6 @@ void populate_waypoints_list(vector<Pos> *list) {
 	string word;
 	string line;
 	char delimiter = ',';
-	waypointsFile >> ws;
 	while(getline(waypointsFile, line)) {
 		stringstream iss(line);
 		getline(iss, word, delimiter);
@@ -196,7 +207,6 @@ void populate_waypoints_list(vector<Pos> *list) {
 		getline(iss, word);
 		if(boost::lexical_cast<char>(word) == 'W') waypoint.lon = -waypoint.lon;
 		list->push_back(waypoint);
-		waypointsFile >> ws;
 	}
 	waypointsFile.close();
 }
@@ -204,7 +214,7 @@ void populate_waypoints_list(vector<Pos> *list) {
 double nmea2radians(double nmea) {
 	int degrees = (int)(nmea)/100;
 	double minutes = nmea - degrees*100;
-	double radians = (degrees + minutes*60) * PI / 180;
+	double radians = (degrees + minutes/60) * PI / 180;
 	return radians;
 }
 
@@ -212,7 +222,7 @@ double calculate_distance(Pos pos1, Pos pos2) {
 	double h = sin2((pos1.lat-pos2.lat)/2) + cos(pos1.lat)*cos(pos2.lat) * sin2((pos2.lon-pos1.lon)/2);
 	if(h > 1) cout << "bearing calculation error" << endl;
 	double distance = 2 * RADIUS_OF_EARTH * asin(sqrt(h));
-	return distance;
+	return distance * 1000;	//meters
 }
 
 double calculate_bearing(Pos pos1, Pos pos2) {

@@ -16,8 +16,8 @@ GPS::GPS() {
 	this->fileDes = -1;
 }
 
-GPS::GPS(const GPS& orig) {};
-GPS::~GPS() {};
+GPS::GPS(const GPS& orig) {}
+GPS::~GPS() {}
 
 
 int GPS::setup() {
@@ -71,21 +71,22 @@ int GPS::close() {
 
 //this thread does all the work
 void GPS::uploadData() {
-	bool firstTime = true;
 	std::string gpsString;
 	int problems;
-	
 	while(running) {
-		if(firstTime) {
-			findGPSStart(fileDes);
-			firstTime = false;
-		}
 		gpsString = getGPSString(fileDes);
 		//std::cout << "gpsString: " << gpsString << std::endl;
+		log->writeLogLine(gpsString);
+		if(checkGPSString(&gpsString)) {
+			log->writeLogLine("Got gps string, but not the one I want");
+			continue;
+		}
 		problems = processGPSString(&currentData, &gpsString);
 		if(!problems) {
 			log->writeLogLine("Haz data:");
 			log->writeLogLine(gpsString);
+		} else {
+			log->writeLogLine("Read string, no dataz :(");
 		}
 	}
 }
@@ -97,21 +98,18 @@ int GPS::getGPS_Data(GPS_Data *data) {
 	
 	data->time = currentData.time;
 	data->latitude = currentData.latitude;
+	data->NS = currentData.NS;
 	data->longitude = currentData.longitude;
+	data->EW = currentData.EW;
+	data->fixQuality = currentData.fixQuality;
+	data->numSatelites = currentData.numSatelites;
+	data->horizDilution = currentData.horizDilution;
 	log->writeLogLine("Retrieved data.");
 	return 0;
 }
 
 
 //do gpsy things
-
-void GPS::findGPSStart(int fileDes) {
-	while(true) {
-		if((char)(serialGetchar(fileDes) == '\n')) {
-			break;
-		}
-	}
-}
 
 std::string GPS::getGPSString(int fileDes) {
 	std::stringstream ss;
@@ -126,86 +124,115 @@ std::string GPS::getGPSString(int fileDes) {
 }
 
 
+int GPS::checkGPSString(std::string *gpsStrPtr) {
+	if((gpsStrPtr->substr(0, 6)).compare("$GPGGA") != 0) {		//if not a lat/lon string
+		return -1;
+	}
+	return 0;
+}
+
 int GPS::processGPSString(GPS_Data *data, std::string *gpsStrPtr) {
-	//I'm looking for a more memory efficient alternatve.
-	//Possible more elegant as well.
 	
-	std::string header;
-	std::istringstream gpsString(*gpsStrPtr);
+	//std::cout << *gpsStrPtr << std::endl;
 	
 	//First check the header
-	std::getline(gpsString, header, ';');
-	if(header.compare("$GPGGA") != 0) {		//if not a lat/lon string
+	int i = 0;
+	int j = gpsStrPtr->find(",");
+	//std::cout << "Header: " << gpsStrPtr->substr(i, j-i) << std::endl;
+	if(gpsStrPtr->compare(i, j-i, "$GPGGA") != 0) {
+		//std::cout << "Not lat/lon data string (want header: $GPGGA)" << std::endl << std::endl;
 		return -1;
 	}
 	
-	//Now do the rest.
-	std::string time, latitude, NS, longitude, EW, fixQuality, numSatelites, horizDilution;
-	std::getline(gpsString, time, ';');
-	std::getline(gpsString, latitude, ';');
-	std::getline(gpsString, NS, ';');
-	std::getline(gpsString, longitude, ';');
-	std::getline(gpsString, EW, ';');
-	std::getline(gpsString, fixQuality, ';');
-	std::getline(gpsString, numSatelites, ';');
-	std::getline(gpsString, horizDilution, ';');
 	
-	//Start at latitude.  Always have time, don't always have latitude.
+	//Time
+	i = j+1;
+	j = gpsStrPtr->find(",", i);
+	//std::cout << "Time: \t\t" << gpsStrPtr->substr(i, j-i) << std::endl;
+	int newTime = boost::lexical_cast<double>(gpsStrPtr->substr(i, j-i));	//Can't update time yet, incase data is incomplete
+
+	
+	
+	//Latitude
+	i = j+1;
+	j = gpsStrPtr->find(",", i);
+	//std::cout << "Latitude: \t" << gpsStrPtr->substr(i, j-i) << std::endl;
 	try {
-		data->latitude = boost::lexical_cast<double>(latitude);
+		data->latitude = boost::lexical_cast<double>(gpsStrPtr->substr(i, j-i));
 	} catch(const boost::bad_lexical_cast &) {
+		//error
 		return -1;
 	}
+	
 	
 	//NS
-	try {
-		data->NS = boost::lexical_cast<char>(NS);
-	} catch(const boost::bad_lexical_cast &) {
+	i = j+1;
+	j = gpsStrPtr->find(",", i);
+	//std::cout << "NS: \t\t\t" << gpsStrPtr->at(i) << std::endl;
+	if(gpsStrPtr->at(i) != 'N' && gpsStrPtr->at(i) != 'S') {
 		return -1;
 	}
+	data->NS = gpsStrPtr->at(i);
+
 	
 	//Longitude
+	i = j+1;
+	j = gpsStrPtr->find(",", i);
+	//std::cout << "Longitude: \t" << gpsStrPtr->substr(i, j-i) << std::endl;
 	try {
-		data->longitude = boost::lexical_cast<double>(longitude);
+		data->longitude = boost::lexical_cast<double>(gpsStrPtr->substr(i, j-i));
 	} catch(const boost::bad_lexical_cast &) {
+		//error
 		return -1;
 	}
 	
 	//EW
-	try {
-		data->EW = boost::lexical_cast<char>(EW);
-	} catch(const boost::bad_lexical_cast &) {
+	i = j+1;
+	j = gpsStrPtr->find(",", i);
+	//std::cout << "EW: \t\t\t" << gpsStrPtr->at(i) << std::endl;
+	if(gpsStrPtr->at(i) != 'E' && gpsStrPtr->at(i) != 'W') {
 		return -1;
 	}
+	data->EW = gpsStrPtr->at(i);
+	
 	
 	//Fix quality
+	i = j+1;
+	j = gpsStrPtr->find(",", i);
+	//std::cout << "Fix quality: \t" << gpsStrPtr->substr(i, j-i) << std::endl;
 	try {
-		data->fixQuality = boost::lexical_cast<int>(fixQuality);
+		data->fixQuality = boost::lexical_cast<int>(gpsStrPtr->substr(i, j-i));
 	} catch(const boost::bad_lexical_cast &) {
+		//error
 		return -1;
 	}
+	
 	
 	//Number of satelites
+	i = j+1;
+	j = gpsStrPtr->find(",", i);
+	//std::cout << "Number of satelites: \t" << gpsStrPtr->substr(i, j-i) << std::endl;
 	try {
-		data->numSatelites = boost::lexical_cast<int>(numSatelites);
+		data->numSatelites = boost::lexical_cast<int>(gpsStrPtr->substr(i, j-i));
 	} catch(const boost::bad_lexical_cast &) {
+		//error
 		return -1;
 	}
+	
 	
 	//Horizontal dilution
+	i = j+1;
+	j = gpsStrPtr->find(",", i);
+	//std::cout << "Horizontal dilution: \t" << gpsStrPtr->substr(i, j-i) << std::endl;
 	try {
-		data->horizDilution = boost::lexical_cast<double>(horizDilution);
+		data->horizDilution = boost::lexical_cast<double>(gpsStrPtr->substr(i, j-i));
 	} catch(const boost::bad_lexical_cast &) {
+		//error
 		return -1;
 	}
 	
-	//If everything's alright up to here, we have an up-to-date gpd coord
-	//Time
-	try {
-		data->time = boost::lexical_cast<double>(time);
-	} catch(const boost::bad_lexical_cast &) {
-		return -1;
-	}
-	
+	//Finally update time.
+	data->time = newTime;
 	return 0;
+	
 }

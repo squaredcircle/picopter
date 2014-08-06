@@ -59,8 +59,8 @@ private:
 	boost::thread* uploader_thread;
 	
 	int fileDes;
-	void findGPSStart(int);
 	std::string getGPSString(int);
+	int checkGPSString(std::string*);
 	int processGPSString(GPS_Data*, std::string*);
 };
 
