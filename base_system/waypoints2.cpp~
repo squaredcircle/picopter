@@ -23,11 +23,11 @@ using namespace gps_util;
 
 
 #define DIRECTION_TEST_SPEED 30
-#define DIRECTION_TEST_DURATION 6000
+#define DIRECTION_TEST_DURATION 3000
 
 #define Kp 20		//proportional controller constant
 
-#define WAIT_AT_WAYPOINTS 3000
+#define WAIT_AT_WAYPOINTS 6000
 #define MAIN_LOOP_DELAY 20
 
 
