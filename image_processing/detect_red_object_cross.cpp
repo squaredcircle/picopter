@@ -1,7 +1,39 @@
+/**
+ * Detect_red_object_cross
+ * 
+ * Author:	Michael Baxter 20503664@student.uwa.edu.au
+ * Date:	18-8-2014
+ * Version:	1.1
+ * 
+ * Marks red object (blob) with cross
+ * 
+ * Here I've written a neat little program for the pi that detects red objects.
+ * I'm using the "middle mass" style algorithm, so its only good for one blob.
+ * The colour detection algorithm uses a reduced colour space HSV thresholding.
+ * Rather than calculating HSV on the go, I've pre-calculated them in a lookup table.
+ * The full colour space requires 256*256*256 bytes = 16.7mb.
+ * Since we only have to distinguish between red and green, I've opted for a
+ * 8*8*8 byte = 512 byte comprimise.  This seems o work well in the lab.
+ * Also, when tallying the number of red pixles, we skip every 3 pixles.
+ * 
+ * 
+ * Changes since v1.0:
+ * We now have framerate.
+ * 
+ * TODO:
+ * We probably don't need that many pixles.
+ * It's the conversion from IplImage* to Mat that takes the longest time
+ * (with the exception of capturing the image in the first place)
+ * 
+ **/
+
 #include <iostream>
 #include "opencv2/highgui/highgui.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
 #include "RaspiCamCV.h"
+#include <time.h>
+#include <string>
+#include <stdio.h>
 
 #define LOOKUP_SIZE 8
 #define CHAR_SIZE 256
@@ -65,38 +97,44 @@ void drawCross(Mat img, Point centre) {
 	}
 }
 
+void drawText(Mat img, string text) {
+	int thickness = 2;
+	int lineType = 8;
+	Point orig_pt(img.cols - 200, img.rows- 20);
+	putText(img, text, orig_pt, CV_FONT_HERSHEY_SIMPLEX, 1, Scalar(255, 255, 255), thickness, lineType);
+}
 
 bool getRedCentre(Mat& Isrc, const uchar table_reduce_colorspace[],  const uchar table_threshold[][LOOKUP_SIZE][LOOKUP_SIZE], int *centre_row, int *centre_col) {
 	int nRows = Isrc.rows;
 	int nCols = Isrc.cols;
 	int nChannels = Isrc.channels();
 	
-	cout << "\t\t\t rows:" << nRows << "\tcols:" << nCols;
-	
 	int pixle_counter = 0;
 	*centre_row = 0;
 	*centre_col = 0;
-	int pixle_value;
 
 	int i, j;
 	uchar* p;
 	for(i=0; i<nRows; i += REDUCTION_FACTOR) {
 		p = Isrc.ptr<uchar>(i);
 		for (j=0; j<nCols; j += nChannels * REDUCTION_FACTOR) {
-			pixle_value = table_threshold[table_reduce_colorspace[p[nChannels*j+2]]][table_reduce_colorspace[p[nChannels*j+1]]][table_reduce_colorspace[p[nChannels*j]]];
-			*centre_row += i*pixle_value;
-			*centre_col += j*pixle_value;
-			 pixle_counter += pixle_value;
+			if(table_threshold[table_reduce_colorspace[p[nChannels*j+2]]][table_reduce_colorspace[p[nChannels*j+1]]][table_reduce_colorspace[p[nChannels*j]]]) {
+				*centre_row += i;
+				*centre_col += j;
+				pixle_counter++;
+			}
 		}
 	}
-	cout << "\tpoints:" << pixle_counter << endl;
+	cout << "red points:" << pixle_counter;
 	if(pixle_counter > PIXLE_THRESHOLD) {
 		*centre_row /= pixle_counter;
 		*centre_col /= pixle_counter;
+		cout << "\t+row: " << *centre_row << "\t+col: " << *centre_col << endl;
 		return true;
 	} else {
 		*centre_row = 0;
 		*centre_col = 0;
+		cout << endl;
 	return false;
 	}
 }
@@ -141,8 +179,15 @@ int main(int argc, char** argv) {
 	
 	cout << "lookup tables built" << endl;
 	
+	
 	RaspiCamCvCapture* capture = raspiCamCvCreateCameraCapture(0); //capture the video from web cam
 	cout << "camera on" << endl;
+	
+	
+	time_t start, end;
+	time(&start);
+	int frame_counter = 0;
+	char string_buf[128];
 	
 	int cross_row, cross_col;
 	
@@ -152,8 +197,12 @@ int main(int argc, char** argv) {
 		
 		if(getRedCentre(image, lookup_reduce_colourspace, lookup_hsv, &cross_row, &cross_col)) {
 			drawCross(image, Point(cross_col, cross_row));
-			cout << "height: " << cross_row << "\twidth: " << cross_col << endl;
 		}
+		
+		time(&end);
+		frame_counter++;
+		sprintf(string_buf, "%3.4f fps", frame_counter/difftime(end, start));
+		drawText(image, string(string_buf));
 		
 		imshow("Original Image", image);
 		
