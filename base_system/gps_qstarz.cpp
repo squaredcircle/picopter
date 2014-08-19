@@ -64,6 +64,7 @@ int GPS::close() {
 	
 	serialClose(fileDes);
 	gpio::stopWiringPi();
+	ready = false;
 	log->writeLogLine("Connection to GPS closed");
 	return 0;
 }

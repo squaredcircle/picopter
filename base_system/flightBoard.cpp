@@ -47,6 +47,7 @@ int FlightBoard::close() {
 	if(!ready) return -1;
 	
 	gpio::stopServoBlaster();	//stop servoBlaster
+	ready = false;
 	log->writeLogLine("Flight board has been closed.");
 	return 0;
 }
