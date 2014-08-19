@@ -74,7 +74,8 @@ int IMU::close() {
 	if(!ready) return -1;
 	
 	//close cmt, free log, free packet
-	log->writeLogLine("Connection to GPS closed");
+	ready = false;
+	log->writeLogLine("Connection to IMU closed");
 	return 0;
 }
 
