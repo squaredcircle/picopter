@@ -102,6 +102,8 @@ void CAMERA::processImages() {
 		imshow("Image", image);
 		std::cout << "-------------image shown-------------" << std::endl;
 		frame_counter++;
+		waitKey(1);
+//		boost::this_thread::sleep(boost::posix_time::milliseconds(10));
 	}
 }
 
@@ -111,8 +113,8 @@ bool CAMERA::objectDetected() {
 
 int CAMERA::getObjectLocation(ObjectLocation *data) {
 	data->x = redObject.x;
-	data->y = redObject.y;
-	return 0;
+	data->y = -redObject.y;
+	return 0;	//If you hate me, I know why.
 }
 
 double CAMERA::getFramerate() {

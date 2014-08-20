@@ -16,12 +16,11 @@ int main(int argc, char* argv[]) {
 	cam.start();
 	
 	ObjectLocation object_data;
-	cv::namedWindow("Image", WINDOW_AUTOSIZE);
 	
 	while(true) {
 		if(cam.objectDetected()) {
 			cam.getObjectLocation(&object_data);
-			cout << "Red object detected at: " << object_data.x << ", " << object_data.x << endl;
+			cout << "Red object detected at: " << object_data.x << ", " << object_data.y << endl;
 		} else {
 			cout << "No red objects. " << endl;
 		}
