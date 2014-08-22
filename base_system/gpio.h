@@ -15,28 +15,28 @@
 #include <cstdlib>	//system
 
 #include <wiringPi.h>
-#define SERVOBLASTER_PATH "/home/pi/ServoBlaster/user/servod"
+#define SERVOBLASTER_PATH "/home/pi/PiBits/ServoBlaster/user/servod"
 
 #define MODE_PIN 5
 
 #define AILERON_CHANNEL 0
 #define AILERON_PIN_PHYSICAL 11
-#define AILERON_PWM_MID 150
-#define AILERON_PWM_SWING 40
+#define AILERON_PWM_MID 153			//Calibrated on August 1st
+#define AILERON_PWM_SWING 42
 #define AILERON_SPEED_MID 0
 #define AILERON_SPEED_SWING 100
 
 #define ELEVATOR_CHANNEL 1
 #define ELEVATOR_PIN_PHYSICAL 12
-#define ELEVATOR_PWM_MID 150
+#define ELEVATOR_PWM_MID 156		//Calibrated on August 1st	
 #define ELEVATOR_PWM_SWING 40
 #define ELEVATOR_SPEED_MID 0
 #define ELEVATOR_SPEED_SWING 100
 
 #define RUDDER_CHANNEL 2
 #define RUDDER_PIN_PHYSICAL 15
-#define RUDDER_PWM_MID 150
-#define RUDDER_PWM_SWING 40
+#define RUDDER_PWM_MID 153			//Calibrated on August 1st
+#define RUDDER_PWM_SWING 42
 #define RUDDER_SPEED_MID 0
 #define RUDDER_SPEED_SWING 100
 

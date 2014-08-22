@@ -1,4 +1,5 @@
 #include "gpio.h"
+//  #include <iostream>
 
 bool gpio::wiringPiRunning;
 bool gpio::servoBlasterRunning;
@@ -43,7 +44,7 @@ int gpio::startServoBlaster() {
 	if(!gpio::servoBlasterRunning) {
 		
 		char servoBlasterInit[128];
-		sprintf(servoBlasterInit, "%s --p1pins=%d,%d,%d,%d",   SERVOBLASTER_PATH, 
+		sprintf(servoBlasterInit, "%s --p1pins=%d,%d,%d,%d --cycle-time=14800us",   SERVOBLASTER_PATH, 
 																	AILERON_PIN_PHYSICAL, 	//ch0
 																	ELEVATOR_PIN_PHYSICAL, 	//ch1
 																	RUDDER_PIN_PHYSICAL, 	//ch2
@@ -81,6 +82,10 @@ int gpio::setServoBlaster(int aileronSpeed, int elevatorSpeed, int rudderSpeed, 
 	sprintf(servoPos, "echo %d=%d > /dev/servoblaster", GIMBLE_CHANNEL, gpio::gimbleAngle2PWM(gimbleAngle));
 	system(servoPos);
 	
+//	std::cout << "aileron :" << gpio::aileronSpeed2PWM(aileronSpeed) << std::endl;		//pritnt some things
+//	std::cout << "elevator :" << gpio::elevatorSpeed2PWM(elevatorSpeed) << std::endl;	//these should be between 110 and 190
+//	std::cout << "rudder :" << gpio::rudderSpeed2PWM(rudderSpeed) << std::endl;
+//	std::cout << "gimble :" << gpio::gimbleAngle2PWM(gimbleAngle) << std::endl;
 	return 0;
 }
 
@@ -99,7 +104,6 @@ int gpio::aileronSpeed2PWM(int speed) {
 
 int gpio::elevatorSpeed2PWM(int speed) {
 	int pwm = ELEVATOR_PWM_MID - ((speed-ELEVATOR_SPEED_MID)*ELEVATOR_PWM_SWING)/ELEVATOR_SPEED_SWING;	//note the -ve.  I've been lazy.
-	//printf("%i\n", pwm);
 	if(pwm > ELEVATOR_PWM_MID + ELEVATOR_PWM_SWING) {
 		pwm = ELEVATOR_PWM_MID + ELEVATOR_PWM_SWING;
 	}

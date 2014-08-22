@@ -5,12 +5,11 @@
 #include <string>
 #include <iostream>
 #include <fstream>
-#include <iostream>
 #include <ctime>
 #include <algorithm>
 #include <stdio.h>
 
-#define LOG_DIRECTORY "/home/pi/logs"
+#define LOG_DIRECTORY "/home/pi/Desktop/logs"
 
 class Logger {
 public:
