@@ -1,3 +1,5 @@
+//Designed by Michael Baxter, modified by Omid Targhagh
+
 #include <iostream>
 #include <iomanip>
 #include <fstream>
@@ -11,7 +13,7 @@ using namespace std;
 #include "gpio.h"
 #include "flightBoard.h"
 #include "gps_qstarz.h"
-
+#include "logger.h"
 
 #define GPS_DATA_FILE "waypoints_list.txt"
 
@@ -20,18 +22,21 @@ using namespace std;
 #define sin2(x) (sin(x)*sin(x))
 
 #define SPEED_LIMIT 40
-#define WAYPOINT_RADIUS 5	//2m;
+#define WAYPOINT_RADIUS 3	//m;
 
 #define FILTER_LENGTH 5
 #define FILTER_PERIOD 100		//Inverse of filter sampling frequency.  Easier to use in thus form.  In ms.
 
 #define DIRECTION_TEST_SPEED 30
-#define DIRECTION_TEST_DURATION 6000
+#define DIRECTION_TEST_DURATION 5000
 
 #define Kp 8		//proportional controller constant
 
 #define WAIT_AT_WAYPOINTS 3000
 #define MAIN_LOOP_DELAY 20
+
+#define POINTS 3 			//Need more accurate GPS
+#define WIDTH 0.0150		//Large enough distance between pts that deviation makes no difference
 
 
 typedef struct{		//These are in radians.  These are in radians. These are in radians.  I've said it three times now.
@@ -55,8 +60,6 @@ private:
 	void processData(void);
 };
 
-
-
 void populate_waypoints_list(vector<Pos>*);
 double calculate_distance(Pos, Pos);
 double calculate_bearing(Pos, Pos);
@@ -72,7 +75,7 @@ int main(int argc, char* argv[]) {
 	FlightBoard fb = FlightBoard();
 	fb.setup();
 	fb.start();
-	Logger logs = Logger("waypoints.log");
+	Logger logs = Logger("lawnmower.log");
 	char str[128];
 	
 	Filter ftr;
@@ -84,13 +87,19 @@ int main(int argc, char* argv[]) {
 	//
 	vector<Pos> waypoints_list;
 	populate_waypoints_list(&waypoints_list);
-	cout << "Waypoint list populated:" << endl;
-	
-	for(size_t i = 0; i< waypoints_list.size(); i++) {
-		cout << "Waypoint " << i+1 << "\t";
-		cout << "lat: " << waypoints_list[i].lat * 180 / PI << "\t";
-		cout << "lon: " << waypoints_list[i].lon * 180 / PI << endl;
+	Pos location[POINTS][POINTS];
+
+	for (int i = 0; i < POINTS; i++) {
+		for (int j = 0; j < POINTS; j++) {
+			location[i][j].lat = waypoints_list[0].lat - i*nmea2radians(WIDTH)/POINTS;		//More negative latitudes are south
+			location[i][j].lon = waypoints_list[0].lon + j*nmea2radians(WIDTH)/POINTS;
+			cout << "Location " << i << "/" << j << " is "<< std::setprecision(7) << location[i][j].lat *180/PI<< " " << location[i][j].lon *180/PI << endl;
+			sprintf(str, "Location %i/%i is %f %f", i, j, location[i][j].lat *180/PI, location[i][j].lon *180/PI);
+			logs.writeLogLine(str);
+		}
 	}
+
+	cout << "Locations populated:" << endl;
 	
 	//----------------------------
 	//Get bearing (by moving forwards a bit)
@@ -114,83 +123,102 @@ int main(int argc, char* argv[]) {
 	ftr.getPos(&direction_test_end);									//Record end position.
 	
 	yaw = calculate_bearing(direction_test_start, direction_test_end);	//Work out which direction we went.
-	cout << "Copter is facing a bearing of: " << yaw << endl;
+	
 	
 	
 	//----------------------------
 	//Time to start main loop!
 	//
-	cout << "Bearing found: starting waypoint navigation" << endl;
-	logs.writeLogLine("Bearing found: starting waypoint navigation");
+	cout << "Bearing found: " << yaw*180/PI << " degrees - Starting waypoint navigation" << endl;
+	sprintf(str ,"Bearing found: %f degrees - Starting waypoint navigation", yaw*180/PI);
+	logs.writeLogLine(str);
 	
-	size_t waypoint_iterator = 0;	//secretly an unsiged int			//Initialise loop counter
 	Pos currentPos = {-1, -1};											//Somewhere to save things
-	double distaceToNextWaypoint;
+	int direction = 1;													//Going 'east' or 'west'
+	int found = 0;
+	double distanceToNextWaypoint;
 	double bearingToNextWaypoint;
 	FB_Data course = {0, 0, 0, 0};										//We can reuse this struct throughout the main loop
 	while(true) {
-		try {
-			checkAutoMode();	//note: this function throws an			//Check if we're in auto mode.
-								//error if not in auto mode.
-								//Is caught below.
-			
-			
-			ftr.getPos(&currentPos);									//First get our current position
-			if(currentPos.lat == -1) cout << "error getting position" << endl;
-			
-			
-			
-			distaceToNextWaypoint = calculate_distance(currentPos, waypoints_list[waypoint_iterator]);
-			if(distaceToNextWaypoint < WAYPOINT_RADIUS) {				//Are we at a waypoint?  Waypoints are circles now.
-				fb.setFB_Data(&stop);									//We're at the waypoint!!  We'll stop an wait a bit;
-				cout << "At waypoint.  Stopping." << endl;
-				sprintf(str, "Reached waypoint %i. Stopping", waypoint_iterator+1);
-				logs.writeLogLine(str);
-				for(int i=0; i<9; i++) {
-					delay(WAIT_AT_WAYPOINTS/10);
-					checkAutoMode();									//Keep checking we're stil in auto mode.
+
+		for (int i = 0; i < POINTS; i++) {
+			for (int j = 0; j < POINTS; j++) {
+				if (direction == -1) {			//If need to sweep backwards
+					j = (POINTS-1) - j;			//Reverses value of j
 				}
-				waypoint_iterator++;									//Next waypoint.
-				if(waypoint_iterator == waypoints_list.size()) waypoint_iterator = 0;
-				
-				
-				cout << "Moving to next waypoint." << " Waypoint no. " << waypoint_iterator+1 << endl;
-				sprintf(str, "Now moving to waypoint %i", waypoint_iterator+1);
-				logs.writeLogLine(str);
-				delay(WAIT_AT_WAYPOINTS/10);
-				
-				
-			} else {
-																		//Not at a waypoint yet.  Find bearing.
-				bearingToNextWaypoint = calculate_bearing(currentPos, waypoints_list[waypoint_iterator]);
-																		//Set a Course
-				setCourse(&course, distaceToNextWaypoint, bearingToNextWaypoint, yaw);
-				fb.setFB_Data(&course);									//Give command to flight board
-				
-				cout << "Moving to waypoint." << endl;
-				
-				cout << "Facing: " << yaw << endl;
-				cout << "Current lat: " << std::setprecision(6) << currentPos.lat * 180 / PI << "\t";
-				cout << "Current lon: " << std::setprecision(7) << currentPos.lon * 180 / PI << endl;
-				cout << "Waypoint lat: " << std::setprecision(6) << waypoints_list[waypoint_iterator].lat * 180 / PI << "\t";
-				cout << "Waypoint lon: " << std::setprecision(7) << waypoints_list[waypoint_iterator].lon * 180 / PI << endl;
-				cout << "Distance = " << std::setprecision(7) << distaceToNextWaypoint << "\t";
-				cout << "Bearing = " << std::setprecision(5) << bearingToNextWaypoint << endl;
-				cout << endl;
-				
-				checkAutoMode();										// Fly for a bit
-				delay(MAIN_LOOP_DELAY);
-				sprintf(str, "Moving to waypoint %i. It has latitude %f and longitude %f.", waypoint_iterator+1, waypoints_list[waypoint_iterator].lat *180/PI, waypoints_list[waypoint_iterator].lon *180/PI);
-				logs.writeLogLine(str);
-				sprintf(str), "Currently at %f %f, moving %f m at a bearing of %f degrees.", currentPos.lat *180/PI, currentPos.lon *180/PI, distaceToNextWaypoint, bearingToNextWaypoint);
-				logs.writeLogLine(str);
+
+				while (!found) {
+					try {
+						checkAutoMode();	//note: this function throws an			//Check if we're in auto mode.
+											//error if not in auto mode.
+											//Is caught below.
+						
+						
+						ftr.getPos(&currentPos);									//First get our current position
+						if(currentPos.lat == -1) cout << "error getting position" << endl;
+						
+						
+						
+						distanceToNextWaypoint = calculate_distance(currentPos, location[i][j]);
+						bearingToNextWaypoint = calculate_bearing(currentPos, location[i][j]);
+
+						if(distanceToNextWaypoint < WAYPOINT_RADIUS) {				//Are we at a waypoint?  Waypoints are circles now.
+							found = 1;
+							fb.setFB_Data(&stop);									//We're at the waypoint!!  We'll stop an wait a bit;
+							cout << "At waypoint" << i << "/" << j << ". Stopping for a bit." << endl;
+							sprintf(str, "Reached waypoint %i/%i, with latitude %f and longitude %f. Stopping for a bit.", i, j,location[i][j].lat * 180/PI, location[i][j].lon * 180/PI);
+							logs.writeLogLine(str);
+							for(int k=0; k<9; k++) {
+								delay(WAIT_AT_WAYPOINTS/10);
+								checkAutoMode();									//Keep checking we're stil in auto mode.
+							}
+
+							cout << "Moving to next waypoint." << endl;
+							sprintf(str, "Now moving to waypoint %i/%i", i, j+1);
+							logs.writeLogLine(str);
+							delay(WAIT_AT_WAYPOINTS/10);
+							
+							
+						} else {
+																					//Not at a waypoint yet.  Find bearing.
+																					//Set a Course
+							setCourse(&course, distanceToNextWaypoint, bearingToNextWaypoint, yaw);
+							sprintf(str, "Course now set to: {%i (A) & %i (E)}", course.aileron, course.elevator);
+							logs.writeLogLine(str);
+							fb.setFB_Data(&course);									//Give command to flight board
+							
+							cout << "Moving to waypoint." << endl;
+							
+							cout << "Current lat: " << std::setprecision(6) << currentPos.lat * 180/PI << "\t";
+							cout << "Current lon: " << std::setprecision(7) << currentPos.lon * 180/PI << endl;
+							cout << "Waypoint lat: " << std::setprecision(6) << location[i][j].lat * 180/PI << "\t";
+							cout << "Waypoint lon: " << std::setprecision(7) << location[i][j].lon * 180/PI << endl;
+							cout << "Distance = " << std::setprecision(7) << distanceToNextWaypoint << "m\t";
+							cout << "Bearing = " << std::setprecision(5) << bearingToNextWaypoint << endl;
+							cout << endl;
+							
+							sprintf(str, "Moving to waypoint %i/%i. It has latitude %f and longitude %f.", i, j, location[i][j].lat * 180/PI, location[i][j].lon * 180/PI);
+							logs.writeLogLine(str);
+							sprintf(str, "Currently at %f %f, need to go %f m with a bearing of %f degrees.", currentPos.lat *180/PI, currentPos.lon *180/PI, distanceToNextWaypoint, bearingToNextWaypoint*180/PI);
+							logs.writeLogLine(str);
+
+							checkAutoMode();										// Fly for a bit
+							delay(MAIN_LOOP_DELAY);
+						}
+					}
+					catch(...) {
+						fb.setFB_Data(&stop);
+						while(!gpio::isAutoMode()) {
+							delay(50);												//Keep checking.  Will go back to start of for loop on return
+						}
+					}
+				}
+				found = 0;					//Reset for next iteration
+				if (direction == -1) {
+					j = (POINTS-1) - j;			//Reverse back
+				}
 			}
-		}
-		catch(...) {
-			fb.setFB_Data(&stop);
-			while(!gpio::isAutoMode()) {
-				delay(50);												//Keep checking.  Will go back to start of for loop on return
-			}
+			direction = direction * -1;	//Reverses direction of next sweep
 		}
 	}
 	return 0;
@@ -231,7 +259,7 @@ double nmea2radians(double nmea) {
 
 double calculate_distance(Pos pos1, Pos pos2) {
 	double h = sin2((pos1.lat-pos2.lat)/2) + cos(pos1.lat)*cos(pos2.lat) * sin2((pos2.lon-pos1.lon)/2);
-	if(h > 1) cout << "bearing calculation error" << endl;
+	if(h > 1) cout << "distance calculation error" << endl;
 	double distance = 2 * RADIUS_OF_EARTH * asin(sqrt(h));
 	return distance * 1000;	//meters
 }
@@ -239,8 +267,8 @@ double calculate_distance(Pos pos1, Pos pos2) {
 double calculate_bearing(Pos pos1, Pos pos2) {
 	double num = sin(pos2.lon - pos1.lon) * cos(pos2.lat);
 	double den = cos(pos1.lat)*sin(pos2.lat) - sin(pos1.lat)*cos(pos2.lat)*cos(pos2.lon-pos1.lon);
-	if(den == 0) cout << "distance calculation error" << endl;
-	double bearing = atan(num/den);
+	if(den == 0) cout << "bearing calculation error" << endl;
+	double bearing = atan2(num, den);
 	return bearing;
 }
 
@@ -256,8 +284,8 @@ void setCourse(FB_Data *instruction, double distance, double bearing, double yaw
 	if(speed > SPEED_LIMIT) {											//P controler with limits.
 		speed = SPEED_LIMIT;
 	}
-	instruction->aileron = (int) (speed * cos(2*PI-(bearing - yaw)));
-	instruction->elevator = (int) (speed * sin(2*PI-(bearing - yaw)));
+	instruction->aileron = (int) (speed * sin(bearing - yaw));
+	instruction->elevator = (int) (speed * cos(bearing - yaw));
 	instruction->rudder = 0;
 	instruction->gimble = 0;
 }	

@@ -12,10 +12,11 @@
 using namespace std;
 
 #define points 3 			//Need more accurate GPS
-#define accuracy 0.015		//Large enough distance between pts that ~2m deviation makes no difference
+#define accuracy 0.0100		//Large enough distance between pts that deviation makes no difference
 
 void flyTo(FlightBoard*, GPS*, GPS_Data*, double, double, double);
 double determineBearing(FlightBoard*, GPS*, GPS_Data*);
+void captureImage(int, int, GPS_Data*);
 
 /*Things needed for 'flyTo'*/
 //---------------------------
@@ -23,12 +24,12 @@ double determineBearing(FlightBoard*, GPS*, GPS_Data*);
 #define RADIUS_OF_EARTH 6364.963	//km
 #define sin2(x) (sin(x)*sin(x))
 #define SPEED_LIMIT 40
-#define WAYPOINT_RADIUS 1.000		//m;
+#define WAYPOINT_RADIUS 4.000		//In m - should be no less than 3 or 4
 #define Kp 8						//proportional controller constant
 #define DIRECTION_TEST_SPEED 40
-#define DIRECTION_TEST_DURATION 3000
+#define DIRECTION_TEST_DURATION 6000
 
-typedef struct{		//These are in radians.  These are in radians. These are in radians.  I've said it three times now.
+typedef struct{		//These are in radians.
 	double lat;
 	double lon;
 } Pos;
@@ -51,7 +52,8 @@ int main() {
 	gps.setup();
 	gps.start();
 	GPS_Data data;					//Struct which stores location 
-
+	
+	cout  << "Waiting to enter autonomous mode..." << endl;
 	while(!gpio::isAutoMode()) delay(100);	//Hexacopter waits until put into auto mode
 	cout << "Entering Autonomous Mode" << endl;
 	
@@ -67,23 +69,28 @@ int main() {
 		for (int j = 0; j < points; j++) {
 			location[i][j][0] = startLat + j*accuracy/points;
 			location[i][j][1] = startLon + i*accuracy/points;
+			cout << "Location " << i << "/" << j << " is " << location[i][j][0]<< " " << location[i][j][1]<< endl;
 		}
 	}
 
 	cout << "Locations Determined." << endl;
 
-	int direction = 1;	//Determines which way flying along loop
+	int direction = 1;	//Determines which way flying along loop - forwards or backwards
 	for (int i = 0; i < points; i++) {
 		if (direction == 1) {	//Going 'right'
 			for (int j = 0; j < points; j ++) {
-				cout << "Now at " << i << "/" << j << ", heading 'right'" << endl;
+				cout << "Now heading 'forwards' to " << i << "/" << j << endl;
 				flyTo(&fb, &gps, &data, location[i][j][0], location[i][j][1], yaw);
+				captureImage(i, j, &data);
+				delay(2000);
 			}
 		}
 		else if (direction == -1) { //Going 'left' 
 			for (int j = points - 1; j >= 0; j--) {
-				cout << "Now at " << i << "/" << j << ", heading 'left'" << endl;
+				cout << "Now heading 'backwards' to " << i << "/" << j << endl;
 				flyTo(&fb, &gps, &data, location[i][j][0], location[i][j][1], yaw);
+				captureImage(i, j, &data);
+				delay(2000);
 			}
 		}
 		direction = direction*-1;	//Reverses direction for next sweep
@@ -93,32 +100,47 @@ int main() {
 }
 
 void flyTo(FlightBoard *fbPtr, GPS *gpsPtr, GPS_Data *dataPtr, double targetLat, double targetLon, double yaw) {
-	cout << "Flying to " << targetLat << " " << targetLon << " with a bearing of " << yaw << endl;
+	cout << "Flying to " << targetLat << " " << targetLon << ", facing " << yaw*(180/PI) << " degrees" << endl;
 	FB_Data stop = {0, 0, 0, 0};
 	FB_Data course = {0, 0, 0, 0};
 	Pos start;
 	Pos end;
+
+	gpsPtr->getGPS_Data(dataPtr);
+	start.lat = nmea2radians(dataPtr->latitude);
+	start.lon = nmea2radians(dataPtr->longitude);
+	end.lat = nmea2radians(targetLat);
+	end.lon = nmea2radians(targetLon);
+	cout << "Needs to move : " << targetLat - dataPtr->latitude << " (lat), " << targetLon - dataPtr->longitude << "(lon)" << endl;
 	double distance = calculate_distance(start, end);
+	double bearing = calculate_bearing(start, end);
+	cout << "Distance: " << distance << " m\tBearing: " << bearing*(180/PI) << " degrees" << endl;
 
 	while (distance > WAYPOINT_RADIUS) {
-		cout << "Travelling..." << endl;
-		gpsPtr->getGPS_Data(dataPtr);
+		setCourse(&course, distance, bearing, yaw);
+		cout << "Course set to: {" << course.aileron << ", " << course.elevator << "}" << endl;
+		fbPtr->setFB_Data(&course);
+		//delay(500);					//Wait for new instructions to actually take effect.
 
+		gpsPtr->getGPS_Data(dataPtr);
 		start.lat = nmea2radians(dataPtr->latitude);
 		start.lon = nmea2radians(dataPtr->longitude);
 		end.lat = nmea2radians(targetLat);
 		end.lon = nmea2radians(targetLon);
-		cout << "Going from " << start.lat << ", " << start.lon << " to \n\t" << end.lat << ", " << end.lon << endl;
-
-		double distance = calculate_distance(start, end);
-		double bearing = calculate_bearing(start, end);
-		cout << "Distance: " << distance << "\tBearing: " << bearing << endl;
-		
-		setCourse(&course, distance, bearing, yaw);
-		fbPtr->setFB_Data(&course);
+		cout << "Needs to move : " << targetLat - dataPtr->latitude << ", " << targetLon - dataPtr->longitude << endl;
+		distance = calculate_distance(start, end);
+		bearing = calculate_bearing(start, end);
+		cout << "Distance: " << distance << " m\tBearing: " << bearing*(180/PI) << endl;
 	}
 	cout << "Arrived" << endl;
 	fbPtr->setFB_Data(&stop);
+}
+
+void captureImage(int row, int column, GPS_Data *dataPtr) {
+	cout << "Taking photo..." << endl;
+	char syscall[128];
+	sprintf(syscall, "raspistill -o lawnmower_run_%i_%i_%f.jpg", row, column, dataPtr->time);
+	system(syscall);
 }
 
 double determineBearing(FlightBoard *fbPtr, GPS *gpsPtr, GPS_Data *dataPtr) {
@@ -131,18 +153,24 @@ double determineBearing(FlightBoard *fbPtr, GPS *gpsPtr, GPS_Data *dataPtr) {
 	gpsPtr->getGPS_Data(dataPtr);													//Record start position.		
 	test_start.lat = nmea2radians(dataPtr->latitude);
 	test_start.lon = nmea2radians(dataPtr->longitude);
-	cout << "Starting at " << test_start.lat << ", " << test_start.lon << endl;
+	cout << "Starting at " << dataPtr->latitude << ", " << dataPtr->longitude << endl;
+	double dummy = dataPtr->latitude;
+	double dummy2 = dataPtr->longitude;
+	//cout << test_start.lat << endl;
 	fbPtr->setFB_Data(&forwards);										//Tell flight board to go forwards.
 	delay(DIRECTION_TEST_DURATION);										//Wait a bit (travel).
 	fbPtr->setFB_Data(&stop);											//Stop.
 	gpsPtr->getGPS_Data(dataPtr);										//Record end position.
 	test_end.lat = nmea2radians(dataPtr->latitude);
 	test_end.lon = nmea2radians(dataPtr->longitude);
-	cout << "Ending at " << test_end.lat << ", " << test_end.lon << endl;
+	cout << "Ending at " << dataPtr->latitude << ", " << dataPtr->longitude << endl;
+	cout << "Difference is : " << dataPtr->latitude - dummy << ", " << dataPtr->longitude - dummy2 << endl;
+	//cout << test_end.lat << endl;
 
 	double yaw = calculate_bearing(test_start, test_end);	//Work out which direction we went.
-	cout << "The Hexacopter has an orientation of: %d" << yaw << endl;
-	flyTo(fbPtr, gpsPtr, dataPtr, test_start.lat, test_start.lon, yaw);
+	cout << "The Hexacopter has an orientation of: " << yaw << endl;
+	cout << "Returning to start location." << endl;
+	flyTo(fbPtr, gpsPtr, dataPtr,dataPtr->latitude, dataPtr->longitude, yaw);
 	return yaw;
 }
 
@@ -150,7 +178,7 @@ double determineBearing(FlightBoard *fbPtr, GPS *gpsPtr, GPS_Data *dataPtr) {
 //-----------------------------------------------------------------------------------------
 
 void setCourse(FB_Data *instruction, double distance, double bearing, double yaw) {
-	double speed = Kp * distance * 2;
+	double speed = Kp * distance;
 	if(speed > SPEED_LIMIT) {											//P controler with limits.
 		speed = SPEED_LIMIT;
 	}
@@ -170,7 +198,7 @@ double calculate_distance(Pos pos1, Pos pos2) {
 double calculate_bearing(Pos pos1, Pos pos2) {
 	double num = sin(pos2.lon - pos1.lon) * cos(pos2.lat);
 	double den = cos(pos1.lat)*sin(pos2.lat) - sin(pos1.lat)*cos(pos2.lat)*cos(pos2.lon-pos1.lon);
-	if(den == 0) cout << "distance calculation error" << endl;
+	if(den == 0) cout << "Distance calculation error" << endl;
 	double bearing = atan(num/den);
 	return bearing;
 }
