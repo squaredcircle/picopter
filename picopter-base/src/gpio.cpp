@@ -48,7 +48,7 @@ int gpio::startServoBlaster() {
 																	AILERON_PIN_PHYSICAL, 	//ch0
 																	ELEVATOR_PIN_PHYSICAL, 	//ch1
 																	RUDDER_PIN_PHYSICAL, 	//ch2
-																	GIMBLE_PIN_PHYSICAL);	//ch3
+																	GIMBAL_PIN_PHYSICAL);	//ch3
 		system(servoBlasterInit);
 		gpio::servoBlasterRunning = true;
 		gpio::setServoBlaster(0, 0, 0, 0);
@@ -68,7 +68,7 @@ int gpio::stopServoBlaster() {
 	}
 }
 
-int gpio::setServoBlaster(int aileronSpeed, int elevatorSpeed, int rudderSpeed, int gimbleAngle) {
+int gpio::setServoBlaster(int aileronSpeed, int elevatorSpeed, int rudderSpeed, int gimbalAngle) {
 	if(!gpio::servoBlasterRunning) {
 		return -1;
 	}
@@ -79,13 +79,13 @@ int gpio::setServoBlaster(int aileronSpeed, int elevatorSpeed, int rudderSpeed, 
 	system(servoPos);
 	sprintf(servoPos, "echo %d=%d > /dev/servoblaster", RUDDER_CHANNEL, gpio::rudderSpeed2PWM(rudderSpeed));
 	system(servoPos);
-	sprintf(servoPos, "echo %d=%d > /dev/servoblaster", GIMBLE_CHANNEL, gpio::gimbleAngle2PWM(gimbleAngle));
+	sprintf(servoPos, "echo %d=%d > /dev/servoblaster", GIMBAL_CHANNEL, gpio::gimbalAngle2PWM(gimbalAngle));
 	system(servoPos);
 	
 //	std::cout << "aileron :" << gpio::aileronSpeed2PWM(aileronSpeed) << std::endl;		//pritnt some things
 //	std::cout << "elevator :" << gpio::elevatorSpeed2PWM(elevatorSpeed) << std::endl;	//these should be between 110 and 190
 //	std::cout << "rudder :" << gpio::rudderSpeed2PWM(rudderSpeed) << std::endl;
-//	std::cout << "gimble :" << gpio::gimbleAngle2PWM(gimbleAngle) << std::endl;
+//	std::cout << "gimbal :" << gpio::gimbalAngle2PWM(gimbalAngle) << std::endl;
 	return 0;
 }
 
@@ -126,13 +126,13 @@ int gpio::rudderSpeed2PWM(int speed) {
 }
 
 
-int gpio::gimbleAngle2PWM(int angle) {
-	int pwm = GIMBLE_PWM_HIGH - ((angle-GIMBLE_ANGLE_LOW)*GIMBLE_PWM_LOW)/GIMBLE_ANGLE_HIGH;
-	if(pwm > GIMBLE_PWM_HIGH) {
-		pwm = GIMBLE_PWM_HIGH;
+int gpio::gimbalAngle2PWM(int angle) {
+	int pwm = GIMBAL_PWM_HIGH - ((angle-GIMBAL_ANGLE_LOW)*GIMBAL_PWM_LOW)/GIMBAL_ANGLE_HIGH;
+	if(pwm > GIMBAL_PWM_HIGH) {
+		pwm = GIMBAL_PWM_HIGH;
 	}
-	if(pwm < GIMBLE_PWM_LOW) {
-		pwm = GIMBLE_PWM_LOW;
+	if(pwm < GIMBAL_PWM_LOW) {
+		pwm = GIMBAL_PWM_LOW;
 	}
 	return pwm;
 }

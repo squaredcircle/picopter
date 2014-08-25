@@ -21,9 +21,9 @@ int main(int argc, char* argv[]) {
 		
 	Movement stop =			{"Stop", 			{0, 0, 0, 0}};
 	Movement forwards =		{"Forwards", 		{0, SPEED, 0, 0}};
-	Movement backwards =	{"Backwards", 		{0,-SPEED, 0, 0}};
+	Movement backwards =		{"Backwards", 		{0,-SPEED, 0, 0}};
 	Movement left =			{"Left", 			{-SPEED, 0, 0, 0}};
-	Movement right =		{"Right", 			{ SPEED, 0, 0, 0}};
+	Movement right =			{"Right", 			{ SPEED, 0, 0, 0}};
 	Movement clockwise = 	{"Clockwise", 		{0, 0, SPEED, 0}};
 	Movement anticlockwise=	{"Anticlockwise", 	{0, 0,-SPEED, 0}};
 	

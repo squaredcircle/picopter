@@ -4,6 +4,9 @@
 //
 //Desciption:	Class used to control the flight board, using the gpio.h/gpio.cpp wrappers.
 
+//v1.5 (probably) 26-8-2014 BAX
+//Changed gimble to gimbal
+
 
 #ifndef __FLIGHTBOARD_H_INCLUDED__
 #define __FLIGHTBOARD_H_INCLUDED__
@@ -17,7 +20,7 @@ typedef struct {
 	int aileron;
 	int elevator;
 	int rudder;
-	int gimble;
+	int gimbal;
 } FB_Data;
 
 

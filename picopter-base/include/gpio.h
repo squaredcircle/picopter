@@ -7,6 +7,12 @@
 //
 //				Compile with: -I/usr/local/include -L/usr/local/lib -lwiringPi
 
+//v1.2 1-8-2014 - OMID
+//PWMs calibrated
+
+//v1.3 26-8-2014 - BAX
+//gimble changed to gimbal
+
 
 #ifndef __GPIO_H_INCLUDED__
 #define __GPIO_H_INCLUDED__
@@ -40,12 +46,12 @@
 #define RUDDER_SPEED_MID 0
 #define RUDDER_SPEED_SWING 100
 
-#define GIMBLE_CHANNEL 3
-#define GIMBLE_PIN_PHYSICAL 16
-#define GIMBLE_PWM_LOW 110
-#define GIMBLE_PWM_HIGH 190
-#define GIMBLE_ANGLE_LOW 0
-#define GIMBLE_ANGLE_HIGH 90
+#define GIMBAL_CHANNEL 3
+#define GIMBAL_PIN_PHYSICAL 16
+#define GIMBAL_PWM_LOW 110
+#define GIMBAL_PWM_HIGH 190
+#define GIMBAL_ANGLE_LOW 0
+#define GIMBAL_ANGLE_HIGH 90
 
 
 
@@ -64,7 +70,7 @@ namespace gpio {
 	int aileronSpeed2PWM(int);
 	int elevatorSpeed2PWM(int);
 	int rudderSpeed2PWM(int);
-	int gimbleAngle2PWM(int);
+	int gimbalAngle2PWM(int);
 	
 	
 	
