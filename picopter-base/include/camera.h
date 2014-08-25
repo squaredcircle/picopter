@@ -25,7 +25,7 @@
 
 using namespace cv;
 
-#define IMAGE_PROCSSING_PARAMETERS_FILE "camera_threshold_list.txt"
+#define IMAGE_PROCSSING_PARAMETERS_FILE "../config/camera_threshold_list.txt"
 
 #define LOOKUP_SIZE 8
 #define CHAR_SIZE 256
