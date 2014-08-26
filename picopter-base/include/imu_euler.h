@@ -22,6 +22,8 @@
 #define IMU_DEVICE_FILE "/dev/ttyUSB0"
 #define IMU_BAUD_RATE B115200
 
+#define IMU_OK 0
+
 using namespace xsens;
 
 typedef struct {

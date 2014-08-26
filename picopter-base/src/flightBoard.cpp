@@ -10,8 +10,8 @@ FlightBoard::FlightBoard() {
 	this->currentData.gimbal = 0;
 }
 
-FlightBoard::FlightBoard(const FlightBoard& orig) {};
-FlightBoard::~FlightBoard() {};
+FlightBoard::FlightBoard(const FlightBoard& orig) {}
+FlightBoard::~FlightBoard() {}
 
 int FlightBoard::setup() {
 	if(ready) return -1;
@@ -43,6 +43,7 @@ int FlightBoard::stop() {
 }
 
 int FlightBoard::close() {
+    if(running) stop();
 	if(running) return -1;
 	if(!ready) return -1;
 	

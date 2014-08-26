@@ -70,10 +70,11 @@ int IMU::stop() {
 }
 
 int IMU::close() {
+    if(running) stop();
 	if(running) return -1;
 	if(!ready) return -1;
 	
-	//close cmt, free log, free packet
+	//TODO: close cmt, free log, free packet
 	ready = false;
 	log->writeLogLine("Connection to IMU closed");
 	return 0;

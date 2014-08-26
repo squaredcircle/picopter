@@ -7,6 +7,9 @@
 //
 //				Compile with: -lboost_thread -lwiringpi
 
+//v1.4 26-8-2014
+//BIG CHANGE: no more nmea.  Straight into degrees.  Less confusion for all.
+
 
 #ifndef __GPS_QSTARZ_H_INCLUDED__
 #define __GPS_QSTARZ_H_INCLUDED__
@@ -24,13 +27,13 @@
 #define GPS_DEVICE_FILE "/dev/ttyACM0"
 #define GPS_BAUD_RATE 115200
 
+#define GPS_OK 0
+
 
 typedef struct {
 	double time;
 	double longitude;
-	char NS;
 	double latitude;
-	char EW;
 	int fixQuality;
 	int numSatelites;
 	double horizDilution;
@@ -62,6 +65,7 @@ private:
 	std::string getGPSString(int);
 	int checkGPSString(std::string*);
 	int processGPSString(GPS_Data*, std::string*);
+    double nmea2degrees(double);
 };
 
 #endif// __GPS_QSTARZ_H_INCLUDED__

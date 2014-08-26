@@ -15,6 +15,7 @@
 #include "gpio.h"
 #include "logger.h"
 
+#define FB_OK 0
 
 typedef struct {
 	int aileron;

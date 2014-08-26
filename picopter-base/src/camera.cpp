@@ -71,6 +71,7 @@ int CAMERA::stop() {
 }
 
 int CAMERA::close() {
+    if(running) stop();
 	if(running) return -1;
 	if(!ready) return -1;
 	

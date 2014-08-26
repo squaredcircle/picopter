@@ -6,9 +6,7 @@ GPS::GPS() {
 	
 	this->currentData.time			= -1;
 	this->currentData.longitude		= -1;
-	this->currentData.NS			= '?';
 	this->currentData.latitude		= -1;
-	this->currentData.EW			= '?';
 	this->currentData.fixQuality	= -1;
 	this->currentData.numSatelites	= -1;
 	this->currentData.horizDilution	= -1;
@@ -59,6 +57,7 @@ int GPS::stop() {
 }
 
 int GPS::close() {
+    if(running) stop();
 	if(running) return -1;
 	if(!ready) return -1;
 	
@@ -99,9 +98,7 @@ int GPS::getGPS_Data(GPS_Data *data) {
 	
 	data->time = currentData.time;
 	data->latitude = currentData.latitude;
-	data->NS = currentData.NS;
 	data->longitude = currentData.longitude;
-	data->EW = currentData.EW;
 	data->fixQuality = currentData.fixQuality;
 	data->numSatelites = currentData.numSatelites;
 	data->horizDilution = currentData.horizDilution;
@@ -133,7 +130,7 @@ int GPS::checkGPSString(std::string *gpsStrPtr) {
 }
 
 int GPS::processGPSString(GPS_Data *data, std::string *gpsStrPtr) {
-	
+	double nmea_latitude, nmea_longitude;
 	//std::cout << *gpsStrPtr << std::endl;
 	
 	//First check the header
@@ -159,7 +156,7 @@ int GPS::processGPSString(GPS_Data *data, std::string *gpsStrPtr) {
 	j = gpsStrPtr->find(",", i);
 	//std::cout << "Latitude: \t" << gpsStrPtr->substr(i, j-i) << std::endl;
 	try {
-		data->latitude = boost::lexical_cast<double>(gpsStrPtr->substr(i, j-i));
+		nmea_latitude = boost::lexical_cast<double>(gpsStrPtr->substr(i, j-i));
 	} catch(const boost::bad_lexical_cast &) {
 		//error
 		return -1;
@@ -173,7 +170,11 @@ int GPS::processGPSString(GPS_Data *data, std::string *gpsStrPtr) {
 	if(gpsStrPtr->at(i) != 'N' && gpsStrPtr->at(i) != 'S') {
 		return -1;
 	}
-	data->NS = gpsStrPtr->at(i);
+	if(gpsStrPtr->at(i) == 'N') {
+        data->latitude = nmea2degrees(nmea_latitude);
+    } else {
+        data->latitude = -nmea2degrees(nmea_latitude);
+    }
 
 	
 	//Longitude
@@ -181,7 +182,7 @@ int GPS::processGPSString(GPS_Data *data, std::string *gpsStrPtr) {
 	j = gpsStrPtr->find(",", i);
 	//std::cout << "Longitude: \t" << gpsStrPtr->substr(i, j-i) << std::endl;
 	try {
-		data->longitude = boost::lexical_cast<double>(gpsStrPtr->substr(i, j-i));
+		nmea_longitude = boost::lexical_cast<double>(gpsStrPtr->substr(i, j-i));
 	} catch(const boost::bad_lexical_cast &) {
 		//error
 		return -1;
@@ -194,7 +195,11 @@ int GPS::processGPSString(GPS_Data *data, std::string *gpsStrPtr) {
 	if(gpsStrPtr->at(i) != 'E' && gpsStrPtr->at(i) != 'W') {
 		return -1;
 	}
-	data->EW = gpsStrPtr->at(i);
+    if(gpsStrPtr->at(i) == 'E') {
+        data->latitude = nmea2degrees(nmea_latitude);
+    } else {
+        data->latitude = -nmea2degrees(nmea_latitude);
+    }
 	
 	
 	//Fix quality
@@ -236,4 +241,11 @@ int GPS::processGPSString(GPS_Data *data, std::string *gpsStrPtr) {
 	data->time = newTime;
 	return 0;
 	
+}
+
+
+double gps_qstarz::nmea2degrees(double nmea) {
+	int degrees = (int)(nmea)/100;
+	double minutes = nmea - degrees*100;
+	return (degrees + minutes/60);
 }

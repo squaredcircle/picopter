@@ -32,6 +32,8 @@ using namespace cv;
 
 #define REDUCTION_FACTOR 4
 
+#define CAM_OK 0
+
 
 typedef struct {
 	int x;

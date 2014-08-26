@@ -71,5 +71,7 @@ int main(int argc, char* argv[]) {
 			delay(PAUSE_DURATION);
 		}
 	}
+    fb.stop();
+    fb.close();
     return 0;
 }
