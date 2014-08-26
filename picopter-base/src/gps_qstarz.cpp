@@ -196,9 +196,9 @@ int GPS::processGPSString(GPS_Data *data, std::string *gpsStrPtr) {
 		return -1;
 	}
     if(gpsStrPtr->at(i) == 'E') {
-        data->latitude = nmea2degrees(nmea_latitude);
+        data->longitude = nmea2degrees(nmea_longitude);
     } else {
-        data->latitude = -nmea2degrees(nmea_latitude);
+        data->longitude = -nmea2degrees(nmea_longitude);
     }
 	
 	
@@ -244,7 +244,7 @@ int GPS::processGPSString(GPS_Data *data, std::string *gpsStrPtr) {
 }
 
 
-double gps_qstarz::nmea2degrees(double nmea) {
+double GPS::nmea2degrees(double nmea) {
 	int degrees = (int)(nmea)/100;
 	double minutes = nmea - degrees*100;
 	return (degrees + minutes/60);

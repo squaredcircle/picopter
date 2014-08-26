@@ -1,17 +1,22 @@
 #include <iostream>
 #include <iomanip>
+#include <cmath>
 
 #include "gps_qstarz.h"		//Stores GPS data
 
-#define WAYPOINT_FILE "waypoints_list.txt"
-#define DELIM ","
+#define WAYPOINT_FILE "../config/waypoints_list.txt"
+#define DELIM ", "
 
 using namespace std;
 
 int main () {
-
+	
+	
 	GPS gps = GPS();	//Creates struct with GPS data
-	gps.setup();
+	if(gps.setup() != GPS_OK) {
+		cout << "Error setting up gps.  Check it's switched on" << endl;
+		return -1;
+	}
 	gps.start();
 	GPS_Data positionData;
 
@@ -27,10 +32,19 @@ int main () {
 		cout << "Waypoint " << (n+1);
 		cin.get();
 		gps.getGPS_Data(&positionData);
-		cout << std::setprecision(12) << positionData.latitude << DELIM << positionData.NS << DELIM;
-		cout << std::setprecision(12) << positionData.longitude << DELIM << positionData.EW << endl;
-		outfile << std::setprecision(12) << positionData.latitude << DELIM << positionData.NS << DELIM;
-		outfile << std::setprecision(12) << positionData.longitude << DELIM << positionData.EW << endl;
+		
+		cout << std::setprecision(12) << abs(positionData.latitude) << DELIM;
+		if(positionData.latitude > 0) cout << 'N';
+		else cout << 'S';
+		cout << endl;
+		
+		cout << std::setprecision(12) << abs(positionData.longitude) << DELIM;
+		if(positionData.longitude > 0) cout << 'E';
+		else cout << 'W';
+		cout << endl;
+		
+		outfile << std::setprecision(12) << positionData.latitude << DELIM;
+		outfile << std::setprecision(12) << positionData.longitude << endl;
 		delay(500);
 	}
 	outfile.close();
