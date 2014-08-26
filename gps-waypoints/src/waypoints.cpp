@@ -20,7 +20,7 @@ using namespace std;
 #define sin2(x) (sin(x)*sin(x))
 
 #define SPEED_LIMIT 40
-#define WAYPOINT_RADIUS 5	//2m;
+#define WAYPOINT_RADIUS 3	//2m;
 
 #define FILTER_LENGTH 5
 #define FILTER_PERIOD 100		//Inverse of filter sampling frequency.  Easier to use in thus form.  In ms.
@@ -56,10 +56,10 @@ private:
 };
 
 
-
 void populate_waypoints_list(vector<Pos>*);
 double calculate_distance(Pos, Pos);
 double calculate_bearing(Pos, Pos);
+int sign(float, float);
 double nmea2radians(double);
 void checkAutoMode(void);
 void setCourse(FB_Data*, double, double, double);
@@ -106,6 +106,7 @@ int main(int argc, char* argv[]) {
 	
 	while(!gpio::isAutoMode()) delay(100);								//Wait until put into auto mode
 	
+	cout << "Started auto mode!" << endl;
 	
 	ftr.getPos(&direction_test_start);									//Record initial position.
 	fb.setFB_Data(&forwards);											//Tell flight board to go forwards.
@@ -114,7 +115,9 @@ int main(int argc, char* argv[]) {
 	ftr.getPos(&direction_test_end);									//Record end position.
 	
 	yaw = calculate_bearing(direction_test_start, direction_test_end);	//Work out which direction we went.
-	cout << "Copter is facing a bearing of: " << yaw << endl;
+	cout << "Copter is facing a bearing of: " << yaw *180/PI<< endl;
+	sprintf(str, "Copter is facing %f degrees.", yaw *180/PI);
+	logs.writeLogLine(str);
 	
 	
 	//----------------------------
@@ -165,24 +168,26 @@ int main(int argc, char* argv[]) {
 				bearingToNextWaypoint = calculate_bearing(currentPos, waypoints_list[waypoint_iterator]);
 																		//Set a Course
 				setCourse(&course, distaceToNextWaypoint, bearingToNextWaypoint, yaw);
+				sprintf(str, "Aileron is %d, Elevator is %d", course.aileron, course.elevator);
+				logs.writeLogLine(str);
 				fb.setFB_Data(&course);									//Give command to flight board
 				
 				cout << "Moving to waypoint." << endl;
 				
-				cout << "Facing: " << yaw << endl;
+				cout << "Facing: " << yaw * 180 / PI << endl;
 				cout << "Current lat: " << std::setprecision(6) << currentPos.lat * 180 / PI << "\t";
 				cout << "Current lon: " << std::setprecision(7) << currentPos.lon * 180 / PI << endl;
 				cout << "Waypoint lat: " << std::setprecision(6) << waypoints_list[waypoint_iterator].lat * 180 / PI << "\t";
 				cout << "Waypoint lon: " << std::setprecision(7) << waypoints_list[waypoint_iterator].lon * 180 / PI << endl;
 				cout << "Distance = " << std::setprecision(7) << distaceToNextWaypoint << "\t";
-				cout << "Bearing = " << std::setprecision(5) << bearingToNextWaypoint << endl;
+				cout << "Bearing = " << std::setprecision(5) << bearingToNextWaypoint * 180 / PI << endl;
 				cout << endl;
 				
 				checkAutoMode();										// Fly for a bit
 				delay(MAIN_LOOP_DELAY);
 				sprintf(str, "Moving to waypoint %i. It has latitude %f and longitude %f.", waypoint_iterator+1, waypoints_list[waypoint_iterator].lat *180/PI, waypoints_list[waypoint_iterator].lon *180/PI);
 				logs.writeLogLine(str);
-				sprintf(str), "Currently at %f %f, moving %f m at a bearing of %f degrees.", currentPos.lat *180/PI, currentPos.lon *180/PI, distaceToNextWaypoint, bearingToNextWaypoint);
+				sprintf(str, "Currently at %f %f, moving %f m at a bearing of %f degrees.", currentPos.lat *180/PI, currentPos.lon *180/PI, distaceToNextWaypoint, bearingToNextWaypoint *180/PI);
 				logs.writeLogLine(str);
 			}
 		}
@@ -231,17 +236,23 @@ double nmea2radians(double nmea) {
 
 double calculate_distance(Pos pos1, Pos pos2) {
 	double h = sin2((pos1.lat-pos2.lat)/2) + cos(pos1.lat)*cos(pos2.lat) * sin2((pos2.lon-pos1.lon)/2);
-	if(h > 1) cout << "bearing calculation error" << endl;
+	if(h > 1) cout << "Distance calculation error" << endl;
 	double distance = 2 * RADIUS_OF_EARTH * asin(sqrt(h));
 	return distance * 1000;	//meters
 }
 
 double calculate_bearing(Pos pos1, Pos pos2) {
-	double num = sin(pos2.lon - pos1.lon) * cos(pos2.lat);
-	double den = cos(pos1.lat)*sin(pos2.lat) - sin(pos1.lat)*cos(pos2.lat)*cos(pos2.lon-pos1.lon);
-	if(den == 0) cout << "distance calculation error" << endl;
-	double bearing = atan(num/den);
+	double num = sin(pos2.lon - pos1.lon) * cos(pos2.lat);	//sign(pos1.lat, pos2.lat) * (cos(pos2.lat) * asin(sqrt(cos(pos1.lat)*cos(pos2.lat) * sin2((pos2.lon - pos1.lon)/2))));	//New formulas, as of 26/8/14
+	double den = cos(pos1.lat)*sin(pos2.lat) - sin(pos1.lat)*cos(pos2.lat)*cos(pos2.lon-pos1.lon);	//sign(pos1.lon, pos2.lon) * asin(sqrt(sin2((pos1.lat - pos2.lat)/2)));
+	//cout << "Num/Den = " << num << "/" << den << endl;
+	double bearing = atan2(num, den);
 	return bearing;
+}
+
+int sign(float a, float b) {
+	if (a > b) return 1;
+	else if (a < b) return -1;
+	else return 0;
 }
 
 void checkAutoMode() {
@@ -256,8 +267,8 @@ void setCourse(FB_Data *instruction, double distance, double bearing, double yaw
 	if(speed > SPEED_LIMIT) {											//P controler with limits.
 		speed = SPEED_LIMIT;
 	}
-	instruction->aileron = (int) (speed * cos(2*PI-(bearing - yaw)));
-	instruction->elevator = (int) (speed * sin(2*PI-(bearing - yaw)));
+	instruction->aileron = (int) (speed * sin(bearing - yaw));	//26/8/14
+	instruction->elevator = (int) (speed * cos(bearing - yaw));
 	instruction->rudder = 0;
 	instruction->gimble = 0;
 }	
