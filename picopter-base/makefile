@@ -48,30 +48,30 @@ obj/camera.o : include/gpio.h src/gpio.cpp include/logger.h src/logger.cpp inclu
 
 
 
-bin/flightBoard_test : obj/flightBoard_test.o $(BASE_OBJECTS)
+bin/flightBoard_test : $(addprefix bin/, $(addsuffix .o, $(flightBoard_test flightBoard gpio logger)))
 	$(CC) $(LDFLAGS) $(INCLUDES) $(BASE_OBJECTS) $(XSENS_INCLUDES) $(XSENS_OBJECTS) $(RASPICAM_INCLUDES) $(RASPICAM_FLAGS) $(OPEN_CV) obj/flightBoard_test.o -o bin/flightBoard_test
 
-bin/gps_qstarz_test : obj/gps_qstarz_test.o $(OBJECTS)
+bin/gps_qstarz_test : $(addprefix bin/, $(addsuffix .o, $(gps_qstarz_test gps_qstarz gpio logger)))
 	$(CC) $(LDFLAGS) $(INCLUDES) $(BASE_OBJECTS) $(XSENS_INCLUDES) $(XSENS_OBJECTS) $(RASPICAM_INCLUDES) $(RASPICAM_FLAGS) $(OPEN_CV) obj/gps_qstarz_test.o -o bin/gps_qstarz_test
 	
-bin/imu_euler_test : obj/imu_euler_test.o $(OBJECTS)
+bin/imu_euler_test : $(addprefix bin/, $(addsuffix .o, $(imu_euler_test imu_euler gpio logger)))
 	$(CC) $(LDFLAGS) $(INCLUDES) $(BASE_OBJECTS) $(XSENS_INCLUDES) $(XSENS_OBJECTS) $(RASPICAM_INCLUDES) $(RASPICAM_FLAGS) $(OPEN_CV) obj/imu_euler_test.o -o bin/imu_euler_test
 
-bin/camera_test : obj/camera_test.o $(OBJECTS)
+bin/camera_test : $(addprefix bin/, $(addsuffix .o, $(camera_test camera gpio logger)))
 	$(CC) $(LDFLAGS) $(INCLUDES) $(BASE_OBJECTS) $(XSENS_INCLUDES) $(XSENS_OBJECTS) $(RASPICAM_INCLUDES) $(RASPICAM_FLAGS) $(OPEN_CV) obj/camera_test.o -o bin/camera_test
 
 
 
-obj/flightBoard_test.o : $(BASE_HEADERS) $(BASE_SOURCES) src/flightBoard_test.cpp
+obj/flightBoard_test.o :  $(addprefix include/, $(addsuffix .h, $(flightBoard_test flightBoard gpio logger)))  $(addprefix src/, $(addsuffix .cpp, $(flightBoard_test flightBoard gpio logger)))
 	$(CC) $(CFLAGS) $(INCLUDES) src/flightBoard_test.cpp -o obj/flightBoard_test.o
 
-obj/gps_qstarz_test.o : $(BASE_HEADERS) $(BASE_SOURCES) src/gps_qstarz_test.cpp
+obj/gps_qstarz_test.o : $(addprefix include/, $(addsuffix .h, $(gps_qstarz_test gps_qstarz gpio logger))) $(addprefix src/, $(addsuffix .cpp, $(gps_qstarz_test gps_qstarz gpio logger)))
 	$(CC) $(CFLAGS) $(INCLUDES) src/gps_qstarz_test.cpp -o obj/gps_qstarz_test.o
 
-obj/imu_euler_test.o : $(BASE_HEADERS) $(BASE_SOURCES) src/imu_euler_test.cpp
+obj/imu_euler_test.o : $(addprefix include/, $(addsuffix .h, $(imu_euler_test imu_euler gpio logger))) $(addprefix src/, $(addsuffix .cpp, $(imu_euler_test imu_euler gpio logger)))
 	$(CC) $(CFLAGS) $(INCLUDES) $(XSENS_INCLUDES) src/imu_euler_test.cpp -o obj/imu_euler_test.o
 
-obj/camera_test.o : $(BASE_HEADERS) $(BASE_SOURCES) src/camera_test.cpp
+obj/camera_test.o : $(addprefix include/, $(addsuffix .h, $(camera_test camera gpio logger))) $(addprefix src/, $(addsuffix .cpp, $(camera_test camera gpio logger)))
 	$(CC) $(CFLAGS) $(INCLUDES) $(RASPICAM_INCLUDES) $(OPEN_CV) src/camera_test.cpp -o obj/camera_test.o
 
 
