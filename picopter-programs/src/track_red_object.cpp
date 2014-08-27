@@ -1,6 +1,7 @@
 #include <iostream>
 #include <string>
 #include <cmath>
+#include <ctime>
 
 using namespace std;
 
@@ -19,7 +20,7 @@ using namespace std;
 
 #define SPEED_LIMIT 40			//Percent
 #define SPIN_SPEED 40			//Percent
-#define RAISE_GIMBAL_PERIOD 10	//Cycles
+#define RAISE_GIMBAL_PERIOD 3	//Seconds
 
 #define GIMBAL_LIMIT 70		//degrees
 #define GIMBAL_STEP 5		//degrees
@@ -54,7 +55,10 @@ int main(int argc, char* argv[]) {
 	ObjectLocation red_object_old;
 
 	
-	int raise_gimbal_counter = 0;
+	time_t last_raised_gimbal_time;
+	time_t now;
+	time(&last_raised_gimbal_time);
+	time(&now);
 	bool raise_gimbal = false;
 	
 	int state = 0;					//State machine implemetation
@@ -111,12 +115,12 @@ int main(int argc, char* argv[]) {
 				break;
 			
 			case 2:													//Case 2:	No object detected, look for it
-				raise_gimbal = (raise_gimbal_counter == RAISE_GIMBAL_PERIOD);
+				time(&now);
+				raise_gimbal = (difftime(now, last_raised_gimbal_time) > RAISE_GIMBAL_PERIOD);
 				setCourse_spin(&course, raise_gimbal);
 				fb.setFB_Data(&course);
 				printFB_Data(&course);
-				raise_gimbal_counter++;
-				if(raise_gimbal) raise_gimbal_counter = 0;
+				if(raise_gimbal) last_raised_gimbal_time = now;
 				delay(200);												//SMALL DELAY
 				break;
 			
