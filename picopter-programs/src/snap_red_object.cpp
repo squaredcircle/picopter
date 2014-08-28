@@ -19,19 +19,12 @@ using namespace std;
 
 
 int main(int argc, char* argv[]) {
-	initscr();
-	start_color();
-	init_pair(1, COLOR_GREEN, COLOR_BLACK);
-	init_pair(2, COLOR_CYAN, COLOR_BLACK);
-	printw("Started program\n");
-	refresh();
+	cout << "Started program" << endl;
 	
-	//Just incase someone tries to run this whie flying.
+	//Just in case someone tries to run this whie flying.
 	FlightBoard fb = FlightBoard();
 	if(fb.setup() != FB_OK) {
-		printw("Error setting up flight board\n");
-		refresh();
-		delay(1000);
+		cout << "Error setting up flight board" << endl;
 		return -1;
 	}
 	fb.start();
@@ -40,10 +33,8 @@ int main(int argc, char* argv[]) {
 
 	CAMERA cam = CAMERA();
 	if(cam.setup() != CAM_OK) {
-		printw("Error setting up camera\n");
-		refresh();
-		delay(1000);
-	return -1;
+		cout << "Error setting up camera" << endl;
+		return -1;
 	}
 	cam.start();
 	
@@ -55,6 +46,12 @@ int main(int argc, char* argv[]) {
 	time(&now);
 	last_photo = now;
 	string dashes (45, '-');
+	
+	initscr();
+	start_color();
+	init_pair(1, COLOR_GREEN, COLOR_BLACK);
+	init_pair(2, COLOR_CYAN, COLOR_BLACK);
+	refresh();
 	
 	delay(1000);
 	while(true) {
@@ -94,5 +91,6 @@ int main(int argc, char* argv[]) {
 		refresh();
 		delay(100);
 	}
+	endwin();
 	return 0;
 }
