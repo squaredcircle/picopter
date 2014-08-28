@@ -1,11 +1,12 @@
 //Author:	Michael Baxter 	20503664@student.uwa.edu.au
 //Date:		19-8-2014
-//Version:	v1.0
+//Version:	v1.1
 //
 //Desciption:	Class used for camea and image processing.
 //				Unlike other classes, all the image processing happens here.
 //
-//				Compile with: a whole load of crap.
+//changes v1.1 28-8-2014 BAX
+//Can take photos now
 
 #ifndef __CAMERA_H_INCLUDED__
 #define __CAMERA_H_INCLUDED__
@@ -55,6 +56,7 @@ public:
 	bool objectDetected();
 	int getObjectLocation(ObjectLocation*);
 	double getFramerate();
+	void takePhoto(std::string);
 private:
 	bool ready;
 	bool running;
@@ -87,6 +89,9 @@ private:
 	
 	void drawObjectMarker(Mat img, Point centre);
 	void drawCrosshair(Mat img);
+	
+	bool takePhotoThisCycle;
+	std::string imageFileName;
 };
 
 #endif// __CAMERA_H_INCLUDED__

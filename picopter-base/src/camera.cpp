@@ -20,6 +20,9 @@ CAMERA::CAMERA() {
 	
 	
 	this->frame_counter = -1;
+	
+	this->takePhotoThisCycle = false;
+	this->imageFileName = "image.jpg";
 }
 
 CAMERA::CAMERA(const CAMERA& orig) {}
@@ -31,9 +34,12 @@ int CAMERA::setup() {
 	if(running) return -1;
 	
 	//log = new Logger("camera.log");
-	
-	readParameters(IMAGE_PROCSSING_PARAMETERS_FILE, &MIN_HUE, &MAX_HUE, &MIN_SAT, &MAX_SAT, &MIN_VAL, &MAX_VAL, &PIXLE_THRESHOLD);
-	//log->writeLogLine("Parameters read.");
+	try {
+		readParameters(IMAGE_PROCSSING_PARAMETERS_FILE, &MIN_HUE, &MAX_HUE, &MIN_SAT, &MAX_SAT, &MIN_VAL, &MAX_VAL, &PIXLE_THRESHOLD);
+		//log->writeLogLine("Parameters read.");
+	} catch(...) {
+		std::cout << "Error reading config file.  Using defauts (hopefully)" << std::endl;
+	}
 	try {
 		build_lookup_reduce_colourspace(lookup_reduce_colourspace);
 		build_lookup_threshold(lookup_threshold);
@@ -99,12 +105,15 @@ void CAMERA::processImages() {
 		}
 		
 		drawCrosshair(image);
-		std::cout << "-------------about to show image -------------" << std::endl;
 		imshow("Image", image);
-		std::cout << "-------------image shown-------------" << std::endl;
+		if(takePhotoThisCycle) {
+			//imwrite(std::string("../") + imageFileName, image);
+			imwrite(imageFileName, image);
+			takePhotoThisCycle = false;
+		}
 		frame_counter++;
 		waitKey(1);
-//		boost::this_thread::sleep(boost::posix_time::milliseconds(10));
+		boost::this_thread::sleep(boost::posix_time::milliseconds(5));
 	}
 }
 
@@ -286,4 +295,9 @@ void CAMERA::drawCrosshair(Mat img) {
 	for(int i=0; i<4; i+=2) {
 		line(img, cross_points[i], cross_points[i+1], Scalar(255, 255, 255), thickness, lineType);
 	}
+}
+
+void CAMERA::takePhoto(std::string fileName) {
+	if(!fileName.empty()) imageFileName = fileName;
+	takePhotoThisCycle = true;
 }

@@ -17,7 +17,7 @@ RASPICAM_FLAGS = -lraspicamcv -lmmal_core -lmmal -lmmal_util -lvcos -lbcm_host
 RASPICAM_INCLUDES = -I../raspicam_cv -L../raspicam_cv -L../userland/build/lib
 OPEN_CV = `pkg-config --cflags --libs opencv`
 
-PROG = square saveWaypoints track_red_object
+PROG = square saveWaypoints track_red_object snap_red_object
 PROG_SOURCES = $(addprefix src/, $(addsuffix .cpp, $(PROG)))
 PROG_OBJECTS = $(addprefix obj/, $(addsuffix .o, $(PROG)))
 EXECUTABLES = $(addprefix bin/, $(PROG))
@@ -35,6 +35,10 @@ bin/saveWaypoints : obj/saveWaypoints.o $(BASE_OBJECTS)
 bin/track_red_object : obj/track_red_object.o $(BASE_OBJECTS)
 	$(CC) $(LDFLAGS) $(INCLUDES) $(BASE_INCLUDE) $(BASE_OBJECTS) $(XSENS_INCLUDES) $(XSENS_OBJECTS) $(RASPICAM_INCLUDES) $(RASPICAM_FLAGS) $(OPEN_CV) obj/track_red_object.o -o bin/track_red_object
 
+bin/snap_red_object : obj/snap_red_object.o $(BASE_OBJECTS)
+	$(CC) $(LDFLAGS) $(INCLUDES) $(BASE_INCLUDE) $(BASE_OBJECTS) $(XSENS_INCLUDES) $(XSENS_OBJECTS) $(RASPICAM_INCLUDES) $(RASPICAM_FLAGS) $(OPEN_CV) obj/snap_red_object.o -o bin/snap_red_object
+
+
 
 obj/square.o :  $(BASE_HEADERS) src/square.cpp
 	$(CC) $(CFLAGS) $(INCLUDES) $(BASE_INCLUDE) $(XSENS_INCLUDES) $(RASPICAM_INCLUDES) $(OPEN_CV) src/square.cpp -o obj/square.o
@@ -44,6 +48,9 @@ obj/saveWaypoints.o : $(BASE_HEADERS) src/saveWaypoints.cpp
 
 obj/track_red_object.o : $(BASE_HEADERS) src/track_red_object.cpp
 	$(CC) $(CFLAGS) $(INCLUDES) $(BASE_INCLUDE) $(XSENS_INCLUDES) $(RASPICAM_INCLUDES) $(OPEN_CV) src/track_red_object.cpp -o obj/track_red_object.o
+
+obj/snap_red_object.o : $(BASE_HEADERS) src/snap_red_object.cpp
+	$(CC) $(CFLAGS) $(INCLUDES) $(BASE_INCLUDE) $(XSENS_INCLUDES) $(RASPICAM_INCLUDES) $(OPEN_CV) src/snap_red_object.cpp -o obj/snap_red_object.o
 
 
 clean:
