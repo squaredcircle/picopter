@@ -75,7 +75,7 @@ int main(int argc, char* argv[]) {
 	
 	GPS gps = GPS();
 	if(gps.setup() != GPS_OK) {
-		cout << "Error setting up gps board.  Terminating program" << endl;
+		cout << "Error setting up gps.  Terminating program" << endl;
 		return -1;
 	}
 	gps.start();
@@ -134,7 +134,6 @@ int main(int argc, char* argv[]) {
 	
 	int state = 0;
 	Coord_rad currentCoord = {-1, -1};
-	Coord_rad tempCoord = {-1, -1};
 	double distaceToNextWaypoint;
 	double bearingToNextWaypoint;
 	FB_Data course = {0, 0, 0, 0};	
@@ -209,7 +208,8 @@ int main(int argc, char* argv[]) {
 				
 				logs.writeLogLine("Reached waypoint, stopping");
 				
-				waypoints_list.push_back(waypoints_list.pop_front());
+				waypoints_list.push_back(waypoints_list.front());
+				waypoints_list.pop_front();
 				
 				delay(WAIT_AT_WAYPOINTS);
 				
@@ -240,7 +240,7 @@ void populate_waypoints_list(deque<Coord_rad> *list) {
 	string word;
 	string line;
 	while(getline(waypointsFile, line)) {
-		iss(line);
+		iss.str(line);
 		iss >> waypoint.lat >> waypoint.lon;
 		list->push_back(waypoint);
 	}
