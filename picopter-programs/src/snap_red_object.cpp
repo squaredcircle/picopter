@@ -15,7 +15,7 @@ using namespace std;
 
 #define MIN_TIME_BETWEEN_PHOTOS 5	//5s
 #define MAX_NUMBER_OF_PHOTOS 50 //take a max of 50 photos
-#define MIN_DISTANCE_FROM_CENTRE_OF_FRAME 260
+#define MIN_DISTANCE_FROM_CENTRE_OF_FRAME 180
 
 
 int main(int argc, char* argv[]) {

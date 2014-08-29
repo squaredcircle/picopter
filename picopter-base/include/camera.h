@@ -1,12 +1,16 @@
 //Author:	Michael Baxter 	20503664@student.uwa.edu.au
-//Date:		19-8-2014
-//Version:	v1.1
+//Date:		29-8-2014
+//Version:	v1.2
 //
 //Desciption:	Class used for camea and image processing.
 //				Unlike other classes, all the image processing happens here.
 //
 //changes v1.1 28-8-2014 BAX
 //Can take photos now
+//
+//changes v1.2 29-8-2014 bax
+//Fixed unreduce. (Scale back from reduced colour space (0-7) to mid-bucket of full colourspace(0-255).
+//eg. 0->15, 1->47, 6->207, 7->239
 
 #ifndef __CAMERA_H_INCLUDED__
 #define __CAMERA_H_INCLUDED__
@@ -26,7 +30,7 @@
 
 using namespace cv;
 
-#define IMAGE_PROCSSING_PARAMETERS_FILE "../config/camera_threshold_list.txt"
+#define IMAGE_PROCSSING_PARAMETERS_FILE "config/camera_threshold_list.txt"
 
 #define LOOKUP_SIZE 8
 #define CHAR_SIZE 256

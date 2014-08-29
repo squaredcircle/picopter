@@ -12,7 +12,7 @@ CAMERA::CAMERA() {
 	this->MAX_SAT		= 255;
 	this->MIN_VAL		= 95;
 	this->MAX_VAL		= 255;
-	this->PIXLE_THRESHOLD	= 50;
+	this->PIXLE_THRESHOLD	= 60;
 	
 	this->redObjectDetected = false;
 	this->redObject.x = -1;
@@ -231,7 +231,7 @@ void CAMERA::build_lookup_reduce_colourspace(uchar lookup_reduce_colourspace[]) 
 }
 
 int CAMERA::unreduce(int x) {
-	return x*(CHAR_SIZE-1)/(LOOKUP_SIZE-1) + (CHAR_SIZE-1)/((LOOKUP_SIZE-1)*2);		//crap! i need to put this factor back.
+	return (x*(CHAR_SIZE-1) + (CHAR_SIZE-1)/2) / LOOKUP_SIZE;		//crap! i need to put this factor back.
 }
 
 
