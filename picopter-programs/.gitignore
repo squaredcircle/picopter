@@ -1,0 +1,5 @@
+#Ignore the following directories:
+objs/
+bin/
+config/
+photos/
