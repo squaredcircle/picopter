@@ -4,7 +4,7 @@
 
 #include "gps_qstarz.h"		//Stores GPS data
 
-#define WAYPOINT_FILE "../config/waypoints_list.txt"
+#define WAYPOINT_FILE "config/waypoints_list.txt"
 #define DELIM ", "
 
 using namespace std;

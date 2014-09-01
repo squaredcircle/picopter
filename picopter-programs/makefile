@@ -14,7 +14,7 @@ XSENS_INCLUDES = -I../Xsens
 XSENS_OBJECTS = $(addprefix ../Xsens/, cmt1.o cmt2.o cmt3.o cmtmessage.o cmtpacket.o cmtscan.o xsens_std.o xsens_time.o xsens_exception.o)
 
 RASPICAM_FLAGS = -lraspicamcv -lmmal_core -lmmal -lmmal_util -lvcos -lbcm_host
-RASPICAM_INCLUDES = -I../raspicam_cv -L../raspicam_cv -L../userland/build/lib
+RASPICAM_INCLUDES = -I../../robidouille/raspicam_cv -L../../robidouilleraspicam_cv -L../../userland/build/lib
 OPEN_CV = `pkg-config --cflags --libs opencv`
 
 EXECUTABLES = $(patsubst src/%.cpp, bin/%, $(wildcard src/*.cpp))

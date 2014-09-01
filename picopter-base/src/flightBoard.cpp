@@ -36,7 +36,8 @@ int FlightBoard::start() {
 
 int FlightBoard::stop() {
 	if(!running) return -1;
-	
+	FB_Data stop = {0, 0, 0, 0}
+    setFB_Data(&stop);
 	running = false;
 	log->writeLogLine("Flight board has been stopped.");
 	return 0;
