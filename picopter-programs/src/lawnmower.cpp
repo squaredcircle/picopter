@@ -1,4 +1,4 @@
-//Basic function that causes the Hexacpter to searcha square, lawnmower fashion
+//Basic function that causes the Hexacpter to search a square, lawnmower fashion
 //Written by Omid Targhagh, based on work done by Michael Baxter
 
 #include <stdio.h>
@@ -25,11 +25,12 @@ using namespace std;
 #define POINTS 3 			//Need more accurate GPS
 #define SPACING 10			//Distance between points in m
 #define LOCATION_WAIT 2000	//Time in ms Copter waits at each point
+#define GPS_DATA_FILE "config/waypoints_list.txt"
 
-void flyTo(FlightBoard*, GPS*, GPS_Data*, double, double, double, Logger*, CAMERA*);
+void flyTo(FlightBoard*, GPS*, GPS_Data*, double, double, double, Logger* /*, CAMERA**/);
 double determineBearing(FlightBoard*, GPS*, GPS_Data*);
 void captureImage(int, GPS_Data*);
-void snapRed(CAMERA*);
+//void snapRed(CAMERA*);
 
 /*Things needed for 'flyTo'*/
 //---------------------------
@@ -47,6 +48,7 @@ typedef struct{		//These are in radians.
 	double lon;
 } Pos;
 
+void readPosition(Pos*);
 double calculate_distance(Pos, Pos);
 double calculate_bearing(Pos, Pos);
 void setCourse(FB_Data*, double, double, double);
@@ -58,12 +60,12 @@ int main() {
 	cout << "Starting..." << endl;
 
 	//Camera stuff---------------------------------------------------------------
-	CAMERA cam = CAMERA();
-	if(cam.setup() != CAM_OK) {
-		cout << "Error setting up camera" << endl;
-		return -1;
-	}
-	cam.start();
+	// CAMERA cam = CAMERA();
+	// if(cam.setup() != CAM_OK) {
+	// 	cout << "Error setting up camera" << endl;
+	// 	return -1;
+	// }
+	// cam.start();
 	//---------------------------------------------------------------------------
 
 	gpio::startWiringPi();			//Initailises wiringPi
@@ -90,16 +92,22 @@ int main() {
 
 	// imu.getIMU_Data(&positionData);
 	double yaw = determineBearing(&fb, &gps, &data);	//Hexacopter determines which way it is facing
-	sprintf(str, "Bearing found: Copter is facing %f degrees.", yaw *180/PI);
+	sprintf(str, "Bearing found: Copter is facing %f degrees.", yaw*180/PI);
 	logs.writeLogLine(str);
 	gps.getGPS_Data(&data);		//Hexacopter works out where it is
 	cout << "Location and Orienation determined" << endl;
 
 	Pos corners[4];
 	//Populate 'corners' somehow - maybe with a waypoints list?
-	for (int i = 0; i < sizeof(corners)/( sizeof(corners[0]))-1; i++) {	//corners.size() should always be 4 - this is just to catch any errors
-		for (int j = 0; j < sizeof(corners)/( sizeof(corners[0]))-1; j++) {
+	for (int i = 0; i < 4; i++) {
+		readPosition(&corners[i]);
+		sprintf(str, "Corner found at: %f %f", corners[i].lat, corners[i].lon);
+		logs.writeLogLine(str);
+	}
+	for (int i = 0; i < (int)( sizeof(corners)/( sizeof(corners[0])))-1; i++) {	//corners.size() should always be 4 - this is just to catch any errors
+		for (int j = 0; j < (int)( sizeof(corners)/( sizeof(corners[0])))-1; j++) {
 			if (corners[j].lat < corners[j+1].lat) {	//Sorts so most Northern is first
+				cout << i << " " << j << endl;
 				Pos dummy = corners[j];
 				corners[j] = corners[j+1];
 				corners[j+1] = dummy;
@@ -122,18 +130,24 @@ int main() {
 		gpsPoints.push_back(sideA[i+2]);
 	}
 	gpsPoints.push_back(sideB[minVectorLength]);	//Ends with last from sideB
-
+	for(int i = 0; i < (int)gpsPoints.size(); i++) {
+		sprintf(str, "Point %d is %f %f", i, gpsPoints[i].lat, gpsPoints[i].lon);
+		logs.writeLogLine(str);
+	}
+	
 	for (int i = 0; i < (int)gpsPoints.size(); i++) {
-		flyTo(&fb, &gps, &data, /*&imu,*/ gpsPoints[i].lat, gpsPoints[i].lon, yaw, &logs, &cam);
+		flyTo(&fb, &gps, &data, /*&imu,*/ gpsPoints[i].lat, gpsPoints[i].lon, yaw, &logs/*, &cam*/);
 		captureImage(i, &data);
 	}
 
 	cout << "Done!" << endl;
+	// cam.stop();
+	// cam.close();
 	logs.writeLogLine("Finished!");
 	return 0;
 }
 
-void flyTo(FlightBoard *fbPtr, GPS *gpsPtr, GPS_Data *dataPtr, double targetLat, double targetLon, double yaw, Logger *logPtr, CAMERA *camPtr) {
+void flyTo(FlightBoard *fbPtr, GPS *gpsPtr, GPS_Data *dataPtr, double targetLat, double targetLon, double yaw, Logger *logPtr/*, CAMERA *camPtr*/) {
 	FB_Data stop = {0, 0, 0, 0};
 	FB_Data course = {0, 0, 0, 0};
 	Pos start;
@@ -151,7 +165,7 @@ void flyTo(FlightBoard *fbPtr, GPS *gpsPtr, GPS_Data *dataPtr, double targetLat,
 	double distance = calculate_distance(start, end);
 	double bearing = calculate_bearing(start, end);
 	cout << "Distance: " << distance << " m\tBearing: " << bearing*(180/PI) << " degrees" << endl;
-	snapRed(camPtr);
+	//snapRed(camPtr);
 
 	while (distance > WAYPOINT_RADIUS) {
 		setCourse(&course, distance, bearing, yaw);
@@ -177,7 +191,7 @@ void flyTo(FlightBoard *fbPtr, GPS *gpsPtr, GPS_Data *dataPtr, double targetLat,
 		cout << "Distance: " << distance << " m\tBearing: " << bearing*(180/PI) << endl;
 		sprintf(str, "Distance: %f m\tBearing : %f degrees", distance, bearing*(180/PI));
 		logPtr->writeLogLine(str);
-		snapRed(camPtr);
+		// snapRed(camPtr);
 	}
 	cout << "Arrived" << endl;
 	fbPtr->setFB_Data(&stop);
@@ -266,7 +280,7 @@ void populateVector(Pos start, Pos end, vector<Pos> *list) {
 
 }
 
-void snapRed(CAMERA *camPtr) {
+/*void snapRed(CAMERA *camPtr) {
 
 	stringstream ss;
 	ObjectLocation object_data;
@@ -314,4 +328,16 @@ void snapRed(CAMERA *camPtr) {
 		}
 	}
 	refresh();
+}*/
+
+void readPosition(Pos* locPtr) {
+	ifstream waypointsFile(GPS_DATA_FILE);
+	istringstream iss;
+	string line;
+	//char delimiter = ' ';
+	if (getline(waypointsFile, line)) {
+		iss.str(line);
+		iss >> locPtr->lat >> locPtr->lon;
+	}
+	waypointsFile.close();
 }
