@@ -12,14 +12,14 @@ using namespace std;
 #include "gpio.h"
 
 #define TOL_strafe 100			//Pixles
-#define KP_strafe 0.4
-#define KI_strafe 0.1
+#define KP_strafe 0.3
+#define KI_strafe 0
 
-#define TOL_rotate 70			//Pixles
-#define KP_rotate 0.5
+#define TOL_rotate 80			//Pixles
+#define KP_rotate 0.1
 
-#define SPEED_LIMIT 45			//Percent
-#define SPIN_SPEED 30			//Percent
+#define SPEED_LIMIT 40			//Percent
+#define SPIN_SPEED 35			//Percent
 #define RAISE_GIMBAL_PERIOD 3	//Seconds
 
 #define GIMBAL_LIMIT 70		//degrees

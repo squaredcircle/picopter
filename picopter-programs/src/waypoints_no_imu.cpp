@@ -234,14 +234,11 @@ int main(int argc, char* argv[]) {
 //----------------------------------------------------------------------
 void populate_waypoints_list(deque<Coord_rad> *list) {
 	
-	Coord_rad waypoint;
 	ifstream waypointsFile(GPS_DATA_FILE);
-	istringstream iss;
-	string word;
-	string line;
-	while(getline(waypointsFile, line)) {
-		iss.str(line);
-		iss >> waypoint.lat >> waypoint.lon;
+	Coord_rad waypoint;
+	while(waypointsFile >> waypoint.lat >> waypoint.lon) {
+		waypoint.lat *= PI/180;
+		waypoint.lon *= PI/180;
 		list->push_back(waypoint);
 	}
 	waypointsFile.close();
