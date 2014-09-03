@@ -81,6 +81,7 @@ int CAMERA::close() {
 	if(running) return -1;
 	if(!ready) return -1;
 	
+	waitKey(200);
 	raspiCamCvReleaseCapture(&capture);
 	ready = false;
 	//log->writeLogLine("Connection to Camera closed");

@@ -1,5 +1,6 @@
 #include <iostream>
 #include <string>
+#include <csignal>
 
 using namespace std;
 
@@ -15,8 +16,23 @@ typedef struct{
 	FB_Data command;
 }	Movement;
 
+bool exitProgram = false;
+void terminate(int);
+
 int main(int argc, char* argv[]) {
 	cout << "Starting program" << endl;
+	
+	//Signal to exit program.
+	struct sigaction signalHandler;	
+	signalHandler.sa_handler = terminate;
+	sigemptyset(&signalHandler.sa_mask);
+	signalHandler.sa_flags = 0;
+	
+	sigaction(SIGTERM, &signalHandler, NULL);
+	sigaction(SIGINT,  &signalHandler, NULL);
+	
+	
+	//Start main program
 	gpio::startWiringPi();
 		
 	Movement stop =			{"Stop", 			{0, 0, 0, 0}};
@@ -45,8 +61,9 @@ int main(int argc, char* argv[]) {
 	int i=0;
 	bool firstTime = true;
 	bool previousMode = false;
-	while(true) {
-		
+	
+	
+	while(!exitProgram) {
 		
 		if(previousMode != gpio::isAutoMode()) {
 			firstTime = true;
@@ -72,6 +89,11 @@ int main(int argc, char* argv[]) {
 		}
 	}
     fb.stop();
-    fb.close();
     return 0;
+}
+
+
+void terminate(int signum) {
+	cout << "Signal " << signum << " received. Stopping flight board test. Exiting." << endl;
+	exitProgram = true;
 }
