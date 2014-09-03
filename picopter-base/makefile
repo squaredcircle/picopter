@@ -4,7 +4,7 @@ CFLAGS = -Wall -c -g
 INCLUDES = -I./include -I/usr/local/include -L/usr/local/lib
 LDFLAGS = -lwiringPi -lboost_thread -lboost_system -lncurses -g
 
-BASE = gpio logger flightBoard gps_qstarz imu_euler camera
+BASE = gpio logger flightBoard gps_qstarz imu_euler camera gps_piksi
 BASE_SOURCES = $(addprefix src/, $(addsuffix .cpp, $(BASE)))
 BASE_HEADERS = $(addprefix include/, $(addsuffix .h, $(BASE)))
 BASE_OBJECTS = $(addprefix obj/, $(addsuffix .o, $(BASE)))
@@ -44,6 +44,10 @@ obj/imu_euler.o : include/gpio.h src/gpio.cpp include/logger.h src/logger.cpp in
 obj/camera.o : include/gpio.h src/gpio.cpp include/logger.h src/logger.cpp include/camera.h src/camera.cpp
 	$(CC) $(CFLAGS) $(INCLUDES) $(RASPICAM_INCLUDES) $(OPEN_CV) src/camera.cpp -o obj/camera.o
 
+obj/gps_piksi.o : include/gpio.h src/gpio.cpp include/logger.h src/logger.cpp include/gps_piksi.h src/gps_qstarz.cpp
+	$(CC) $(CFLAGS) $(INCLUDES) src/gps_piksi.cpp -o obj/gps_piksi.o
+
+
 
 
 
@@ -60,6 +64,9 @@ bin/imu_euler_test : obj/imu_euler_test.o $(BASE_OBJECTS)
 bin/camera_test : obj/camera_test.o $(BASE_OBJECTS)
 	$(CC) $(LDFLAGS) $(INCLUDES) $(BASE_OBJECTS) $(XSENS_INCLUDES) $(XSENS_OBJECTS) $(RASPICAM_INCLUDES) $(RASPICAM_FLAGS) $(OPEN_CV) obj/camera_test.o -o bin/camera_test
 
+bin/gps_piksi_test : obj/gps_piksi_test.o $(BASE_OBJECTS)
+	$(CC) $(LDFLAGS) $(INCLUDES) $(BASE_OBJECTS) $(XSENS_INCLUDES) $(XSENS_OBJECTS) $(RASPICAM_INCLUDES) $(RASPICAM_FLAGS) $(OPEN_CV) obj/gps_piksi_test.o -o bin/gps_piksi_test
+
 
 
 obj/flightBoard_test.o : src/flightBoard_test.cpp $(addprefix include/, $(addsuffix .h, flightBoard gpio logger))  $(addprefix src/, $(addsuffix .cpp, flightBoard gpio logger))
@@ -73,6 +80,9 @@ obj/imu_euler_test.o : src/imu_euler_test.cpp $(addprefix include/, $(addsuffix 
 
 obj/camera_test.o : src/camera_test.cpp $(addprefix include/, $(addsuffix .h, camera gpio logger)) $(addprefix src/, $(addsuffix .cpp, camera gpio logger))
 	$(CC) $(CFLAGS) $(INCLUDES) $(RASPICAM_INCLUDES) $(OPEN_CV) src/camera_test.cpp -o obj/camera_test.o
+
+obj/gps_piksi_test.o : src/gps_piksi_test.cpp $(addprefix include/, $(addsuffix .h, gps_qstarz gpio logger)) $(addprefix src/, $(addsuffix .cpp, gps_qstarz gpio logger))
+	$(CC) $(CFLAGS) $(INCLUDES) src/gps_piksi_test.cpp -o obj/gps_piksi_test.o
 
 
 clean:

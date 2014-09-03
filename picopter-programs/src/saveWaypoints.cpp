@@ -5,7 +5,7 @@
 #include "gps_qstarz.h"		//Stores GPS data
 
 #define WAYPOINT_FILE "config/waypoints_list.txt"
-#define DELIM ", "
+#define DELIM " "
 
 using namespace std;
 
@@ -43,7 +43,7 @@ int main () {
 		else cout << 'W';
 		cout << endl;
 		
-		outfile << std::setprecision(12) << positionData.latitude << DELIM;
+		outfile << std::setprecision(12) << positionData.latitude << " ";
 		outfile << std::setprecision(12) << positionData.longitude << endl;
 		delay(500);
 	}
