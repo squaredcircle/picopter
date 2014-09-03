@@ -12,14 +12,14 @@ using namespace std;
 #include "gpio.h"
 
 #define TOL_strafe 100			//Pixles
-#define KP_strafe 0.3
-#define KI_strafe 0
+#define KP_strafe 0.4
+#define KI_strafe 0.1
 
-#define TOL_rotate 80			//Pixles
-#define KP_rotate 0.1
+#define TOL_rotate 70			//Pixles
+#define KP_rotate 0.5
 
-#define SPEED_LIMIT 40			//Percent
-#define SPIN_SPEED 40			//Percent
+#define SPEED_LIMIT 45			//Percent
+#define SPIN_SPEED 30			//Percent
 #define RAISE_GIMBAL_PERIOD 3	//Seconds
 
 #define GIMBAL_LIMIT 70		//degrees
@@ -35,6 +35,8 @@ void printFB_Data(FB_Data*);
 
 int main(int argc, char* argv[]) {
 	cout << "Starting program" << endl;
+	
+	gpio::startWiringPi();
 	
 	FlightBoard fb = FlightBoard();
 	if(fb.setup() != FB_OK) {
@@ -76,7 +78,7 @@ int main(int argc, char* argv[]) {
 	
 		
 		
-		if(gpio::isAutoMode()) {						//If not in autonomous mode
+		if(!gpio::isAutoMode()) {						//If not in autonomous mode
 			state = 0;
 		} else if(state == 5) {							//If already given up
 			state = 5;
@@ -206,9 +208,9 @@ void setCourse_faceObject(FB_Data *course, ObjectLocation *red_object) {
 
 void setCourse_forwardsLowerGimbal(FB_Data *course, ObjectLocation *red_object) {
 	course->aileron = 0;
-	course->elevator = SPEED_LIMIT;
+	course->elevator = SPEED_LIMIT/2;
 	course->rudder = 0;
-	if(red_object->y > 0) {
+	if(red_object->y < 0) {
 		course->gimbal -= GIMBAL_STEP;
 	}
 	if(course->gimbal < 0) course->gimbal = 0;

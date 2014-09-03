@@ -63,7 +63,7 @@ See http://www.boost.org for more information about the boost libraries and http
 
 Cmake is used to build the raspicam userland tools later on.
 
-    sudo apt-get cmake
+    sudo apt-get install cmake
 
 See http://www.cmake.org for more information.
 
@@ -89,7 +89,7 @@ See https://projects.drogon.net/raspberry-pi/wiringpi/ for more information.
 ServoBlaster is the program used to output pwm on some of the pi's gpio pins.  These are used as inputs to the flight board.
 
     cd ~
-    git clone git://git.github.com/richardghirst/PiBits.git
+    git clone git://github.com/richardghirst/PiBits.git
     cd PiBits/ServoBlaster/user
     make servod
 
@@ -134,9 +134,9 @@ raspivid_cv is a library which allows us to use OpenCV on the pi's camera.
 
 One line needs to be changed in the make file for this to work:
 
-    nano makefile
+    nano Makefile
 
-On line 7, remove "/git/raspberrypi".  ctrl-x to exit nano (y, return).
+On line 6, remove "/git/raspberrypi".  ctrl-x to exit nano (y, return).
 
 Then make raspicam_cv;
 
