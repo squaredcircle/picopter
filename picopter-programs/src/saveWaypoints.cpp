@@ -1,6 +1,7 @@
 #include <iostream>
 #include <iomanip>
 #include <cmath>
+#include <csignal>
 
 #include "gps_qstarz.h"		//Stores GPS data
 
@@ -8,6 +9,9 @@
 #define DELIM " "
 
 using namespace std;
+
+int N = 0;
+void terminate(int);
 
 int main () {
 	
@@ -22,7 +26,6 @@ int main () {
 
 	ofstream outfile (WAYPOINT_FILE, ofstream::out);
 
-	int N;
 	cout << "Enter number of waypoints:";
 	cin >> N;
 	cin.get();
@@ -33,20 +36,26 @@ int main () {
 		cin.get();
 		gps.getGPS_Data(&positionData);
 		
-		cout << std::setprecision(12) << abs(positionData.latitude) << DELIM;
+		cout << std::setprecision(12) << abs(positionData.latitude) << " ";
 		if(positionData.latitude > 0) cout << 'N';
 		else cout << 'S';
 		cout << endl;
 		
-		cout << std::setprecision(12) << abs(positionData.longitude) << DELIM;
+		cout << std::setprecision(12) << abs(positionData.longitude) << " ";
 		if(positionData.longitude > 0) cout << 'E';
 		else cout << 'W';
 		cout << endl;
 		
-		outfile << std::setprecision(12) << positionData.latitude << " ";
+		outfile << std::setprecision(12) << positionData.latitude << DELIM;
 		outfile << std::setprecision(12) << positionData.longitude << endl;
 		delay(500);
 	}
 	outfile.close();
 	return 0;
+}
+
+
+void terminate(int signum) {
+	cout << "Signal " << signum << " received. Stopping saveWaypoints program. Exiting." << endl;
+	N = 0;
 }

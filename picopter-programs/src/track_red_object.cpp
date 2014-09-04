@@ -2,6 +2,7 @@
 #include <string>
 #include <cmath>
 #include <ctime>
+#include <csignal>
 
 using namespace std;
 
@@ -31,6 +32,9 @@ void setCourse_faceObject(FB_Data*, ObjectLocation*);
 void setCourse_forwardsLowerGimbal(FB_Data*, ObjectLocation*);
 
 void printFB_Data(FB_Data*);
+
+bool exitProgram = false;
+void terminate(int);
 
 
 int main(int argc, char* argv[]) {
@@ -74,7 +78,7 @@ int main(int argc, char* argv[]) {
 	delay(800);	//wait for laggy camera stream							
 	cout << "System set up; starting main loop" << endl;
 	
-	while(true) {
+	while(!exitProgram) {
 	
 		
 		
@@ -221,4 +225,9 @@ void printFB_Data(FB_Data* data) {
 	cout << "E: " << data->elevator << "\t";
 	cout << "R: " << data->rudder << "\t";
 	cout << "G: " << data->gimbal << endl;
+}
+
+void terminate(int signum) {
+	cout << "Signal " << signum << " received. Stopping track_red_object program. Exiting." << endl;
+	exitProgram = true;
 }

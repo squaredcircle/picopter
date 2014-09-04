@@ -18,6 +18,7 @@
 #include <string>
 #include <sstream>
 #include <deque>
+#include <csignal>
 
 using namespace std;
 
@@ -58,6 +59,9 @@ void setCourse(FB_Data*, double, double, double);
 Coord_rad getCoord(GPS*);
 bool checkInPerth(Coord_rad*);
 void printFB_Data(FB_Data*);
+
+bool exitProgram = false;
+void terminate(int);
 
 
 int main(int argc, char* argv[]) {
@@ -142,14 +146,17 @@ int main(int argc, char* argv[]) {
 																		//State 0:	Manual mode
 																		//State 1:	PID to waypoint
 																		//State 2:	At waypoint
-																		//State 3:	GPS in error								
-	while(true) {														
+                                                                        //State 3:  GPS in error
+                                                                        //State 4:	Waypoints list is empty
+	while(!exitProgram) {
 		currentCoord = getCoord(&gps);
 		distaceToNextWaypoint = calculate_distance(currentCoord, waypoints_list.front());
 		bearingToNextWaypoint = calculate_bearing(currentCoord, waypoints_list.front());
 		
 		if(!gpio::isAutoMode()) {
 			state = 0;
+        } else if (waypoints_list.empty()) {
+            state = 4;
 		} else if(state == 3 ||!checkInPerth(&currentCoord)) {
 			state = 3;
 		} else if(distaceToNextWaypoint < WAYPOINT_RADIUS) {
@@ -226,8 +233,23 @@ int main(int argc, char* argv[]) {
 				logs.writeLogLine("Error reading GPS, stopping");
 				delay(500);
 			break;
+            
+            
+            case 4:
+				cout << "Error: waypoints list is empty" << endl;
+				fb.setFB_Data(&stop);
+				printFB_Data(&stop);
+				
+				logs.writeLogLine("Error: waypoints list is empty");
+				delay(500);
+                break;
 		}
 	}
+    fb.stop();
+    gps.stop();
+    
+    gps.close();
+    return 0;
 }
 
 
@@ -293,4 +315,9 @@ void printFB_Data(FB_Data* data) {
 	cout << "E: " << data->elevator << "\t";
 	cout << "R: " << data->rudder << "\t";
 	cout << "G: " << data->gimbal << endl;
+}
+
+void terminate(int signum) {
+	cout << "Signal " << signum << " received. Stopping waypoints program. Exiting." << endl;
+	exitProgram = true;
 }
