@@ -18,22 +18,32 @@
 
 using namespace std;
 
-#define SPACING 7			//Distance between points in m
+#define BMIN 0 //0 works
+#define BMAX 180 //180 works
+#define GMIN 0
+#define GMAX 200 //200 works
+#define RMIN 120//120 works
+#define RMAX 256 //256works
+#define REDTHRESH 50	//Number of red pixels need to see in an image
+#define FRAME_WAIT 11 	//Number of frames to wait
+
+#define SPACING 10			//Distance between points in m
 #define LOCATION_WAIT 2000	//Time in ms Copter waits at each point
 #define GPS_DATA_FILE "config/waypoints_list.txt"
 
-void flyTo(FlightBoard*, GPS*, GPS_Data*, double, double, double, Logger* /*, CAMERA**/);
+void flyTo(FlightBoard*, GPS*, GPS_Data*, double, double, double, Logger* , RaspiCamCvCapture*);
 double determineBearing(FlightBoard*, GPS*, GPS_Data*);
 void captureImage(int, GPS_Data*);
-//void snapRed(CAMERA*);
+bool checkRed(Mat);
+double redComDist(Mat);
 
 /*Things needed for 'flyTo'*/
 //---------------------------
 #define PI 3.14159265359
 #define RADIUS_OF_EARTH 6364963	//m
 #define sin2(x) (sin(x)*sin(x))
-#define SPEED_LIMIT 30				//Want to go slowly as wil lbe analysing images
-#define WAYPOINT_RADIUS 3.000		//In m - should be no less than 3 or 4
+#define SPEED_LIMIT 35				//Want to go slowly as wil lbe analysing images
+#define WAYPOINT_RADIUS 2.000		//In m - should be no less than 3 or 4
 #define Kp 8						//proportional controller constant
 #define DIRECTION_TEST_SPEED 40
 #define DIRECTION_TEST_DURATION 6000
@@ -48,47 +58,51 @@ double calculate_distance(Pos, Pos);
 double calculate_bearing(Pos, Pos);
 void setCourse(FB_Data*, double, double, double);
 void populateVector(Pos, Pos, vector<Pos>*);
-//---------------------------
+bool exitProgram = false;
+void terminate(int);
 
 int main() {
 
 	cout << "Starting..." << endl;
 	gpio::startWiringPi();			//Initailises wiringPi
 	FlightBoard fb = FlightBoard();	//Initialises flightboard
-	fb.setup();
+	if(fb.setup() != FB_OK) {
+		cout << "Error setting up flight board.  Terminating program" << endl;
+		return -1;
+	}
 	fb.start();
 	GPS gps = GPS();				//Initialises GPS
-	gps.setup();
+	if(gps.setup() != GPS_OK) {
+		cout << "Error setting up gps.  Terminating program" << endl;
+		return -1;
+	}
 	gps.start();
 	GPS_Data data;
+	//Start the camera up
+	RaspiCamCvCapture* capture = raspiCamCvCreateCameraCapture(0);
+
 	Logger logs = Logger("lawnmower.log");	//Initalises log
 	char str[BUFSIZ];
-	
-	cout  << "Waiting to enter autonomous mode..." << endl;
-	while(!gpio::isAutoMode()) delay(100);	//Hexacopter waits until put into auto mode
-	cout << "Autonomous Mode has been Entered" << endl;
-
-	double yaw = determineBearing(&fb, &gps, &data);	//Hexacopter determines which way it is facing
-	sprintf(str, "Bearing found: Copter is facing %f degrees.", yaw);
-	logs.writeLogLine(str);
-	gps.getGPS_Data(&data);		//Hexacopter works out where it is
-	cout << "Location and Orienation determined" << endl;
 
 	Pos corners[4];
 	//Populate 'corners' somehow - maybe with a waypoints list?
 	readPosition(&corners[0], 0);	//First line
-	sprintf(str, "Corner #1 found at: %f %f", (corners[0].lat), (corners[0].lon));
+	cout << "Corner #1 read as: " << (corners[0].lat) << " " << (corners[0].lon) << endl;
+	sprintf(str, "Corner #1 read as: %f %f", (corners[0].lat), (corners[0].lon));
 	logs.writeLogLine(str);	
-	readPosition(&corners[2], 1);	//Second line
-	sprintf(str, "Corner #3 found at: %f %f", (corners[2].lat), (corners[2].lon));
+	readPosition(&corners[3], 1);	//Second line
+	cout << "Corner #4 read as: " << (corners[3].lat) << " " << (corners[3].lon) << endl;
+	sprintf(str, "Corner #4 read as: %f %f", (corners[3].lat), (corners[3].lon));
 	logs.writeLogLine(str);	
 	corners[1].lat = corners[0].lat;
-	corners[1].lon = corners[2].lon;
+	corners[1].lon = corners[3].lon;
+	cout << "Corner #2 calculated as: " << (corners[1].lat) << " " << (corners[1].lon) << endl;
 	sprintf(str, "Corner #2 calculated as: %f %f", (corners[1].lat), (corners[1].lon));
 	logs.writeLogLine(str);	
-	corners[3].lat = corners[2].lat;
-	corners[3].lon = corners[0].lon;
-	sprintf(str, "Corner #4 calculated as: %f %f", (corners[3].lat), (corners[3].lon));
+	corners[2].lat = corners[3].lat;
+	corners[2].lon = corners[0].lon;
+	cout << "Corner #3 calculated as: " << (corners[2].lat) << " " << (corners[2].lon) << endl;
+	sprintf(str, "Corner #3 calculated as: %f %f", (corners[2].lat), (corners[2].lon));
 	logs.writeLogLine(str);
 
 	vector<Pos> sideA;
@@ -102,50 +116,59 @@ int main() {
 	}
 	populateVector(corners[2], corners[3], &sideB);
 	for(int i = 0; i < (int)sideB.size(); i++) {
-		cout << "Point " << i+1 << " of sideB is " << (sideB[i].lat) << " " << (sideB[i].lon) << endl;
+		//cout << "Point " << i+1 << " of sideB is " << (sideB[i].lat) << " " << (sideB[i].lon) << endl;
 		sprintf(str, "Point %d of sideB is %f %f", i+1, (sideB[i].lat), (sideB[i].lon));
 		logs.writeLogLine(str);
 	}
 	int minVectorLength = sideA.size();
-	cout << "Hello! " << minVectorLength << endl;
 	if ((int)sideB.size() < minVectorLength) minVectorLength = sideB.size(); //Checks which is smallest
-	cout << "Hello! " << minVectorLength << endl;
-
-	gpsPoints.push_back(sideA[0]);	//Start of with first from sideA
-	for (int i = 0; i < minVectorLength; i=i+2) {
-		sprintf(str, "%d %d", i,minVectorLength);
-		logs.writeLogLine(str); 
-		gpsPoints.push_back(sideB[i]);		//Alternate between adding in 2 from sideB and 2 from sideA
-		if (i < minVectorLength-1) {
-			sprintf(str, "%d %d.1", i,minVectorLength);
-			logs.writeLogLine(str); 
-			gpsPoints.push_back(sideB[i+1]);
-			gpsPoints.push_back(sideA[i+1]);
-			}
-		if (i < minVectorLength-2) {
-			sprintf(str, "%d %d.2", i,minVectorLength);
+	
+	for (int i = 0; i < minVectorLength; i++) {
+		if (i%2 == 0) {	//Even?
+			sprintf(str, "%d %d- Even", i,minVectorLength);
 			logs.writeLogLine(str);
-			gpsPoints.push_back(sideA[i+2]);
+			gpsPoints.push_back(sideA[i]);
+			gpsPoints.push_back(sideB[i]);
+		}
+		else if (i%2 == 1) {//Odd?
+			sprintf(str, "%d %d - Odd", i, minVectorLength);
+			logs.writeLogLine(str);
+			gpsPoints.push_back(sideB[i]);
+			gpsPoints.push_back(sideA[i]);
 		}
 	}
-	gpsPoints.push_back(sideB[minVectorLength]);	//Ends with last from sideB
+	
 	for(int i = 0; i < (int)gpsPoints.size(); i++) {
-		cout << "Point " << i+1 << " is " << (gpsPoints[i].lat) << " " << (gpsPoints[i].lon) << endl;
+		cout << setprecision(15) << "Point " << i+1 << " is " << (gpsPoints[i].lat) << " " << (gpsPoints[i].lon) << endl;
 		sprintf(str, "Point %d is %f %f", i+1, (gpsPoints[i].lat), (gpsPoints[i].lon));
 		logs.writeLogLine(str);
 	}
+
+	cout  << "Waiting to enter autonomous mode..." << endl;
+	while(!gpio::isAutoMode()) delay(100);	//Hexacopter waits until put into auto mode
+	cout << "Autonomous Mode has been Entered" << endl;
+
+	double yaw = determineBearing(&fb, &gps, &data);	//Hexacopter determines which way it is facing
+	sprintf(str, "Bearing found: Copter is facing %f degrees.", yaw);
+	logs.writeLogLine(str);
+	gps.getGPS_Data(&data);		//Hexacopter works out where it is
+	cout << "Location and Orienation determined" << endl;
 	
 	for (int i = 0; i < (int)gpsPoints.size(); i++) {
-		flyTo(&fb, &gps, &data, gpsPoints[i].lat, gpsPoints[i].lon, yaw, &logs);
-		captureImage(i, &data);
+		flyTo(&fb, &gps, &data, gpsPoints[i].lat, gpsPoints[i].lon, yaw, &logs, capture);
+		//captureImage(i, &data);
+		if(exitProgram) {
+			break;
+		}
 	}
 
+	raspiCamCvReleaseCapture(&capture);
 	cout << "Done!" << endl;
 	logs.writeLogLine("Finished!");
 	return 0;
 }
 
-void flyTo(FlightBoard *fbPtr, GPS *gpsPtr, GPS_Data *dataPtr, double targetLat, double targetLon, double yaw, Logger *logPtr) {
+void flyTo(FlightBoard *fbPtr, GPS *gpsPtr, GPS_Data *dataPtr, double targetLat, double targetLon, double yaw, Logger *logPtr, RaspiCamCvCapture *camPtr) {
 	FB_Data stop = {0, 0, 0, 0};
 	FB_Data course = {0, 0, 0, 0};
 	Pos start;
@@ -156,42 +179,114 @@ void flyTo(FlightBoard *fbPtr, GPS *gpsPtr, GPS_Data *dataPtr, double targetLat,
 	start.lon = (dataPtr->longitude);
 	end.lat = targetLat;
 	end.lon = targetLon;
-	// imuPtr->getIMU_Data(&positionData);
-	// yaw = positionData.yaw;
-	cout << "Flying to " << targetLat << " " << targetLon << ", facing " << yaw << " degrees" << endl;
+	cout << setprecision(15) << "Flying to " << targetLat << " " << targetLon << ", facing " << yaw << " degrees" << endl;
 	char str[BUFSIZ];
 	double distance = calculate_distance(start, end);
 	double bearing = calculate_bearing(start, end);
 	cout << "Distance: " << distance << " m\tBearing: " << bearing << " degrees" << endl;
-	
-	while (distance > WAYPOINT_RADIUS) {
+	Mat bestImg;
+	Mat currentImg;
+	int timer = 0;
+	bool sawRed = false;
+	bool haveBest = false;
+
+	while (!exitProgram && distance > WAYPOINT_RADIUS) {
 		setCourse(&course, distance, bearing, yaw);
 		//cout << "Course set to: {" << course.aileron << " (A), " << course.elevator << " (E)}" << endl;
 		sprintf(str, "Course set to : {%d (A), %d (E)}", course.aileron, course.elevator);
+		logPtr->writeLogLine(str);
+		gpsPtr->getGPS_Data(dataPtr);
 		fbPtr->setFB_Data(&course);
-		//delay(500);					//Wait for new instructions to actually take effect.
-
+//		checkRed(camPtr);
+		IplImage* view = raspiCamCvQueryFrame(camPtr);
+		Mat image(view);
+		timer++;
+		if ((timer > 0) && checkRed(image)) {	//Is there red?
+			sawRed = true;
+			image.copyTo(currentImg);
+			if (!haveBest) {
+				currentImg.copyTo(bestImg);
+				haveBest = true;
+			}
+			else if (redComDist(currentImg) < redComDist(bestImg)) {
+				currentImg.copyTo(bestImg);
+			}
+		}
+		else {
+			if (sawRed && (timer > 0))  {	//Only resets first time image leaves 
+				timer = 0-FRAME_WAIT;
+				char dummy[BUFSIZ];
+				sprintf(dummy, "photos/Lawnmower_%d_%d_%d.jpg", (int)((dataPtr->latitude)*1000), (int)((dataPtr->longitude)*1000), (int)((dataPtr->time)*100));
+				imwrite(dummy, bestImg);
+				imshow("Image", bestImg);
+				waitKey(1);
+				haveBest = false;
+			}
+			sawRed = false;
+		}
+		
+		delay(100);	//Wait for instructions
 		gpsPtr->getGPS_Data(dataPtr);
 		start.lat = (dataPtr->latitude);
 		start.lon = (dataPtr->longitude);
-		end.lat = targetLat;
-		end.lon = targetLon;
-		// imuPtr->getIMU_Data(&positionData);
-		// yaw = positionData.yaw;
-		//cout << "Needs to move from: " << dataPtr->latitude << ", " << dataPtr->longitude << "\n\tto : " << targetLat << ", " << targetLon << endl;
+		cout << "Needs to move from: " << dataPtr->latitude << ", " << dataPtr->longitude << "\n\tto : " << targetLat << ", " << targetLon << endl;
 		sprintf(str, "Currently at %f %f", dataPtr->latitude, dataPtr->longitude);
 		logPtr->writeLogLine(str);
 		sprintf(str, "Going to %f %f", end.lat, end.lon);
 		logPtr->writeLogLine(str);
 		distance = calculate_distance(start, end);
 		bearing = calculate_bearing(start, end);
-		//cout << "Distance: " << distance << " m\tBearing: " << bearing << endl;
+		cout << "Distance: " << distance << " m\tBearing: " << bearing << endl;
 		sprintf(str, "Distance: %f m\tBearing : %f degrees", distance, bearing);
 		logPtr->writeLogLine(str);
 		// snapRed(camPtr);
 	}
 	cout << "Arrived" << endl;
+	sprintf(str, "Arrived at %f %f\n-----------------------------\n", end.lat, end.lon);
+	logPtr->writeLogLine(str);
 	fbPtr->setFB_Data(&stop);
+}
+
+bool checkRed(Mat image) {
+	cout << "Hello!" << endl;
+	int nRows = image.rows;
+	int nCols = image.cols;
+	uchar* p;
+	int nRed = 0;
+	for(int i = 0; i < nRows; i++) {
+		p = image.ptr<uchar>(i);
+		for (int j = 0; j < nCols; j=j+3) {
+			if ((p[j] > BMIN) && (p[j] < BMAX) && (p[j] > GMIN) && (p[j] < GMAX) && (p[j] > RMIN) && (p[j] < RMAX)) {
+				nRed++;
+			}
+		}
+	}
+	cout << nRed << endl;
+	if (nRed >= REDTHRESH) return true;
+	else return false;
+}
+
+double redComDist(Mat image) {
+	int nRows = image.rows;
+	int nCols = image.cols;
+	uchar* p;
+	double xMean = 0;
+	double yMean = 0;
+	int nRed = 0;
+	for(int i = 0; i < nRows; i++) {
+		p = image.ptr<uchar>(i);
+		for (int j = 0; j < nCols; j=j+3) {
+			if ((p[j] > BMIN) && (p[j] < BMAX) && (p[j] > GMIN) && (p[j] < GMAX) && (p[j] > RMIN) && (p[j] < RMAX)) {
+				nRed++;
+				xMean = xMean + j/3;
+				yMean = yMean + i;
+			}
+		}
+	}
+	xMean = xMean/nRed;
+	yMean = yMean/nRed;
+
+	return sqrt(pow(xMean-(double)(nCols/2), 2) + pow(yMean-(double)(nRows/2), 2));
 }
 
 void captureImage(int point, GPS_Data *dataPtr) {
@@ -232,8 +327,8 @@ void setCourse(FB_Data *instruction, double distance, double bearing, double yaw
 	if(speed > SPEED_LIMIT) {											//P controler with limits.
 		speed = SPEED_LIMIT;
 	}
-	instruction->aileron = (int) (speed * sin(bearing - yaw));
-	instruction->elevator = (int) (speed * cos(bearing - yaw));
+	instruction->aileron = (int) (speed * sin((bearing-yaw)*(PI/180)));
+	instruction->elevator = (int) (speed * cos((bearing-yaw)*(PI/180)));
 	instruction->rudder = 0;
 	instruction->gimbal = 0;
 }
@@ -266,14 +361,15 @@ void populateVector(Pos start, Pos end, vector<Pos> *list) {
 	double lat2 = (end.lat)*(PI/180);
 	double lon2 = (end.lon)*(PI/180);
 	double endDistance = calculate_distance(start, end);
-	cout << setprecision(15) << start.lat << " " << start.lon << endl;
-	cout << setprecision(15) << end.lat << " " << end.lon << endl;
-	cout << "Distance: " << endDistance << endl;
+	//cout << start.lat << " " << start.lon << endl;
+	//cout << end.lat << " " << end.lon << endl;
 	int numberOfIntermediates = floor(endDistance/SPACING);	//Assumes SPACING (distance between adjacaent points) is given
-	cout << "Points: " << numberOfIntermediates << endl;
 	list->push_back(start);
+	for (int i = 0; i < numberOfIntermediates; i++){
+		cout << i/numberOfIntermediates << endl;
+	}
 	for (int i = 1; i < numberOfIntermediates; i++){
-		double fraction = (SPACING*i)/endDistance;
+		double fraction = i/numberOfIntermediates;
 		double a = sin((1-fraction)*endDistance)/sin(endDistance);
 		double b = sin(fraction*endDistance)/sin(endDistance);
 		double x = a*cos(lat1)*cos(lon1) + b*cos(lat2)*cos(lon2);
@@ -301,4 +397,9 @@ void readPosition(Pos* locPtr, int skip) {
 		iss >> locPtr->lat >> locPtr->lon;
 	}
 	waypointsFile.close();
+}
+
+void terminate(int signum) {
+	cout << "Signal " << signum << " received. Stopping waypoints program. Exiting." << endl;
+	exitProgram = true;
 }
