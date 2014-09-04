@@ -6,6 +6,7 @@
 #include <string.h>
 #include <cmath>
 #include <ctime>
+#include <csignal>
 
 #include <gpio.h>
 #include <flightBoard.h>
