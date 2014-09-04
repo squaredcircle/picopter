@@ -18,7 +18,7 @@
 
 using namespace std;
 
-#define SPACING 5			//Distance between points in m
+#define SPACING 7			//Distance between points in m
 #define LOCATION_WAIT 2000	//Time in ms Copter waits at each point
 #define GPS_DATA_FILE "config/waypoints_list.txt"
 
@@ -33,7 +33,7 @@ void captureImage(int, GPS_Data*);
 #define RADIUS_OF_EARTH 6364963	//m
 #define sin2(x) (sin(x)*sin(x))
 #define SPEED_LIMIT 30				//Want to go slowly as wil lbe analysing images
-#define WAYPOINT_RADIUS 4.000		//In m - should be no less than 3 or 4
+#define WAYPOINT_RADIUS 3.000		//In m - should be no less than 3 or 4
 #define Kp 8						//proportional controller constant
 #define DIRECTION_TEST_SPEED 40
 #define DIRECTION_TEST_DURATION 6000
@@ -113,12 +113,20 @@ int main() {
 
 	gpsPoints.push_back(sideA[0]);	//Start of with first from sideA
 	for (int i = 0; i < minVectorLength; i=i+2) {
+		sprintf(str, "%d %d", i,minVectorLength);
+		logs.writeLogLine(str); 
 		gpsPoints.push_back(sideB[i]);		//Alternate between adding in 2 from sideB and 2 from sideA
 		if (i < minVectorLength-1) {
+			sprintf(str, "%d %d.1", i,minVectorLength);
+			logs.writeLogLine(str); 
 			gpsPoints.push_back(sideB[i+1]);
 			gpsPoints.push_back(sideA[i+1]);
 			}
-		if (i < minVectorLength-2) gpsPoints.push_back(sideA[i+2]);
+		if (i < minVectorLength-2) {
+			sprintf(str, "%d %d.2", i,minVectorLength);
+			logs.writeLogLine(str);
+			gpsPoints.push_back(sideA[i+2]);
+		}
 	}
 	gpsPoints.push_back(sideB[minVectorLength]);	//Ends with last from sideB
 	for(int i = 0; i < (int)gpsPoints.size(); i++) {
@@ -158,7 +166,7 @@ void flyTo(FlightBoard *fbPtr, GPS *gpsPtr, GPS_Data *dataPtr, double targetLat,
 	
 	while (distance > WAYPOINT_RADIUS) {
 		setCourse(&course, distance, bearing, yaw);
-		cout << "Course set to: {" << course.aileron << " (A), " << course.elevator << " (E)}" << endl;
+		//cout << "Course set to: {" << course.aileron << " (A), " << course.elevator << " (E)}" << endl;
 		sprintf(str, "Course set to : {%d (A), %d (E)}", course.aileron, course.elevator);
 		fbPtr->setFB_Data(&course);
 		//delay(500);					//Wait for new instructions to actually take effect.
@@ -170,14 +178,14 @@ void flyTo(FlightBoard *fbPtr, GPS *gpsPtr, GPS_Data *dataPtr, double targetLat,
 		end.lon = targetLon;
 		// imuPtr->getIMU_Data(&positionData);
 		// yaw = positionData.yaw;
-		cout << "Needs to move from: " << dataPtr->latitude << ", " << dataPtr->longitude << "\n\tto : " << targetLat << ", " << targetLon << endl;
+		//cout << "Needs to move from: " << dataPtr->latitude << ", " << dataPtr->longitude << "\n\tto : " << targetLat << ", " << targetLon << endl;
 		sprintf(str, "Currently at %f %f", dataPtr->latitude, dataPtr->longitude);
 		logPtr->writeLogLine(str);
 		sprintf(str, "Going to %f %f", end.lat, end.lon);
 		logPtr->writeLogLine(str);
 		distance = calculate_distance(start, end);
 		bearing = calculate_bearing(start, end);
-		cout << "Distance: " << distance << " m\tBearing: " << bearing << endl;
+		//cout << "Distance: " << distance << " m\tBearing: " << bearing << endl;
 		sprintf(str, "Distance: %f m\tBearing : %f degrees", distance, bearing);
 		logPtr->writeLogLine(str);
 		// snapRed(camPtr);
