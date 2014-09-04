@@ -9,16 +9,16 @@ using namespace std;
 
 int main (int argc, char* argcv[]) {
 
-	GPS gps = GPS();
-	if(gps.setup() != GPS_OK) {
+	PIKSI gps = PIKSI();
+	if(gps.setup() != PIKSI_OK) {
         cout << "Error opening gps: check it's switched on" << endl;
         return -1;
     }
 	gps.start();
-	GPS_Data positionData;
+	PIKSI_Data positionData;
 
 	while(true) {
-		gps.getPGPS_Data(&positionData);
+		gps.getPIKSI_Data(&positionData);
 		cout << setprecision(12) << positionData.time << DELIM;
 		cout << setprecision(12) << positionData.latitude << DELIM;
 		cout << setprecision(12) << positionData.longitude << endl;

@@ -19,10 +19,10 @@
 #include "logger.h"
 
 #define PIKSI_FILE "piksi_data.txt"
-#define PIKSI_SCRIPT "piksi_data.txt"
+#define PIKSI_SCRIPT "scripts/piksi_background.py"
 
 
-#define PGPS_OK 0
+#define PIKSI_OK 0
 
 
 typedef struct {
@@ -31,27 +31,27 @@ typedef struct {
 	double latitude;
 	int numSatelites;
 	double horizAccuracy;
-} GPS_Data;
+} PIKSI_Data;
 
 
-class GPS {
+class PIKSI {
 public:
-	GPS(void);
-	GPS(const GPS&);
-	virtual ~GPS(void);
+	PIKSI(void);
+	PIKSI(const PIKSI&);
+	virtual ~PIKSI(void);
 	
 	int setup(void);
 	int start(void);
 	int stop(void);
 	int close(void);
 	
-	int getGPS_Data(PGPS_Data*);
+	int getPIKSI_Data(PIKSI_Data*);
 private:
 	bool ready;
 	bool running;
 	Logger* log;
 	
-	ifstream* dataFile;
+	std::ifstream* dataFile;
 };
 
 #endif// __GPS_PIKSI_INCLUDED__

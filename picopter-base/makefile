@@ -81,7 +81,7 @@ obj/imu_euler_test.o : src/imu_euler_test.cpp $(addprefix include/, $(addsuffix 
 obj/camera_test.o : src/camera_test.cpp $(addprefix include/, $(addsuffix .h, camera gpio logger)) $(addprefix src/, $(addsuffix .cpp, camera gpio logger))
 	$(CC) $(CFLAGS) $(INCLUDES) $(RASPICAM_INCLUDES) $(OPEN_CV) src/camera_test.cpp -o obj/camera_test.o
 
-obj/gps_piksi_test.o : src/gps_piksi_test.cpp $(addprefix include/, $(addsuffix .h, gps_qstarz gpio logger)) $(addprefix src/, $(addsuffix .cpp, gps_qstarz gpio logger))
+obj/gps_piksi_test.o : src/gps_piksi_test.cpp $(addprefix include/, $(addsuffix .h, gps_qstarz gpio logger)) $(addprefix src/, $(addsuffix .cpp, gps_piksi gpio logger))
 	$(CC) $(CFLAGS) $(INCLUDES) src/gps_piksi_test.cpp -o obj/gps_piksi_test.o
 
 

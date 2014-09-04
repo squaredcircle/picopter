@@ -1,19 +1,19 @@
 #include "gps_piksi.h"
 
-GPS::GPS() {
+PIKSI::PIKSI() {
 	this->ready = false;
 	this->running = false;
 }
 
-GPS::GPS(const GPS& orig) {}
-GPS::~GPS() {}
+PIKSI::PIKSI(const PIKSI& orig) {}
+PIKSI::~PIKSI() {}
 
 
-int GPS::setup() {
+int PIKSI::setup() {
 	if(ready) return -1;
 	if(running) return -1;
 	
-	log = new Logger("gps.log");
+	log = new Logger("piksi.log");
 	
     char str_buf[128];
     sprintf("python %s", PIKSI_SCRIPT);
@@ -21,77 +21,77 @@ int GPS::setup() {
     log->writeLogLine("Piksi background script started.");
     
     
-	dataFile->open(PIKSI_FILE)
-	if (!dataFile->isOpen()) {
-		log->writeLogLine("Error opening gps. No file found.");
+	dataFile->open(PIKSI_FILE);
+	if (!dataFile->is_open()) {
+		log->writeLogLine("Error opening piksi. No file found.");
 		return -1;
 	}
 	dataFile->close();
     
 	ready = true;
-	log->writeLogLine("GPS set up sucessfully.");
+	log->writeLogLine("PIKSI set up sucessfully.");
 	return 0;
 }
 
-int GPS::start() {
+int PIKSI::start() {
 	if(!ready) return -1;
 	if(running) return -1;
 	
     //Currently cosmetic.  Will change when the c++ things work
     
 	running = true;
-	log->writeLogLine("GPS started sucessfully.");
+	log->writeLogLine("PIKSI started sucessfully.");
 	return 0;
 }
 
-int GPS::stop() {
+int PIKSI::stop() {
 	if(!running) return -1;
 	
 	running = false;
-	log->writeLogLine("GPS stopped.");
+	log->writeLogLine("PIKSI stopped.");
 	return 0;
 }
 
-int GPS::close() {
+int PIKSI::close() {
     if(running) stop();
 	if(running) return -1;
 	if(!ready) return -1;
 	
-    if(dataFile->isOpen()) {
+    if(dataFile->is_open()) {
         return -1;
     }
     
 	ready = false;
-	log->writeLogLine("Connection to GPS closed");
+	log->writeLogLine("Connection to PIKSI closed");
 	return 0;
 }
 
 
 //get things
-int GPS::getGPS_Data(GPS_Data *data) {
+int PIKSI::getPIKSI_Data(PIKSI_Data *data) {
 	if(!running) return -1;
     
     log->writeLogLine("Retreiving data.");
     
     std::string dataLine;
     dataFile->open(PIKSI_FILE);
-    getline(dataFile,dataLine);
+    std::getline(*dataFile,dataLine);
     dataFile->close();
     
     if(dataLine.empty()) {
         log->writeLogLine("Error: no data found.");
         return -1;
     } else {
-        log->writeLogLine(dataLine.cstr());
+        log->writeLogLine(dataLine.c_str());
     }
     
-    istringstream iss (dataLine);
+    std::istringstream iss (dataLine);
     
     iss >> data->time;
     iss >> data->longitude;
     iss >> data->latitude;
     iss >> data->numSatelites;
-    iss >> data->horizDilution
+    iss >> data->horizAccuracy;
     
 	log->writeLogLine("Finished retrieving data.");
 	return 0;
