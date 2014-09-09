@@ -6,7 +6,6 @@
 #include <string.h>
 #include <cmath>
 #include <ctime>
-#include <csignal>
 
 #include <gpio.h>
 #include <flightBoard.h>
@@ -19,23 +18,24 @@
 
 using namespace std;
 
-#define BMIN 0 //0 works
+#define BMIN 0
 #define BMAX 180 //180 works
 #define GMIN 0
-#define GMAX 200 //200 works
-#define RMIN 120//120 works
-#define RMAX 256 //256works
+#define GMAX 150 //200 works
+#define RMIN 150//120 works
+#define RMAX 256
 #define REDTHRESH 50	//Number of red pixels need to see in an image
 #define FRAME_WAIT 11 	//Number of frames to wait
 
 #define SPACING 10			//Distance between points in m
 #define LOCATION_WAIT 2000	//Time in ms Copter waits at each point
+#define LOOP_WAIT 100 		//Time in ms Copter wait in each loop
 #define GPS_DATA_FILE "config/waypoints_list.txt"
 
-void flyTo(FlightBoard*, GPS*, GPS_Data*, double, double, double, Logger* , RaspiCamCvCapture*);
+void flyTo(FlightBoard*, GPS*, GPS_Data*, double, double, double, Logger*, Logger* , RaspiCamCvCapture*);
 double determineBearing(FlightBoard*, GPS*, GPS_Data*);
 void captureImage(int, GPS_Data*);
-bool checkRed(Mat);
+bool checkRed(Mat, Logger*);
 double redComDist(Mat);
 
 /*Things needed for 'flyTo'*/
@@ -82,7 +82,8 @@ int main() {
 	//Start the camera up
 	RaspiCamCvCapture* capture = raspiCamCvCreateCameraCapture(0);
 
-	Logger logs = Logger("lawnmower.log");	//Initalises log
+	Logger lawnlog = Logger("Lawn.log");	//Initalises log
+	Logger rawgpslog = Logger("Lawn_Raw_GPS.log");
 	char str[BUFSIZ];
 
 	Pos corners[4];
@@ -90,36 +91,36 @@ int main() {
 	readPosition(&corners[0], 0);	//First line
 	cout << "Corner #1 read as: " << (corners[0].lat) << " " << (corners[0].lon) << endl;
 	sprintf(str, "Corner #1 read as: %f %f", (corners[0].lat), (corners[0].lon));
-	logs.writeLogLine(str);	
+	lawnlog.writeLogLine(str);	
 	readPosition(&corners[3], 1);	//Second line
 	cout << "Corner #4 read as: " << (corners[3].lat) << " " << (corners[3].lon) << endl;
 	sprintf(str, "Corner #4 read as: %f %f", (corners[3].lat), (corners[3].lon));
-	logs.writeLogLine(str);	
+	lawnlog.writeLogLine(str);	
 	corners[1].lat = corners[0].lat;
 	corners[1].lon = corners[3].lon;
 	cout << "Corner #2 calculated as: " << (corners[1].lat) << " " << (corners[1].lon) << endl;
 	sprintf(str, "Corner #2 calculated as: %f %f", (corners[1].lat), (corners[1].lon));
-	logs.writeLogLine(str);	
+	lawnlog.writeLogLine(str);	
 	corners[2].lat = corners[3].lat;
 	corners[2].lon = corners[0].lon;
 	cout << "Corner #3 calculated as: " << (corners[2].lat) << " " << (corners[2].lon) << endl;
 	sprintf(str, "Corner #3 calculated as: %f %f", (corners[2].lat), (corners[2].lon));
-	logs.writeLogLine(str);
+	lawnlog.writeLogLine(str);
 
 	vector<Pos> sideA;
 	vector<Pos> sideB;
 	vector<Pos> gpsPoints;
 	populateVector(corners[0], corners[1], &sideA);
 	for(int i = 0; i < (int)sideA.size(); i++) {
-		cout << "Point " << i+1 << " of sideA is " << (sideA[i].lat) << " " << (sideA[i].lon) << endl;
+		//cout << "Point " << i+1 << " of sideA is " << (sideA[i].lat) << " " << (sideA[i].lon) << endl;
 		sprintf(str, "Point %d of sideA is %f %f", i+1, (sideA[i].lat), (sideA[i].lon));
-		logs.writeLogLine(str);
+		lawnlog.writeLogLine(str);
 	}
 	populateVector(corners[2], corners[3], &sideB);
 	for(int i = 0; i < (int)sideB.size(); i++) {
 		//cout << "Point " << i+1 << " of sideB is " << (sideB[i].lat) << " " << (sideB[i].lon) << endl;
 		sprintf(str, "Point %d of sideB is %f %f", i+1, (sideB[i].lat), (sideB[i].lon));
-		logs.writeLogLine(str);
+		lawnlog.writeLogLine(str);
 	}
 	int minVectorLength = sideA.size();
 	if ((int)sideB.size() < minVectorLength) minVectorLength = sideB.size(); //Checks which is smallest
@@ -127,23 +128,25 @@ int main() {
 	for (int i = 0; i < minVectorLength; i++) {
 		if (i%2 == 0) {	//Even?
 			sprintf(str, "%d %d- Even", i,minVectorLength);
-			logs.writeLogLine(str);
+			//lawnlog.writeLogLine(str);
 			gpsPoints.push_back(sideA[i]);
 			gpsPoints.push_back(sideB[i]);
 		}
 		else if (i%2 == 1) {//Odd?
 			sprintf(str, "%d %d - Odd", i, minVectorLength);
-			logs.writeLogLine(str);
+			//lawnlog.writeLogLine(str);
 			gpsPoints.push_back(sideB[i]);
 			gpsPoints.push_back(sideA[i]);
 		}
 	}
 	
+	cout << endl;
 	for(int i = 0; i < (int)gpsPoints.size(); i++) {
 		cout << setprecision(15) << "Point " << i+1 << " is " << (gpsPoints[i].lat) << " " << (gpsPoints[i].lon) << endl;
 		sprintf(str, "Point %d is %f %f", i+1, (gpsPoints[i].lat), (gpsPoints[i].lon));
-		logs.writeLogLine(str);
+		lawnlog.writeLogLine(str);
 	}
+	cout << endl;
 
 	cout  << "Waiting to enter autonomous mode..." << endl;
 	while(!gpio::isAutoMode()) delay(100);	//Hexacopter waits until put into auto mode
@@ -151,12 +154,12 @@ int main() {
 
 	double yaw = determineBearing(&fb, &gps, &data);	//Hexacopter determines which way it is facing
 	sprintf(str, "Bearing found: Copter is facing %f degrees.", yaw);
-	logs.writeLogLine(str);
+	lawnlog.writeLogLine(str);
 	gps.getGPS_Data(&data);		//Hexacopter works out where it is
 	cout << "Location and Orienation determined" << endl;
 	
 	for (int i = 0; i < (int)gpsPoints.size(); i++) {
-		flyTo(&fb, &gps, &data, gpsPoints[i].lat, gpsPoints[i].lon, yaw, &logs, capture);
+		flyTo(&fb, &gps, &data, gpsPoints[i].lat, gpsPoints[i].lon, yaw, &lawnlog, &rawgpslog, capture);
 		//captureImage(i, &data);
 		if(exitProgram) {
 			break;
@@ -165,11 +168,11 @@ int main() {
 
 	raspiCamCvReleaseCapture(&capture);
 	cout << "Done!" << endl;
-	logs.writeLogLine("Finished!");
+	lawnlog.writeLogLine("Finished!");
 	return 0;
 }
 
-void flyTo(FlightBoard *fbPtr, GPS *gpsPtr, GPS_Data *dataPtr, double targetLat, double targetLon, double yaw, Logger *logPtr, RaspiCamCvCapture *camPtr) {
+void flyTo(FlightBoard *fbPtr, GPS *gpsPtr, GPS_Data *dataPtr, double targetLat, double targetLon, double yaw, Logger *logPtr, Logger *rawLogPtr, RaspiCamCvCapture *camPtr) {
 	FB_Data stop = {0, 0, 0, 0};
 	FB_Data course = {0, 0, 0, 0};
 	Pos start;
@@ -182,6 +185,8 @@ void flyTo(FlightBoard *fbPtr, GPS *gpsPtr, GPS_Data *dataPtr, double targetLat,
 	end.lon = targetLon;
 	cout << setprecision(15) << "Flying to " << targetLat << " " << targetLon << ", facing " << yaw << " degrees" << endl;
 	char str[BUFSIZ];
+	sprintf(str, "%f %f", dataPtr->longitude, dataPtr->latitude);
+	rawLogPtr->writeLogLine(str, false);
 	double distance = calculate_distance(start, end);
 	double bearing = calculate_bearing(start, end);
 	cout << "Distance: " << distance << " m\tBearing: " << bearing << " degrees" << endl;
@@ -202,7 +207,7 @@ void flyTo(FlightBoard *fbPtr, GPS *gpsPtr, GPS_Data *dataPtr, double targetLat,
 		IplImage* view = raspiCamCvQueryFrame(camPtr);
 		Mat image(view);
 		timer++;
-		if ((timer > 0) && checkRed(image)) {	//Is there red?
+		if ((timer > 0) && checkRed(image, logPtr)) {	//Is there red?
 			sawRed = true;
 			image.copyTo(currentImg);
 			if (!haveBest) {
@@ -219,20 +224,22 @@ void flyTo(FlightBoard *fbPtr, GPS *gpsPtr, GPS_Data *dataPtr, double targetLat,
 				char dummy[BUFSIZ];
 				sprintf(dummy, "photos/Lawnmower_%d_%d_%d.jpg", (int)((dataPtr->latitude)*1000), (int)((dataPtr->longitude)*1000), (int)((dataPtr->time)*100));
 				imwrite(dummy, bestImg);
-				imshow("Image", bestImg);
+				imshow("Last Red Object", bestImg);
 				waitKey(1);
 				haveBest = false;
 			}
 			sawRed = false;
 		}
 		
-		delay(100);	//Wait for instructions
+		delay(LOOP_WAIT);	//Wait for instructions
 		gpsPtr->getGPS_Data(dataPtr);
 		start.lat = (dataPtr->latitude);
 		start.lon = (dataPtr->longitude);
 		cout << "Needs to move from: " << dataPtr->latitude << ", " << dataPtr->longitude << "\n\tto : " << targetLat << ", " << targetLon << endl;
 		sprintf(str, "Currently at %f %f", dataPtr->latitude, dataPtr->longitude);
 		logPtr->writeLogLine(str);
+		sprintf(str, "%f %f", dataPtr->longitude, dataPtr->latitude);
+		rawLogPtr->writeLogLine(str, false);
 		sprintf(str, "Going to %f %f", end.lat, end.lon);
 		logPtr->writeLogLine(str);
 		distance = calculate_distance(start, end);
@@ -246,10 +253,10 @@ void flyTo(FlightBoard *fbPtr, GPS *gpsPtr, GPS_Data *dataPtr, double targetLat,
 	sprintf(str, "Arrived at %f %f\n-----------------------------\n", end.lat, end.lon);
 	logPtr->writeLogLine(str);
 	fbPtr->setFB_Data(&stop);
+	delay(LOCATION_WAIT);
 }
 
-bool checkRed(Mat image) {
-	cout << "Hello!" << endl;
+bool checkRed(Mat image, Logger *logPtr) {
 	int nRows = image.rows;
 	int nCols = image.cols;
 	uchar* p;
@@ -262,7 +269,10 @@ bool checkRed(Mat image) {
 			}
 		}
 	}
-	cout << nRed << endl;
+	cout << "How much 'Red' can we see? " << nRed << endl;
+	char str[BUFSIZ];
+	sprintf(str, "We can see %d 'Red' pixels.", nRed);
+	logPtr->writeLogLine(str);
 	if (nRed >= REDTHRESH) return true;
 	else return false;
 }
@@ -362,15 +372,14 @@ void populateVector(Pos start, Pos end, vector<Pos> *list) {
 	double lat2 = (end.lat)*(PI/180);
 	double lon2 = (end.lon)*(PI/180);
 	double endDistance = calculate_distance(start, end);
+	//cout << endDistance << endl;
 	//cout << start.lat << " " << start.lon << endl;
 	//cout << end.lat << " " << end.lon << endl;
-	int numberOfIntermediates = floor(endDistance/SPACING);	//Assumes SPACING (distance between adjacaent points) is given
+	int numberOfIntermediates = (endDistance/SPACING);	//Assumes SPACING (distance between adjacaent points) is given
 	list->push_back(start);
-	for (int i = 0; i < numberOfIntermediates; i++){
-		cout << i/numberOfIntermediates << endl;
-	}
 	for (int i = 1; i < numberOfIntermediates; i++){
-		double fraction = i/numberOfIntermediates;
+		double fraction = (double)i/(double)numberOfIntermediates;
+		//cout << fraction << endl;
 		double a = sin((1-fraction)*endDistance)/sin(endDistance);
 		double b = sin(fraction*endDistance)/sin(endDistance);
 		double x = a*cos(lat1)*cos(lon1) + b*cos(lat2)*cos(lon2);
