@@ -1,84 +1,37 @@
-/*
-*   Config Parser
-*   Authour:   Bax
-*   Date:       8-9-2014
-*   Version:    1.0
-*
-*   Parses config files in fielded, tab-delimeted format.
-*/
-#include <string>
-#include <iostream>
-#include <sstream>
-#include <fstream>
+#include <config_parser.h>
 
-#include <utility>
-#include <map>
-#include <queue>
-#include <iterator>
+ConfigParser::ParamMap::ParamMap() {}
+ConfigParser::ParamMap::ParamMap(const ParamMap& orig) {}
+ConfigParser::ParamMap::~ParamMap() {}
 
-
-typedef std::map<std::string, int*> ParamMap_int;
-typedef std::map<std::string, double*> ParamMap_double;
-typedef std::map<std::string, char*> ParamMap_char;
-
-typedef std::map<std::string, char> ParamMap_type;
-
-class ParamMap {
-public:
-    ParamMap(void);
-    ParamMap(const ParamMap&);
-	virtual ~ParamMap(void);
-    
-    void insert(std::string, int*);
-    void insert(std::string, double*);
-    void insert(std::string, char*);
-    
-    int* getInt(std::string);
-    double* getDouble(std::string);
-    char* getChar(std::string);
-    char getType(std::string);
-    
-    std::string listParameters(void);
-    
-private:
-    ParamMap_int intMap;
-    ParamMap_double doubleMap;
-    ParamMap_char charMap;
-    ParamMap_type typeMap;
-};
-
-ParamMap::ParamMap() {}
-ParamMap::ParamMap(const ParamMap& orig) {}
-ParamMap::~ParamMap() {}
-
-void ParamMap::insert(std::string label, int* ptr) {
+void ConfigParser::ParamMap::insert(std::string label, int* ptr) {
     intMap.insert(std::pair<std::string, int*>(label, ptr));
     typeMap.insert(std::pair<std::string, char>(label, 'i'));
 }
 
-void ParamMap::insert(std::string label, double* ptr) {
+void ConfigParser::ParamMap::insert(std::string label, double* ptr) {
     doubleMap.insert(std::pair<std::string, double*>(label, ptr));
     typeMap.insert(std::pair<std::string, char>(label, 'd'));
 }
 
-void ParamMap::insert(std::string label, char* ptr) {
+void ConfigParser::ParamMap::insert(std::string label, char* ptr) {
     charMap.insert(std::pair<std::string, char*>(label, ptr));
     typeMap.insert(std::pair<std::string, char>(label, 'c'));
 }
 
-int* ParamMap::getInt(std::string label) {
+int* ConfigParser::ParamMap::getInt(std::string label) {
     return intMap[label];
 }
 
-double* ParamMap::getDouble(std::string label) {
+double* ConfigParser::ParamMap::getDouble(std::string label) {
     return doubleMap[label];
 }
 
-char* ParamMap::getChar(std::string label) {
+char* ConfigParser::ParamMap::getChar(std::string label) {
     return charMap[label];
 }
 
-char ParamMap::getType(std::string label) {
+char ConfigParser::ParamMap::getType(std::string label) {
     if(typeMap.find(label) != typeMap.end()) {
         return typeMap[label];
     } else {
@@ -86,7 +39,7 @@ char ParamMap::getType(std::string label) {
     }
 }
 
-std::string ParamMap::listParameters() {
+std::string ConfigParser::ParamMap::listParameters() {
     std::stringstream ss;
     ParamMap_type::reverse_iterator rit;
     for(rit = typeMap.rbegin(); rit!=typeMap.rend(); ++rit) {
@@ -110,11 +63,7 @@ std::string ParamMap::listParameters() {
 }
 
 
-
-int loadParameters(std::string className, ParamMap *parameters, std::string fileName);
-std::string printConfigParserError(int);
-
-int loadParameters(std::string className, ParamMap *parameters, std::string fileName) {
+int ConfigParser::loadParameters(std::string className, ParamMap *parameters, std::string fileName) {
     
     
     std::ifstream configFile(fileName.c_str(), std::ifstream::in);
@@ -137,6 +86,8 @@ int loadParameters(std::string className, ParamMap *parameters, std::string file
     
     while(getline(configFile, line)) {
         std::cout << "LOAD:\tgot line:" << line << std::endl;
+        if(line.empty()) continue;
+        if(line.at(0) == ' ' || line.at(0) == '\t') continue;
         if(line.at(0) == '#') continue;
         if(line.at(0) != '%') return -2;
         char ch = line.at(1);
@@ -227,7 +178,7 @@ int loadParameters(std::string className, ParamMap *parameters, std::string file
     return 0;
 }
 
-std::string printParameterParserError(int code) {
+std::string ConfigParser::printParameterParserError(int code) {
     if(code == 0)           return "No error.";
     else if(code == -1)     return "No config file found.";
     else if(code == -2)     return "Not a recognised line start.";
@@ -235,22 +186,4 @@ std::string printParameterParserError(int code) {
     else if(code == -4)     return "Field not a variable.";
     else if(code == -4)     return "Row not complete.";
     else                    return "Unknown error code";
-}
-
-int main(int argc, char* argv[]) {
-    int x = 7;
-    double catfish = 0;
-    char z = '0';
-    int a = 42;
-    
-    ParamMap parameters;
-    parameters.insert("x", &x);
-    parameters.insert("catfish", &catfish);
-    parameters.insert("z", &z);
-    parameters.insert("a", &a);
-    
-    std::cout << loadParameters("config", &parameters, "./config/config.txt") << std::endl;
-    std::cout << parameters.listParameters() << std::endl;
-    
-    return 0;
 }
