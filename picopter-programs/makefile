@@ -1,20 +1,20 @@
 CC = g++
 
 CFLAGS = -Wall -c -g
-INCLUDES = -I./include -I/usr/local/include -L/usr/local/lib
-LDFLAGS = -lwiringPi -lboost_thread -lboost_system -lncurses -g
+INCLUDES = -I./include -I/usr/local/include
+LDFLAGS = -L/usr/local/lib -lwiringPi -lboost_thread -lboost_system -lncurses -g
 
 BASE = gpio logger flightBoard gps_qstarz imu_euler camera
 BASE_INCLUDE = -I../picopter-base/include
 BASE_HEADERS = $(addprefix ../picopter-base/include/, $(addsuffix .h, $(BASE)))
 BASE_OBJECTS = $(addprefix ../picopter-base/obj/, $(addsuffix .o, $(BASE)))
 
-XSENS_FLAGS =
+XSENS_LINKS = -L ../Xsens -lcmt
 XSENS_INCLUDES = -I../Xsens
 XSENS_OBJECTS = $(addprefix ../Xsens/, cmt1.o cmt2.o cmt3.o cmtmessage.o cmtpacket.o cmtscan.o xsens_std.o xsens_time.o xsens_exception.o)
 
-RASPICAM_FLAGS = -lraspicamcv -lmmal_core -lmmal -lmmal_util -lvcos -lbcm_host
-RASPICAM_INCLUDES = -I../../robidouille/raspicam_cv -L../../robidouille/raspicam_cv -L../../userland/build/lib
+RASPICAM_LINKS = -L../../robidouille/raspicam_cv -L../../userland/build/lib -lraspicamcv -lmmal_core -lmmal -lmmal_util -lvcos -lbcm_host
+RASPICAM_INCLUDES = -I../../robidouille/raspicam_cv
 OPEN_CV = `pkg-config --cflags --libs opencv`
 
 EXECUTABLES = $(patsubst src/%.cpp, bin/%, $(wildcard src/*.cpp))
@@ -23,8 +23,7 @@ EXECUTABLES = $(patsubst src/%.cpp, bin/%, $(wildcard src/*.cpp))
 all: $(EXECUTABLES)
 
 bin/% : obj/%.o $(BASE_OBJECTS)
-	$(CC) $(LDFLAGS) $(INCLUDES) $(BASE_INCLUDE) $(BASE_OBJECTS) $(XSENS_INCLUDES) $(XSENS_OBJECTS) $(RASPICAM_INCLUDES) $(RASPICAM_FLAGS) $(OPEN_CV) $< -o $@
-
+	$(CC) $(LDFLAGS) $(INCLUDES) $(BASE_INCLUDE) $(BASE_OBJECTS) $(XSENS_INCLUDES) $(XSENS_LINKS) $(RASPICAM_INCLUDES) $(RASPICAM_LINKS) $(OPEN_CV) $< -o $@
 
 obj/%.o :  src/%.cpp $(BASE_HEADERS)
 	$(CC) $(CFLAGS) $(INCLUDES) $(BASE_INCLUDE) $(XSENS_INCLUDES) $(RASPICAM_INCLUDES) $(OPEN_CV) $< -o $@
