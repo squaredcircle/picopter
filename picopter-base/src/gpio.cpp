@@ -1,5 +1,15 @@
+//v1.4	9-9-2014	BAX
+//Fixed the gimbal angle ->  pwm scaling equation
+//Documented code.
+
+//v1.3	26-8-2014	BAX
+//gimble changed to gimbal.
+
+//v1.2	1-8-2014	OMID
+//PWMs calibrated.
+
+
 #include "gpio.h"
-//  #include <iostream>
 
 bool gpio::wiringPiRunning;
 bool gpio::servoBlasterRunning;
@@ -127,7 +137,7 @@ int gpio::rudderSpeed2PWM(int speed) {
 
 
 int gpio::gimbalAngle2PWM(int angle) {
-	int pwm = GIMBAL_PWM_HIGH - ((angle-GIMBAL_ANGLE_LOW)*GIMBAL_PWM_LOW)/GIMBAL_ANGLE_HIGH;
+	int pwm = GIMBAL_PWM_HIGH - (angle - GIMBAL_ANGLE_LOW)*(GIMBAL_PWM_HIGH - GIMBAL_PWM_LOW)/(GIMBAL_ANGLE_HIGH - GIMBAL_ANGLE_LOW);
 	if(pwm > GIMBAL_PWM_HIGH) {
 		pwm = GIMBAL_PWM_HIGH;
 	}

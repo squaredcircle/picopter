@@ -1,18 +1,14 @@
-//Author:	Michael Baxter 20503664@student.uwa.edu.au
-//Date:		13-7-2014
-//Version:	v1.0
-//
-//Desciption:	Wrapper for the GPIO interfaces: wiringPi and servoBlaster
-//				Instead of a static class, I've opted for a namespace implementation.
-//
-//				Compile with: -I/usr/local/include -L/usr/local/lib -lwiringPi
-
-//v1.2 1-8-2014 - OMID
-//PWMs calibrated
-
-//v1.3 26-8-2014 - BAX
-//gimble changed to gimbal
-
+/**
+ * @author	Michael Baxter <20503664@student.uwa.edu.au>
+ * @date	9-9-2014
+ * @version	1.4
+ * 
+ * Wrapper for the GPIO interfaces: wiringPi and servoblaser.
+ * 
+ * The only functions directly relevent to a user are startWiringPi() and isAutoMode().  All other functions included here are not recommended for use.
+ * 
+ * Also: all pwm values are defined here (preprocessor #define), so this header file needs to be edited for calibration with flight board.
+ **/
 
 #ifndef __GPIO_H_INCLUDED__
 #define __GPIO_H_INCLUDED__
@@ -22,6 +18,8 @@
 
 #include <wiringPi.h>
 #define SERVOBLASTER_PATH "/home/pi/PiBits/ServoBlaster/user/servod"
+
+#define GPIO_OK 0
 
 #define MODE_PIN 5
 
@@ -57,23 +55,111 @@
 
 
 namespace gpio {
+	/**
+	 * Starts wiringPi.
+	 * 
+	 * Run this function to be able to read whether the copter is in autonamous mode or not.
+	 * 
+	 * @return	GPIO_OK (=0) if started okay, -1 otherwise
+	 **/
 	int startWiringPi(void);
+	
+	/**
+	 * Stops wiringPi.
+	 * 
+	 * @return	GPIO_OK (=0) if stopped okay, -1 otherwise
+	 **/
 	int stopWiringPi(void);
+	
+	/**
+	 * Checks whether copter is in auto mode or not.
+	 * 
+	 * This function requires the wiringPi daemon to be running berfore use.  Be sure to run startWiringPi() before use.
+	 * 
+	 * @return	true if the copter is in autonomous mode, false otherwise;
+	 **/
 	bool isAutoMode(void);
 		
 	
+	/**
+	 * Starts ServoBlaster.
+	 * 
+	 * This function starts the ServoBlaster daemon which is responsible for outputting pwm on the gpio pins for interaction with the flight board.
+	 * 
+	 * This function is used in FlightBoard.start(), and should not be used directly.
+	 * 
+	 * @return	GPIO_OK (=0) if started okay, -1 otherwise
+	 **/
 	int startServoBlaster(void);
+	
+	/**
+	 * Stops ServoBlaster.
+	 * 
+	 * Do not call this function while in flight.  It will cause the copter to fall out of the sky.
+	 * 
+	 * This function is used in FlightBoard.stop(), and should not be used directly.
+	 * 
+	 * @return	GPIO_OK (=0) if stopped okay, -1 otherwise
+	 **/
 	int stopServoBlaster(void);
 	
+	/**
+	 * Sets values of the four flight board channels (A, E, R, G).
+	 * 
+	 * Only four channels are used at the moment; Aileron, Elevator, Rudder and Gimbal.  This function is used by FlightBoard.setFB_Data(&FB_Data) and does not need to be called directly.
+	 * 
+	 * Speeds on the first 3 channels (A, E, R) can be set between -100 and 100 (%).  The gimble angle can be set between 0 and 90 (degrees).  Values outside the these ranges are truncated.
+	 * 
+	 * @param	aileron		Aileron speed
+	 * @param	elevator	Elevator speed
+	 * @param	rudder		Rudder speed
+	 * @param	gimbal		Gimbal angle
+	 * @return				GPIO_OK (=0) if stopped okay, -1 otherwise
+	 **/
 	int setServoBlaster(int, int, int, int);
 	
+	/**
+	 * Converts a meaningful speed (+-100%) to pwm, tuned for the aileron channel.
+	 * 
+	 * The pwm is needed by servoblaster.  Tune using the above defines.
+	 * 
+	 * @param	speed	Desired % of full speed
+	 * @return 			pwm for ServoBlaster	
+	 **/
 	int aileronSpeed2PWM(int);
+	
+	/**
+	 * Converts a meaningful speed (+-100%) to pwm, tuned for the elevator channel.
+	 * 
+	 * The pwm is needed by servoblaster.  Tune using the above defines.
+	 * 
+	 * @param	speed	Desired % of full speed
+	 * @return 			pwm for ServoBlaster	
+	 **/
 	int elevatorSpeed2PWM(int);
+	
+	/**
+	 * Converts a meaningful speed (+-100%) to pwm, tuned for the rudder channel.
+	 * 
+	 * The pwm is needed by servoblaster.  Tune using the above defines.
+	 * 
+	 * @param	speed	Desired % of full speed
+	 * @return 			pwm for ServoBlaster	
+	 **/
 	int rudderSpeed2PWM(int);
+	
+	/**
+	 * Converts a meaningful angle (0 - 90deg) to pwm, tuned for the gimbal channel.
+	 * 
+	 * The pwm is needed by servoblaster.  Tune using the above defines.
+	 * 
+	 * @param	speed	Desired gimbal angle
+	 * @return 			pwm for ServoBlaster	
+	 **/
 	int gimbalAngle2PWM(int);
 	
 	
-	
+	//Don't touch these.
 	extern bool wiringPiRunning;		//naughty.
 	extern bool servoBlasterRunning;
 }
