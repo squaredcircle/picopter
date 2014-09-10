@@ -1,3 +1,14 @@
+//v1.3	10-9-2014	BAX
+//Documented code and added new config parsing
+
+//v1.2	10-9-2014	BAX
+//Fixed unreduce. (Scale back from reduced colour space (0-7) to mid-bucket of full colourspace(0-255).
+//eg. 0->15, 1->47, 6->207, 7->239
+
+//v1.1	28-8-2014	BAX
+//Can take photos now
+
+
 #include "camera.h"
 
 CAMERA::CAMERA() {
@@ -13,6 +24,9 @@ CAMERA::CAMERA() {
 	this->MIN_VAL		= 95;
 	this->MAX_VAL		= 255;
 	this->PIXLE_THRESHOLD	= 60;
+    this->PIXLE_SKIP        = 4;
+    
+    this->THREAD_SLEEP_TIME = 5;
 	
 	this->redObjectDetected = false;
 	this->redObject.x = -1;
@@ -23,6 +37,8 @@ CAMERA::CAMERA() {
 	
 	this->takePhotoThisCycle = false;
 	this->imageFileName = "image.jpg";
+    
+    this->showImage = true;
 }
 
 CAMERA::CAMERA(const CAMERA& orig) {}
@@ -34,12 +50,6 @@ int CAMERA::setup() {
 	if(running) return -1;
 	
 	//log = new Logger("camera.log");
-	try {
-		readParameters(IMAGE_PROCSSING_PARAMETERS_FILE, &MIN_HUE, &MAX_HUE, &MIN_SAT, &MAX_SAT, &MIN_VAL, &MAX_VAL, &PIXLE_THRESHOLD);
-		//log->writeLogLine("Parameters read.");
-	} catch(...) {
-		std::cout << "Error reading config file.  Using defauts (hopefully)" << std::endl;
-	}
 	try {
 		build_lookup_reduce_colourspace(lookup_reduce_colourspace);
 		build_lookup_threshold(lookup_threshold);
@@ -54,6 +64,23 @@ int CAMERA::setup() {
 	ready = true;
 	//log->writeLogLine("Camera set up sucessfully.");
 	return 0;
+}
+
+int CAMERA::setup(std::string fileName) {
+    ConfigParser::ParaMap parameters;
+    
+    parameters.insert("MIN_HUE", &MIN_HUE);
+    parameters.insert("MAX_HUE", &MAX_HUE);
+    parameters.insert("MIN_SAT", &MIN_SAT);
+    parameters.insert("MAX_SAT", &MAX_SAT);
+    parameters.insert("MIN_VAL", &MIN_VAL);
+    parameters.insert("MAX_VAL", &MAX_VAL);
+    
+    parameters.insert("PIXLE_THRESHOLD", &PIXLE_THRESHOLD);
+    parameters.insert("PIXLE_SKIP", &PIXLE_SKIP);
+    
+    ConfigParser::loadParmeters("CAMERA", &parameters, fileName);
+	return setup();
 }
 
 int CAMERA::start() {
@@ -106,7 +133,9 @@ void CAMERA::processImages() {
 		}
 		
 		drawCrosshair(image);
-		imshow("Image", image);
+        if(showImage) {
+            imshow("Image", image);
+        }
 		if(takePhotoThisCycle) {
 			//imwrite(std::string("../") + imageFileName, image);
 			imwrite(imageFileName, image);
@@ -114,7 +143,9 @@ void CAMERA::processImages() {
 		}
 		frame_counter++;
 		waitKey(1);
-		boost::this_thread::sleep(boost::posix_time::milliseconds(5));
+        if(THREAD_SLEEP_TIME > 0) {
+            boost::this_thread::sleep(boost::posix_time::milliseconds(THREAD_SLEEP_TIME));
+        }
 	}
 }
 
@@ -125,50 +156,17 @@ bool CAMERA::objectDetected() {
 int CAMERA::getObjectLocation(ObjectLocation *data) {
 	data->x = redObject.x;
 	data->y = -redObject.y;
-	return 0;	//If you hate me, I know why.
+    
+    if(!redObjectDetected) {
+        return -1;
+    } else {
+        return 0;	//If you hate me, I know why.
+    }
 }
 
 double CAMERA::getFramerate() {
 	time(&end_time);
 	return frame_counter/difftime(end_time, start_time);
-}
-
-
-void CAMERA::readParameters(std::string fileName, int *MIN_HUE, int *MAX_HUE, int *MIN_SAT, int *MAX_SAT, int *MIN_VAL, int *MAX_VAL, int *PIXLE_THRESHOLD) {
-	std::ifstream paramFile(fileName.c_str());
-	std::istringstream iss;
-	std::string line;
-	char comment = '#';
-	
-	int thresholds[6];
-	for(int i=0; i<6; i+=2) {
-		paramFile >> std::ws;
-		getline(paramFile, line);
-		while(line.at(0) == comment) {
-			paramFile >> std::ws;
-			getline(paramFile, line);
-		}
-		iss.clear();
-		iss.str(line);
-		iss >> thresholds[i] >> thresholds[i+1];
-	}
-	
-	*MIN_HUE = thresholds[0];
-	*MAX_HUE = thresholds[1];
-	*MIN_SAT = thresholds[2];
-	*MAX_SAT = thresholds[3];
-	*MIN_VAL = thresholds[4];
-	*MAX_VAL = thresholds[5];
-	
-	paramFile >> std::ws;
-	getline(paramFile, line);
-	while(line.at(0) == comment) {
-		paramFile >> std::ws;
-		getline(paramFile, line);
-	}
-	iss.clear();
-	iss.str(line);
-	iss >> *PIXLE_THRESHOLD;
 }
 
 void CAMERA::RGB2HSV(int r, int g, int b, int *h, int *s, int *v) {
@@ -247,9 +245,9 @@ bool CAMERA::getRedCentre(Mat& Isrc, const uchar table_reduce_colorspace[],  con
 
 	int i, j;
 	uchar* p;
-	for(i=0; i<nRows; i += REDUCTION_FACTOR) {
+	for(i=0; i<nRows; i += PIXLE_SKIP) {
 		p = Isrc.ptr<uchar>(i);
-		for (j=0; j<nCols; j += nChannels * REDUCTION_FACTOR) {
+		for (j=0; j<nCols; j += nChannels * PIXLE_SKIP) {
 			if(table_threshold[table_reduce_colorspace[p[nChannels*j+2]]][table_reduce_colorspace[p[nChannels*j+1]]][table_reduce_colorspace[p[nChannels*j]]]) {
 				centre_row += i;
 				centre_col += j;
@@ -301,4 +299,8 @@ void CAMERA::drawCrosshair(Mat img) {
 void CAMERA::takePhoto(std::string fileName) {
 	if(!fileName.empty()) imageFileName = fileName;
 	takePhotoThisCycle = true;
+}
+
+void CAMERA::setShowImage(bool set) {
+    showImage = set;
 }

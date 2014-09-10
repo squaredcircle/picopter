@@ -1,3 +1,10 @@
+//v1.6	10-9-2014	BAX
+//Documented code
+
+//v1.5	26-8-2014	BAX
+//gimble changed to gimbal
+
+
 #include "flightBoard.h"
 
 FlightBoard::FlightBoard() {
@@ -51,6 +58,7 @@ int FlightBoard::close() {
 	gpio::stopServoBlaster();	//stop servoBlaster
 	ready = false;
 	log->writeLogLine("Flight board has been closed.");
+	log->closeLog();
 	return 0;
 }
 

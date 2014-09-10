@@ -1,3 +1,13 @@
+//v1.6  10-9-2014   BAX
+//Added error checking capabilities and sleep capablilties
+
+//v1.5	10-9-2014	BAX
+//Documented code
+
+//v1.4	26-8-2014	BAX
+//BIG CHANGE: no more nmea.  Straight into degrees.  Less confusion for all.
+
+
 #include "gps_qstarz.h"
 
 GPS::GPS() {
@@ -12,6 +22,12 @@ GPS::GPS() {
 	this->currentData.horizDilution	= -1;
 	
 	this->fileDes = -1;
+    
+    this->THREAD_SLEEP_TIME = 0;   //miliseconds
+    this->TIMEOUT = 3;  //seconds
+    
+    this->noDataError = false;
+    time(&lastData);
 }
 
 GPS::GPS(const GPS& orig) {}
@@ -34,6 +50,14 @@ int GPS::setup() {
 	ready = true;
 	log->writeLogLine("GPS set up sucessfully.");
 	return 0;
+}
+
+int GPS::setup(std::string fileName) {
+    ConfigParser::ParaMap parameters;
+    parameters.insert("THREAD_SLEEP_TIME", &THREAD_SLEEP_TIME);
+    parameters.insert("TIMEOUT", &TIMEOUT);
+    ConfigParser::loadParmeters("GPS", &parameters, fileName);
+	return setup();
 }
 
 int GPS::start() {
@@ -65,6 +89,7 @@ int GPS::close() {
 	gpio::stopWiringPi();
 	ready = false;
 	log->writeLogLine("Connection to GPS closed");
+	log->closeLog();
 	return 0;
 }
 
@@ -85,9 +110,17 @@ void GPS::uploadData() {
 		if(!problems) {
 			log->writeLogLine("Haz data:");
 			log->writeLogLine(gpsString);
+            time(&lastData);
+            if(noDataError) {
+                noDataError = false;
+            }
 		} else {
 			log->writeLogLine("Read string, no dataz :(");
+            noDataError = true;
 		}
+        if(THREAD_SLEEP_TIME > 0) {
+            boost::this_thread::sleep(boost::posix_time::milliseconds(THREAD_SLEEP_TIME));
+        }
 	}
 }
 
@@ -129,6 +162,9 @@ int GPS::checkGPSString(std::string *gpsStrPtr) {
 	return 0;
 }
 
+/*
+ * I'm not proud of this bulky string parsing, but I don't have time to fix it
+ */
 int GPS::processGPSString(GPS_Data *data, std::string *gpsStrPtr) {
 	double nmea_latitude, nmea_longitude;
 	//std::cout << *gpsStrPtr << std::endl;
@@ -248,4 +284,41 @@ double GPS::nmea2degrees(double nmea) {
 	int degrees = (int)(nmea)/100;
 	double minutes = nmea - degrees*100;
 	return (degrees + minutes/60);
+}
+
+
+
+bool inError() {
+    time(&now);
+    if(!ready || !running || (difftime(now, lastData) > TIMEOUT) || noDataError) {
+        log->writeLogLine("Checked for errors: GPS error found");
+    } else {
+        log->writeLogLine("Checked for errors: No errors found");
+    }
+    return(!ready || !running || (difftime(now, lastData) > TIMEOUT) || noDataError);
+}
+
+bool inError(std::string *errorStr) {
+    time(&now);
+    if(!ready) {
+        *errorStr = "Error: GPS not set up";
+        log->writeLogLine(*errorStr);
+        return true;
+    } else if(!running) {
+        *errorStr = "Error: GPS not started";
+        log->writeLogLine(*errorStr);
+        return true;
+    } else if(difftime(now, lastData) > TIMEOUT) {
+        *errorStr = "Error: GPS timeout";
+        log->writeLogLine(*errorStr);
+        return true;
+    } else if(noDataError) {
+        *errorStr = "Error: Last message did not contain data";
+        log->writeLogLine(*errorStr);
+        return true;
+    } else {
+        *errorStr = "No errors detected";
+        log->writeLogLine(*errorStr);
+        return true;
+    }
 }

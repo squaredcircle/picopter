@@ -1,5 +1,6 @@
 /**
- * @author	Michael Baxter <20503664@student.uwa.edu.au>
+ * @file    gpio.h
+ * @author	Michael Baxter	<20503664@student.uwa.edu.au>
  * @date	9-9-2014
  * @version	1.4
  * 
@@ -53,9 +54,13 @@
 
 
 
-
+/**
+ * @namespace gpio
+ **/
 namespace gpio {
 	/**
+     * @fn int gpio::startWiringPi(void)
+     *
 	 * Starts wiringPi.
 	 * 
 	 * Run this function to be able to read whether the copter is in autonamous mode or not.
@@ -65,6 +70,8 @@ namespace gpio {
 	int startWiringPi(void);
 	
 	/**
+     * @fn int gpio::stopWiringPi(void);
+     *
 	 * Stops wiringPi.
 	 * 
 	 * @return	GPIO_OK (=0) if stopped okay, -1 otherwise
@@ -72,16 +79,20 @@ namespace gpio {
 	int stopWiringPi(void);
 	
 	/**
+     * @fn bool isAutoMode(void)
+     *
 	 * Checks whether copter is in auto mode or not.
 	 * 
 	 * This function requires the wiringPi daemon to be running berfore use.  Be sure to run startWiringPi() before use.
 	 * 
-	 * @return	true if the copter is in autonomous mode, false otherwise;
+	 * @return	strue if the copter is in autonomous mode, false otherwise;
 	 **/
 	bool isAutoMode(void);
 		
 	
 	/**
+     *@fn int startServoBlaster
+     *
 	 * Starts ServoBlaster.
 	 * 
 	 * This function starts the ServoBlaster daemon which is responsible for outputting pwm on the gpio pins for interaction with the flight board.
@@ -93,6 +104,8 @@ namespace gpio {
 	int startServoBlaster(void);
 	
 	/**
+     * @fn stopServoBlaster
+     *
 	 * Stops ServoBlaster.
 	 * 
 	 * Do not call this function while in flight.  It will cause the copter to fall out of the sky.
@@ -104,6 +117,8 @@ namespace gpio {
 	int stopServoBlaster(void);
 	
 	/**
+     * @fn int setServoBlaster(int aileron, int elevator, int rudder, int gimbal)
+     *
 	 * Sets values of the four flight board channels (A, E, R, G).
 	 * 
 	 * Only four channels are used at the moment; Aileron, Elevator, Rudder and Gimbal.  This function is used by FlightBoard.setFB_Data(&FB_Data) and does not need to be called directly.
@@ -114,7 +129,7 @@ namespace gpio {
 	 * @param	elevator	Elevator speed
 	 * @param	rudder		Rudder speed
 	 * @param	gimbal		Gimbal angle
-	 * @return				GPIO_OK (=0) if stopped okay, -1 otherwise
+	 * @return			GPIO_OK (=0) if stopped okay, -1 otherwise
 	 **/
 	int setServoBlaster(int, int, int, int);
 	
@@ -124,7 +139,7 @@ namespace gpio {
 	 * The pwm is needed by servoblaster.  Tune using the above defines.
 	 * 
 	 * @param	speed	Desired % of full speed
-	 * @return 			pwm for ServoBlaster	
+	 * @return 		pwm for ServoBlaster	
 	 **/
 	int aileronSpeed2PWM(int);
 	
@@ -134,7 +149,7 @@ namespace gpio {
 	 * The pwm is needed by servoblaster.  Tune using the above defines.
 	 * 
 	 * @param	speed	Desired % of full speed
-	 * @return 			pwm for ServoBlaster	
+	 * @return 		pwm for ServoBlaster	
 	 **/
 	int elevatorSpeed2PWM(int);
 	
@@ -144,7 +159,7 @@ namespace gpio {
 	 * The pwm is needed by servoblaster.  Tune using the above defines.
 	 * 
 	 * @param	speed	Desired % of full speed
-	 * @return 			pwm for ServoBlaster	
+	 * @return 		pwm for ServoBlaster	
 	 **/
 	int rudderSpeed2PWM(int);
 	
@@ -154,7 +169,7 @@ namespace gpio {
 	 * The pwm is needed by servoblaster.  Tune using the above defines.
 	 * 
 	 * @param	speed	Desired gimbal angle
-	 * @return 			pwm for ServoBlaster	
+	 * @return 		pwm for ServoBlaster	
 	 **/
 	int gimbalAngle2PWM(int);
 	
