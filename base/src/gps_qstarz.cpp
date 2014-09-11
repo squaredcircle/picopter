@@ -53,10 +53,10 @@ int GPS::setup() {
 }
 
 int GPS::setup(std::string fileName) {
-    ConfigParser::ParaMap parameters;
+    ConfigParser::ParamMap parameters;
     parameters.insert("THREAD_SLEEP_TIME", &THREAD_SLEEP_TIME);
     parameters.insert("TIMEOUT", &TIMEOUT);
-    ConfigParser::loadParmeters("GPS", &parameters, fileName);
+    ConfigParser::loadParameters("GPS", &parameters, fileName);
 	return setup();
 }
 
@@ -288,7 +288,7 @@ double GPS::nmea2degrees(double nmea) {
 
 
 
-bool inError() {
+bool GPS::inError() {
     time(&now);
     if(!ready || !running || (difftime(now, lastData) > TIMEOUT) || noDataError) {
         log->writeLogLine("Checked for errors: GPS error found");
@@ -298,7 +298,7 @@ bool inError() {
     return(!ready || !running || (difftime(now, lastData) > TIMEOUT) || noDataError);
 }
 
-bool inError(std::string *errorStr) {
+bool GPS::inError(std::string *errorStr) {
     time(&now);
     if(!ready) {
         *errorStr = "Error: GPS not set up";

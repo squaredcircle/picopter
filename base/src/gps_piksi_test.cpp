@@ -2,6 +2,7 @@
 #include <iomanip>
 
 #include "gps_piksi.h"
+#include <wiringPi.h>
 
 #define DELIM ", "
 

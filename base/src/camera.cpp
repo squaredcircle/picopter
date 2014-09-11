@@ -67,7 +67,7 @@ int CAMERA::setup() {
 }
 
 int CAMERA::setup(std::string fileName) {
-    ConfigParser::ParaMap parameters;
+    ConfigParser::ParamMap parameters;
     
     parameters.insert("MIN_HUE", &MIN_HUE);
     parameters.insert("MAX_HUE", &MAX_HUE);
@@ -79,7 +79,7 @@ int CAMERA::setup(std::string fileName) {
     parameters.insert("PIXLE_THRESHOLD", &PIXLE_THRESHOLD);
     parameters.insert("PIXLE_SKIP", &PIXLE_SKIP);
     
-    ConfigParser::loadParmeters("CAMERA", &parameters, fileName);
+    ConfigParser::loadParameters("CAMERA", &parameters, fileName);
 	return setup();
 }
 

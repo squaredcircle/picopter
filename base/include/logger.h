@@ -9,7 +9,7 @@
 #include <algorithm>
 #include <stdio.h>
 
-#define LOG_DIRECTORY "/home/pi/Desktop/logs"
+#define LOG_DIRECTORY "/home/pi/picopter/logs"
 
 class Logger {
 public:
