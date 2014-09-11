@@ -48,8 +48,9 @@ int main(int argc, char* argv[]) {
 
 	//Start the camera up
 	CAMERA cam = CAMERA();
-	if(cam.setup() != CAM_OK) {
+	if(cam.setup("./config/camera_config.txt") != CAMERA_OK) {
 		cout << "Error setting up camera" << endl;
+        fb.stop();
 		return -1;
 	}
 	cam.start();

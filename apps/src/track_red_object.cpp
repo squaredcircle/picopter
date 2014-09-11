@@ -52,8 +52,9 @@ int main(int argc, char* argv[]) {
 	FB_Data stop = {0, 0, 0, 0};
 	
 	CAMERA cam = CAMERA();
-	if(cam.setup() != CAM_OK) {
+	if(cam.setup("./config/camera_config.txt") != CAMERA_OK) {
 		cout << "Error setting up camera." << endl;
+        fb.stop();
 		return -1;
 	}
 	cam.start();

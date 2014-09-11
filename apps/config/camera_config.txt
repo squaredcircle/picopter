@@ -1,0 +1,6 @@
+# This text file is used to store the threshold data for image processing
+
+%T	CAMERA
+%F	MIN_HUE	MAX_HUE	MIN_SAT	MAX_SAT	MIN_VAL	MAX_VAL	PIXLE_THRESHOLD
+%R	320	40	95	255	95	255	5
+%E

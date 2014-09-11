@@ -21,7 +21,7 @@ using namespace std;
 #define GIMBAL_STEP 5		//degrees
 #define GIMBAL_TOL 50       //Pixles
 
-void setCourse_faceObject(FB_Data*, ObjectLocation*);
+void setCourse_faceObject(FB_Data*);
 void setCourse_moveGimbal(FB_Data*, ObjectLocation*);
 void setCourse_stopTurning(FB_Data*, ObjectLocation*);
 
@@ -46,14 +46,13 @@ int main(int argc, char* argv[]) {
 	FB_Data stop = {0, 0, 0, 0};
 	
 	CAMERA cam = CAMERA();
-	if(cam.setup() != CAM_OK) {
+	if(cam.setup("./config/camera_config.txt") != CAMERA_OK) {
 		cout << "Error setting up camera." << endl;
         fb.stop();
 		return -1;
 	}
 	cam.start();
 	ObjectLocation red_object;
-	ObjectLocation red_object_old;
 
 	int state = 0;			//State machine implemetation
                             //State 0;	Manual mode

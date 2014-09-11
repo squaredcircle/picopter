@@ -8,6 +8,8 @@
  */
 
 
+#ifndef __CONFIG_PARSER_H_INCLUDED__
+#define __CONFIG_PARSER_H_INCLUDED__
 
 #include <string>
 #include <iostream>
@@ -53,3 +55,5 @@ namespace ConfigParser {
     std::string printConfigParserError(int);
     std::string printParameterParserError(int);
 }
+
+#endif// __CONFIG_PARSER_H_INCLUDED__
