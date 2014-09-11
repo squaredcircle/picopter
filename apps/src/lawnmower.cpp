@@ -21,18 +21,26 @@ using namespace std;
 #define BMIN 0
 #define BMAX 180 //180 works
 #define GMIN 0
-#define GMAX 150 //200 works
-#define RMIN 150//120 works
+#define GMAX 180 //200 works
+#define RMIN 120//120 works
 #define RMAX 256
 #define REDTHRESH 50	//Number of red pixels need to see in an image
 #define FRAME_WAIT 11 	//Number of frames to wait
 
-#define SPACING 10			//Distance between points in m
+#define SPACING 4			//Distance between points in m
 #define LOCATION_WAIT 2000	//Time in ms Copter waits at each point
 #define LOOP_WAIT 100 		//Time in ms Copter wait in each loop
 #define GPS_DATA_FILE "config/waypoints_list.txt"
+#define WAYPOINT_RADIUS 1.000		//In m - should be no less than 3 or 4
+#define Kp 8						//proportional controller constant
 
-void flyTo(FlightBoard*, GPS*, GPS_Data*, double, double, double, Logger*, Logger* , RaspiCamCvCapture*);
+#define OVAL_IMAGE_PATH "config/James_Oval.png"
+#define TOPLAT -31.979422	//Properties of image file of James Oval & represent min & max corners - are in degrees
+#define TOPLON 115.817162
+#define BOTTOMLAT -31.980634
+#define BOTTOMLON 115.818709
+
+void flyTo(FlightBoard*, GPS*, GPS_Data*, double, double, double, Logger*, Logger* , RaspiCamCvCapture*, int);
 double determineBearing(FlightBoard*, GPS*, GPS_Data*);
 void captureImage(int, GPS_Data*);
 bool checkRed(Mat, Logger*);
@@ -44,8 +52,6 @@ double redComDist(Mat);
 #define RADIUS_OF_EARTH 6364963	//m
 #define sin2(x) (sin(x)*sin(x))
 #define SPEED_LIMIT 35				//Want to go slowly as wil lbe analysing images
-#define WAYPOINT_RADIUS 2.000		//In m - should be no less than 3 or 4
-#define Kp 8						//proportional controller constant
 #define DIRECTION_TEST_SPEED 40
 #define DIRECTION_TEST_DURATION 6000
 
@@ -86,8 +92,8 @@ int main() {
 	Logger rawgpslog = Logger("Lawn_Raw_GPS.log");
 	char str[BUFSIZ];
 
+	//Determines waypoints
 	Pos corners[4];
-	//Populate 'corners' somehow - maybe with a waypoints list?
 	readPosition(&corners[0], 0);	//First line
 	cout << "Corner #1 read as: " << (corners[0].lat) << " " << (corners[0].lon) << endl;
 	sprintf(str, "Corner #1 read as: %f %f", (corners[0].lat), (corners[0].lon));
@@ -159,8 +165,11 @@ int main() {
 	cout << "Location and Orienation determined" << endl;
 	
 	for (int i = 0; i < (int)gpsPoints.size(); i++) {
-		flyTo(&fb, &gps, &data, gpsPoints[i].lat, gpsPoints[i].lon, yaw, &lawnlog, &rawgpslog, capture);
+		flyTo(&fb, &gps, &data, gpsPoints[i].lat, gpsPoints[i].lon, yaw, &lawnlog, &rawgpslog, capture, i);
 		//captureImage(i, &data);
+		if (i == 0) {	//Are we at the first point?
+			rawgpslog.clearLog();	//Flush data in there
+		}
 		if(exitProgram) {
 			break;
 		}
@@ -172,7 +181,7 @@ int main() {
 	return 0;
 }
 
-void flyTo(FlightBoard *fbPtr, GPS *gpsPtr, GPS_Data *dataPtr, double targetLat, double targetLon, double yaw, Logger *logPtr, Logger *rawLogPtr, RaspiCamCvCapture *camPtr) {
+void flyTo(FlightBoard *fbPtr, GPS *gpsPtr, GPS_Data *dataPtr, double targetLat, double targetLon, double yaw, Logger *logPtr, Logger *rawLogPtr, RaspiCamCvCapture *camPtr, int index) {
 	FB_Data stop = {0, 0, 0, 0};
 	FB_Data course = {0, 0, 0, 0};
 	Pos start;
@@ -185,7 +194,7 @@ void flyTo(FlightBoard *fbPtr, GPS *gpsPtr, GPS_Data *dataPtr, double targetLat,
 	end.lon = targetLon;
 	cout << setprecision(15) << "Flying to " << targetLat << " " << targetLon << ", facing " << yaw << " degrees" << endl;
 	char str[BUFSIZ];
-	sprintf(str, "%f %f", dataPtr->longitude, dataPtr->latitude);
+	sprintf(str, "%f %f %d", dataPtr->longitude, dataPtr->latitude, index);
 	rawLogPtr->writeLogLine(str, false);
 	double distance = calculate_distance(start, end);
 	double bearing = calculate_bearing(start, end);
@@ -238,7 +247,7 @@ void flyTo(FlightBoard *fbPtr, GPS *gpsPtr, GPS_Data *dataPtr, double targetLat,
 		cout << "Needs to move from: " << dataPtr->latitude << ", " << dataPtr->longitude << "\n\tto : " << targetLat << ", " << targetLon << endl;
 		sprintf(str, "Currently at %f %f", dataPtr->latitude, dataPtr->longitude);
 		logPtr->writeLogLine(str);
-		sprintf(str, "%f %f", dataPtr->longitude, dataPtr->latitude);
+		sprintf(str, "%f %f %d", dataPtr->longitude, dataPtr->latitude, index);
 		rawLogPtr->writeLogLine(str, false);
 		sprintf(str, "Going to %f %f", end.lat, end.lon);
 		logPtr->writeLogLine(str);
@@ -372,14 +381,10 @@ void populateVector(Pos start, Pos end, vector<Pos> *list) {
 	double lat2 = (end.lat)*(PI/180);
 	double lon2 = (end.lon)*(PI/180);
 	double endDistance = calculate_distance(start, end);
-	//cout << endDistance << endl;
-	//cout << start.lat << " " << start.lon << endl;
-	//cout << end.lat << " " << end.lon << endl;
 	int numberOfIntermediates = (endDistance/SPACING);	//Assumes SPACING (distance between adjacaent points) is given
 	list->push_back(start);
 	for (int i = 1; i < numberOfIntermediates; i++){
 		double fraction = (double)i/(double)numberOfIntermediates;
-		//cout << fraction << endl;
 		double a = sin((1-fraction)*endDistance)/sin(endDistance);
 		double b = sin(fraction*endDistance)/sin(endDistance);
 		double x = a*cos(lat1)*cos(lon1) + b*cos(lat2)*cos(lon2);
@@ -388,6 +393,10 @@ void populateVector(Pos start, Pos end, vector<Pos> *list) {
 		Pos position;
 		position.lat = (atan2(z, sqrt(x*x + y*y)))*(180/PI);
 		position.lon = (atan2(y, x))*(180/PI);
+		if (abs(position.lat + start.lat) < 0.01) {	//Checks formula not giving wrong values compared to the start (should have roughly constant latitude)
+			position.lat = -position.lat;
+			position.lon = position.lon + 180;
+		}
 		list->push_back(position);
 	}
 	list->push_back(end);
