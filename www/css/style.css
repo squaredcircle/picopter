@@ -6,7 +6,7 @@ html, body {
 
 #mainwindow {
 	height:				100%;
-	width:				50%;
+	width:				60%;
 	float:				left;
 }
 
@@ -17,15 +17,20 @@ html, body {
 
 #sidepanel {
 	height: 			100%;
-	width:				50%;
+	width:				40%;
 	float:				right;
+}
+
+#map {
+	width:				100%;
+	height:				100%;
 }
 
 #panel {
 	position: 			absolute;
 	top: 				5px;
-	left: 				75%;
-	margin-left: 		-180px;
+	left: 				26%;
+/*	margin-left: 		-360px; */
 	z-index: 			5;
 	background-color: 	#fff;
 	padding: 			5px;
@@ -34,7 +39,7 @@ html, body {
 
 #sidepanel_top {
 	height:				60%;
-	background-color:	#666;
+	background-color:	#fff;
 	border-left:		10px #333 solid;
 	margin: 			0px auto;
 }
