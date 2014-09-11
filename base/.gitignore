@@ -1,6 +1,6 @@
 #Ignore the following directories:
 objs/
 bin/
-#config/
+config/
 photos/
 docs/

@@ -21,9 +21,9 @@ using namespace std;
 #define GIMBAL_STEP 5		//degrees
 #define GIMBAL_TOL 50       //Pixles
 
-void setCourse_faceObject(FB_Data*);
+void setCourse_faceObject(FB_Data*, ObjectLocation*);
 void setCourse_moveGimbal(FB_Data*, ObjectLocation*);
-void setCourse_stopTurning(FB_Data*, ObjectLocation*);
+void setCourse_stopTurning(FB_Data*);
 
 void printFB_Data(FB_Data*);
 
