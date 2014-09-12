@@ -89,7 +89,10 @@ int ConfigParser::loadParameters(std::string className, ParamMap *parameters, st
         if(line.empty()) continue;
         if(line.at(0) == ' ' || line.at(0) == '\t') continue;
         if(line.at(0) == '#') continue;
-        if(line.at(0) != '%') return -2;
+        if(line.at(0) != '%') {
+			configFile.close();
+			return -2;
+		}
         char ch = line.at(1);
         switch(ch) {
             case 'T':
@@ -152,6 +155,7 @@ int ConfigParser::loadParameters(std::string className, ParamMap *parameters, st
                                 break;
                             default:
                                 std::cout << "Error loading parameters: field "<< fields.front() << " is not a variable" << std::endl;
+                                configFile.close();
                                 return -4;
                                 break;
                         }
@@ -162,19 +166,23 @@ int ConfigParser::loadParameters(std::string className, ParamMap *parameters, st
                 
             case 'E':
                 if(!fields.empty()) {
+					configFile.close();
                     return -5;
                 } else {
+					configFile.close();
                     return 0;
                 }
                 break;
                 
             default:
+				configFile.close();
                 return -3;
                 break;
             
                 
         }
     }
+    configFile.close();
     return 0;
 }
 

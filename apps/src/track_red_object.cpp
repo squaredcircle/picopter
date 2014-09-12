@@ -40,6 +40,15 @@ void terminate(int);
 int main(int argc, char* argv[]) {
 	cout << "Starting program" << endl;
 	
+	struct sigaction signalHandler;	
+	signalHandler.sa_handler = terminate;
+	sigemptyset(&signalHandler.sa_mask);
+	signalHandler.sa_flags = 0;
+	
+	sigaction(SIGTERM, &signalHandler, NULL);
+	sigaction(SIGINT,  &signalHandler, NULL);
+	
+	
 	gpio::startWiringPi();
 	
 	FlightBoard fb = FlightBoard();

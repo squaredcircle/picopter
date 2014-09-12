@@ -26,7 +26,7 @@ CAMERA::CAMERA() {
 	this->PIXLE_THRESHOLD	= 60;
     this->PIXLE_SKIP        = 4;
     
-    this->THREAD_SLEEP_TIME = 5;
+    this->THREAD_SLEEP_TIME = 0;
 	
 	this->redObjectDetected = false;
 	this->redObject.x = -1;
@@ -247,8 +247,8 @@ bool CAMERA::getRedCentre(Mat& Isrc, const uchar table_reduce_colorspace[],  con
 	uchar* p;
 	for(i=0; i<nRows; i += PIXLE_SKIP) {
 		p = Isrc.ptr<uchar>(i);
-		for (j=0; j<nCols; j += nChannels * PIXLE_SKIP) {
-			if(table_threshold[table_reduce_colorspace[p[nChannels*j+2]]][table_reduce_colorspace[p[nChannels*j+1]]][table_reduce_colorspace[p[nChannels*j]]]) {
+		for (j=0; j<nCols; j += PIXLE_SKIP) {
+			if(table_threshold[table_reduce_colorspace[p[j*nChannels+2]]][table_reduce_colorspace[p[j*nChannels+1]]][table_reduce_colorspace[p[j*nChannels]]]) {
 				centre_row += i;
 				centre_col += j;
 				pixle_counter++;

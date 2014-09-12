@@ -4,6 +4,8 @@
 #include <ctime>
 #include <csignal>
 
+#include <boost/thread.hpp>
+
 using namespace std;
 
 
@@ -33,6 +35,15 @@ void terminate(int);
 
 int main(int argc, char* argv[]) {
 	cout << "Starting program" << endl;
+	
+	//Signal to exit program.
+	struct sigaction signalHandler;	
+	signalHandler.sa_handler = terminate;
+	sigemptyset(&signalHandler.sa_mask);
+	signalHandler.sa_flags = 0;
+	
+	sigaction(SIGTERM, &signalHandler, NULL);
+	sigaction(SIGINT,  &signalHandler, NULL);
 	
 	gpio::startWiringPi();
 	
@@ -76,13 +87,13 @@ int main(int argc, char* argv[]) {
 		}
 		
 		cout << "State:\t" << state << endl;
+		cout << "Freamate:\t" << cam.getFramerate() << endl;
 
 		switch(state) {
 			case 0:											//Case 0:	Not in auto mode, standby
 				fb.setFB_Data(&stop);							//Stop moving
 				printFB_Data(&stop);
 				cout << "In manual mode, standby" << endl;		//PRINT SOMETHING
-				delay(50);										//VERY SMALL DELAY
 				break;
 			
 			case 1:											//Case 1:	Object detected, face and point gimbal at it.
@@ -91,7 +102,6 @@ int main(int argc, char* argv[]) {
                 setCourse_moveGimbal(&course, &red_object);
 				fb.setFB_Data(&course);
 				printFB_Data(&course);
-				delay(200);										//SMALL DELAY
 				break;
 			
 
@@ -102,9 +112,11 @@ int main(int argc, char* argv[]) {
 				printFB_Data(&course);							//STOP
 				cout << "No object." << endl;					//PRINT: NO OBJECT FOUND.
 				cout << "Switch in and out of auto mode to restart search." << endl;
-				delay(50);										//VERY SMALL DELAY
 				break;
 		}
+		
+	boost::this_thread::sleep(boost::posix_time::milliseconds(350));
+	
 	}
     fb.stop();
 	cam.stop();
