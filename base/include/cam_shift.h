@@ -58,8 +58,8 @@
  
  
 
-#ifndef __CAMERA_H_INCLUDED__
-#define __CAMERA_H_INCLUDED__
+#ifndef __CAM_SHIFT_H_INCLUDED__
+#define __CAM_SHIFT_H_INCLUDED__
 
 #include <iostream>
 #include "opencv2/highgui/highgui.hpp"
@@ -71,6 +71,8 @@
 #include <stdio.h>
 #include <fstream>
 #include <sstream>
+#include <cmath>
+#include <algorithm>
 
 //#include "logger.h"
 #include "config_parser.h"
@@ -82,7 +84,7 @@ using namespace cv;
 #define LOOKUP_SIZE 8
 #define CHAR_SIZE 256
 
-#define CAMERA_OK 0
+#define CAMSHIFT_OK 0
 
 /**@struct ObjectLocation
  * 
@@ -95,23 +97,30 @@ typedef struct {
 	int y;
 } ObjectLocation;
 
+typedef struct {
+	int x;
+	int y;
+    int l;
+    int w;
+} CamWindow;
 
-class CAMERA {
+
+class CAM_SHIFT {
 public:
     /**
 	 * Constructor for the CAMERA object.
 	 **/
-	CAMERA(void);
+	CAM_SHIFT(void);
     
     /**
 	 * Copy constructor.
 	 **/
-	CAMERA(const CAMERA&);
+	CAM_SHIFT(const CAM_SHIFT&);
     
     /**
 	 * Destructor.
 	 **/
-	virtual ~CAMERA(void);
+	virtual ~CAM_SHIFT(void);
 	
     /**
 	 * Setup camera for use.
@@ -195,6 +204,8 @@ public:
 private:
     int MIN_HUE, MAX_HUE, MIN_SAT, MAX_SAT, MIN_VAL, MAX_VAL, PIXLE_THRESHOLD, PIXLE_SKIP, THREAD_SLEEP_TIME;
     
+    CamWindow window;
+    
 	bool ready;
 	bool running;
 	//Logger* log;
@@ -211,7 +222,7 @@ private:
 	void build_lookup_reduce_colourspace(uchar lookup_reduce_colourspace[]);
 	int unreduce(int x);
 	
-	bool getRedCentre(Mat& Isrc, const uchar lookup_reduce_colorspace[],  const uchar lookup_threshold[][LOOKUP_SIZE][LOOKUP_SIZE], ObjectLocation *redObject);
+	bool getRedCentre(Mat& Isrc, const uchar lookup_reduce_colorspace[],  const uchar lookup_threshold[][LOOKUP_SIZE][LOOKUP_SIZE], bool *redObjectDetected, ObjectLocation *redObject, CamWindow *window);
 	ObjectLocation redObject;
 	bool redObjectDetected;
 	
@@ -221,10 +232,11 @@ private:
 	int frame_counter;
 	
 	void drawObjectMarker(Mat img, Point centre);
+    void drawBox(Mat img, CamWindow window);
 	void drawCrosshair(Mat img);
 	
 	bool takePhotoThisCycle;
 	std::string imageFileName;
 };
 
-#endif// __CAMERA_H_INCLUDED__
+#endif// __CAM_SHIFT_H_INCLUDED__

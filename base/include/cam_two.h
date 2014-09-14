@@ -1,21 +1,21 @@
 /**
- * @file    camera.h
+ * @file    cam_two.h
  * @author	Michael Baxter	<20503664@student.uwa.edu.au>
- * @date	10-9-2014
- * @version	1.3
+ * @date	11-9-2014
+ * @version	1.0
  * 
- * Class used to start camera fee and detect red objects.
+ * Class used to start camera feed and detect a red object and a blue object.
  * 
- * Red object detection employs a "center of mass" type algorithm with reduced colourspace, HSV detection definitions and lookup tables.
+ * Object detection employs the center of mass algorithm with reduced colourspace, HSV detection definitions and lookup tables.
  * 
  * 
  * Example usage follows:
  * ----------------------
  * 
- * Construct CAMERA object and start daemons:
+ * Construct CAM_TWO object and start daemons:
  * 
- *   CAMERA cam = CAMERA();
- *   if(cam.setup() != CAMERA_OK) {
+ *   CAM_TWO cam = CAM_TWO();
+ *   if(cam.setup() != CAM_TWO_OK) {
  *     //Problem with the camera.  Probably should have thrown runtime exceptions now (GPU is funny like that).
  *   }
  *   cam.start();
@@ -23,6 +23,7 @@
  * Create a ObjectLocation struct to store an object's location relative to the center of the image in pikles:
  * 
  * 	ObjectLocation redBucketLid;
+ *  ObjectLocation blueBucketLid;
  *   if(cam.objectDetected()) {
  *     cam.getObjectLocation(&redBucketLid);
  *     cout << "Red lid at: x = " << redBucketLid.x << " y = " << redBucketLid.y << endl;
@@ -37,29 +38,39 @@
  *
  * Configurable parameters:
  * ------------------------
- * int MIN_HUE 320
- * int MAX_HUE 40
- * int MIN_SAT 95
- * int MAX_SAT 255
- * int MIN_VAL 95
- * int MAX_VAL 255
- * int PIXLE_THRESHOLD 10       Number of pixles needed to register as an object.
+ * int MIN_HUE1 320
+ * int MAX_HUE1 40
+ * int MIN_SAT1 95
+ * int MAX_SAT1 255
+ * int MIN_VAL1 95
+ * int MAX_VAL1 255
+ * int PIXLE_THRESHOLD1 10       Number of pixles needed to register as an object.
+ * int MIN_HUE2 180
+ * int MAX_HUE2 260
+ * int MIN_SAT2 95
+ * int MAX_SAT2 255
+ * int MIN_VAL2 95
+ * int MAX_VAL2 255
+ * int PIXLE_THRESHOLD1 10       Number of pixles needed to register as an object.
+ 
+ 
+ 
  * int PIXLE_SKIP 4             Only process every PIXLE_SKIP pixles.
  * int THREAD_SLEEP_TIME 5      Time thread sleeps at end of each loop in ms.
  *
  * Config file example:
  * ---------------------
  * %T	CAMERA
- * %F	MIN_HUE	MAX_HUE	MIN_SAT	MAX_SAT	MIN_VAL	MAX_VAL	PIXLE_THRESHOLD
- * %R	320		40		95		255		95		255		10
+ * %F	MIN_HUE1	MAX_HUE1        MIN_HUE2    MAX_HUE2
+ * %R   320         40              180         260
  * %E
  * 
  **/
  
  
 
-#ifndef __CAMERA_H_INCLUDED__
-#define __CAMERA_H_INCLUDED__
+#ifndef __CAM_TWO_H_INCLUDED__
+#define __CAM_TWO_H_INCLUDED__
 
 #include <iostream>
 #include "opencv2/highgui/highgui.hpp"
@@ -96,22 +107,22 @@ typedef struct {
 } ObjectLocation;
 
 
-class CAMERA {
+class CAM_TWO {
 public:
     /**
 	 * Constructor for the CAMERA object.
 	 **/
-	CAMERA(void);
+	CAM_TWO(void);
     
     /**
 	 * Copy constructor.
 	 **/
-	CAMERA(const CAMERA&);
+	CAM_TWO(const CAM_TWO&);
     
     /**
 	 * Destructor.
 	 **/
-	virtual ~CAMERA(void);
+	virtual ~CAM_TWO(void);
 	
     /**
 	 * Setup camera for use.
@@ -166,7 +177,8 @@ public:
 	 *
 	 * @return	true if object is found, false otherwise.
 	 **/
-	bool objectDetected();
+	bool objectOneDetected();
+    bool objectTwoDetected();
     
     /**
      * Saves the detected object's location in an ObjectLocation struct, accessed by address.
@@ -176,7 +188,8 @@ public:
      * @param   *data   Struct to save objects location to
      * @return  0 if object was in fact detected, -1 otherwise (data is old).
      **/
-	int getObjectLocation(ObjectLocation*);
+	int getObjectOneLocation(ObjectLocation*);
+    int getObjectTwoLocation(ObjectLocation*);
     
     /**
      * Returns average framerate
@@ -191,9 +204,11 @@ public:
      * @param   fileName    String containing the images file name.  Need to include path and extension
      **/
 	void takePhoto(std::string);
-
+    
 private:
-    int MIN_HUE, MAX_HUE, MIN_SAT, MAX_SAT, MIN_VAL, MAX_VAL, PIXLE_THRESHOLD, PIXLE_SKIP, THREAD_SLEEP_TIME;
+    int MIN_HUE1, MAX_HUE1, MIN_SAT1, MAX_SAT1, MIN_VAL1, MAX_VAL1, PIXLE_THRESHOLD1;
+    int MIN_HUE2, MAX_HUE2, MIN_SAT2, MAX_SAT2, MIN_VAL2, MAX_VAL2, PIXLE_THRESHOLD2;
+    int PIXLE_SKIP, THREAD_SLEEP_TIME;
     
 	bool ready;
 	bool running;
@@ -203,24 +218,29 @@ private:
 	boost::thread* process_thread;
 	
 
-	uchar lookup_threshold[LOOKUP_SIZE][LOOKUP_SIZE][LOOKUP_SIZE];
-	void build_lookup_threshold(uchar lookup_threshold[][LOOKUP_SIZE][LOOKUP_SIZE]);
+	uchar lookup_threshold_red[LOOKUP_SIZE][LOOKUP_SIZE][LOOKUP_SIZE];
+	void build_lookup_threshold_red(uchar lookup_threshold[][LOOKUP_SIZE][LOOKUP_SIZE]);
+	uchar lookup_threshold_blue[LOOKUP_SIZE][LOOKUP_SIZE][LOOKUP_SIZE];
+	void build_lookup_threshold_blue(uchar lookup_threshold[][LOOKUP_SIZE][LOOKUP_SIZE]);
 	void RGB2HSV(int r, int g, int b, int *h, int *s, int *v);
 
 	uchar lookup_reduce_colourspace[CHAR_SIZE];
 	void build_lookup_reduce_colourspace(uchar lookup_reduce_colourspace[]);
 	int unreduce(int x);
 	
-	bool getRedCentre(Mat& Isrc, const uchar lookup_reduce_colorspace[],  const uchar lookup_threshold[][LOOKUP_SIZE][LOOKUP_SIZE], ObjectLocation *redObject);
+	void getObjectCentres(Mat& Isrc, const uchar lookup_reduce_colorspace[],  const uchar lookup_threshold_red[][LOOKUP_SIZE][LOOKUP_SIZE],  const uchar lookup_threshold_blue[][LOOKUP_SIZE][LOOKUP_SIZE], bool *redObjectDetected, ObjectLocation *redObject, bool *blueObjectDetected, ObjectLocation *blueObject);
+    
 	ObjectLocation redObject;
 	bool redObjectDetected;
+    ObjectLocation blueObject;
+	bool blueObjectDetected;
 	
 	RaspiCamCvCapture* capture;
 	
 	time_t start_time, end_time;
 	int frame_counter;
 	
-	void drawObjectMarker(Mat img, Point centre);
+	void drawObjectMarker(Mat img, Point centre, Scalar colour);
 	void drawCrosshair(Mat img);
 	
 	bool takePhotoThisCycle;

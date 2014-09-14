@@ -138,11 +138,11 @@ void setCourse_faceObject(FB_Data *course, ObjectLocation *red_object) {
 
 void setCourse_moveGimbal(FB_Data *course, ObjectLocation *red_object) {
 	if(red_object->y > GIMBAL_TOL) {
-		course->gimbal -= GIMBAL_STEP;
+		course->gimbal += GIMBAL_STEP;
 	}
     
     if(red_object->y < -GIMBAL_TOL) {
-		course->gimbal += GIMBAL_STEP;
+		course->gimbal -= GIMBAL_STEP;
 	}
     
 	if(course->gimbal < GIMBAL_MIN) course->gimbal = GIMBAL_MIN;

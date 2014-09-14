@@ -9,9 +9,9 @@
 //Can take photos now
 
 
-#include "camera.h"
+#include "cam_shift.h"
 
-CAMERA::CAMERA() {
+CAM_SHIFT::CAM_SHIFT() {
 	this->ready = false;
 	this->running = false;
 	
@@ -24,7 +24,7 @@ CAMERA::CAMERA() {
 	this->MIN_VAL		= 95;
 	this->MAX_VAL		= 255;
 	this->PIXLE_THRESHOLD	= 60;
-    this->PIXLE_SKIP        = 4;
+    this->PIXLE_SKIP        = 2;
     
     this->THREAD_SLEEP_TIME = 0;
 	
@@ -32,6 +32,10 @@ CAMERA::CAMERA() {
 	this->redObject.x = -1;
 	this->redObject.y = -1;
 	
+	this->window.x = 0;
+	this->window.w = 10;
+	this->window.y = 0;
+	this->window.l = 10;
 	
 	this->frame_counter = -1;
 	
@@ -39,11 +43,11 @@ CAMERA::CAMERA() {
 	this->imageFileName = "image.jpg";
 }
 
-CAMERA::CAMERA(const CAMERA& orig) {}
-CAMERA::~CAMERA() {}
+CAM_SHIFT::CAM_SHIFT(const CAM_SHIFT& orig) {}
+CAM_SHIFT::~CAM_SHIFT() {}
 
 
-int CAMERA::setup() {
+int CAM_SHIFT::setup() {
 	if(ready) return -1;
 	if(running) return -1;
 	
@@ -64,7 +68,7 @@ int CAMERA::setup() {
 	return 0;
 }
 
-int CAMERA::setup(std::string fileName) {
+int CAM_SHIFT::setup(std::string fileName) {
     ConfigParser::ParamMap parameters;
     
     parameters.insert("MIN_HUE", &MIN_HUE);
@@ -78,15 +82,15 @@ int CAMERA::setup(std::string fileName) {
     parameters.insert("PIXLE_SKIP", &PIXLE_SKIP);
     parameters.insert("THREAD_SLEEP_TIME", &THREAD_SLEEP_TIME);
     
-    ConfigParser::loadParameters("CAMERA", &parameters, fileName);
+    ConfigParser::loadParameters("CAM_SHIFT", &parameters, fileName);
 	return setup();
 }
 
-int CAMERA::start() {
+int CAM_SHIFT::start() {
 	if(!ready) return -1;
 	if(running) return -1;
 	
-	process_thread = new boost::thread(&CAMERA::processImages, this);
+	process_thread = new boost::thread(&CAM_SHIFT::processImages, this);
 	process_thread->detach();
 	
 	running = true;
@@ -94,7 +98,7 @@ int CAMERA::start() {
 	return 0;
 }
 
-int CAMERA::stop() {
+int CAM_SHIFT::stop() {
 	if(!running) return -1;
 	
 	running = false;
@@ -102,7 +106,7 @@ int CAMERA::stop() {
 	return 0;
 }
 
-int CAMERA::close() {
+int CAM_SHIFT::close() {
     if(running) stop();
 	if(running) return -1;
 	if(!ready) return -1;
@@ -116,7 +120,7 @@ int CAMERA::close() {
 
 
 //this thread does all the work
-void CAMERA::processImages() {
+void CAM_SHIFT::processImages() {
 	time(&start_time);
 	frame_counter = 0;
 	while(running) {
@@ -124,9 +128,9 @@ void CAMERA::processImages() {
 		IplImage* image_raspi = raspiCamCvQueryFrame(capture);	//MAYBE DO THIS BETTER
 		Mat image(image_raspi);
 		
-		if(getRedCentre(image, lookup_reduce_colourspace, lookup_threshold, &redObject)) {
-			redObjectDetected = true;
+		if(getRedCentre(image, lookup_reduce_colourspace, lookup_threshold, &redObjectDetected, &redObject, &window)) {
 			drawObjectMarker(image, Point(redObject.x+image.cols/2, redObject.y+image.rows/2));
+            drawBox(image, window);
 		} else {
 			redObjectDetected = false;
 		}
@@ -148,11 +152,11 @@ void CAMERA::processImages() {
 	}
 }
 
-bool CAMERA::objectDetected() {
+bool CAM_SHIFT::objectDetected() {
 	return redObjectDetected;
 }
 
-int CAMERA::getObjectLocation(ObjectLocation *data) {
+int CAM_SHIFT::getObjectLocation(ObjectLocation *data) {
 	data->x = redObject.x;
 	data->y = -redObject.y;
     
@@ -163,12 +167,12 @@ int CAMERA::getObjectLocation(ObjectLocation *data) {
     }
 }
 
-double CAMERA::getFramerate() {
+double CAM_SHIFT::getFramerate() {
 	time(&end_time);
 	return frame_counter/difftime(end_time, start_time);
 }
 
-void CAMERA::RGB2HSV(int r, int g, int b, int *h, int *s, int *v) {
+void CAM_SHIFT::RGB2HSV(int r, int g, int b, int *h, int *s, int *v) {
 	int Vmax = std::max(r, std::max(g, b));
 	int Vmin = std::min(r, std::min(g, b));
 
@@ -196,7 +200,7 @@ void CAMERA::RGB2HSV(int r, int g, int b, int *h, int *s, int *v) {
 	if (*h < 0) *h += 360;
 }
 
-void CAMERA::build_lookup_threshold(uchar lookup_threshold[][LOOKUP_SIZE][LOOKUP_SIZE]) {
+void CAM_SHIFT::build_lookup_threshold(uchar lookup_threshold[][LOOKUP_SIZE][LOOKUP_SIZE]) {
 	int r, g, b, h, s, v;
 	for(r=0; r<LOOKUP_SIZE; r++) {
 		for(g=0; g<LOOKUP_SIZE; g++) {
@@ -222,53 +226,82 @@ void CAMERA::build_lookup_threshold(uchar lookup_threshold[][LOOKUP_SIZE][LOOKUP
 }
 
 
-void CAMERA::build_lookup_reduce_colourspace(uchar lookup_reduce_colourspace[]) {
+void CAM_SHIFT::build_lookup_reduce_colourspace(uchar lookup_reduce_colourspace[]) {
 	for (int i=0; i<CHAR_SIZE; i++) {
 		lookup_reduce_colourspace[i] = (uchar)(i*(LOOKUP_SIZE-1)/(CHAR_SIZE-1));
 	}
 }
 
-int CAMERA::unreduce(int x) {
+int CAM_SHIFT::unreduce(int x) {
 	return (x*(CHAR_SIZE-1) + (CHAR_SIZE-1)/2) / LOOKUP_SIZE;		//crap! i need to put this factor back.
 }
 
 
-bool CAMERA::getRedCentre(Mat& Isrc, const uchar table_reduce_colorspace[],  const uchar table_threshold[][LOOKUP_SIZE][LOOKUP_SIZE], ObjectLocation *redObject) {
-	int nRows = Isrc.rows;
-	int nCols = Isrc.cols;
+bool CAM_SHIFT::getRedCentre(Mat& Isrc, const uchar table_reduce_colorspace[],  const uchar table_threshold[][LOOKUP_SIZE][LOOKUP_SIZE], bool *redObjectDetected, ObjectLocation *redObject, CamWindow *window) {
+	int rowStart = window->y;
+	int rowEnd = rowStart + window->l;
+    int colStart = window->x;
+	int colEnd = colStart + window->w;
 	int nChannels = Isrc.channels();
+    
+    int xc = redObject->x + Isrc.cols/2;
+    int yc = redObject->y + Isrc.rows/2;
 	
-	int pixle_counter = 0;
-	int centre_row  = 0;
-	int centre_col = 0;
+	int M00 = 0;
+    int M01 = 0;
+    int M02 = 0;
+	int M10 = 0;
+    int M11 = 0;
+    int M20 = 0;
 
 	int i, j;
 	uchar* p;
-	for(i=0; i<nRows; i += PIXLE_SKIP) {
+	for(i=rowStart; i<rowEnd; i += PIXLE_SKIP) {
 		p = Isrc.ptr<uchar>(i);
-		for (j=0; j<nCols; j += PIXLE_SKIP) {
+		for (j=colStart; j<colEnd; j += PIXLE_SKIP) {
 			if(table_threshold[table_reduce_colorspace[p[j*nChannels+2]]][table_reduce_colorspace[p[j*nChannels+1]]][table_reduce_colorspace[p[j*nChannels]]]) {
-				centre_row += i;
-				centre_col += j;
-				pixle_counter++;
+                M00 += 1;
+                M01 += i;
+                M02 += i*i;
+                M10 += j;
+                M11 += i*j;
+                M20 += j*j;
+                
 			}
 		}
 	}
 	//cout << "red points:" << pixle_counter;
-	if(pixle_counter > PIXLE_THRESHOLD) {
-		centre_row /= pixle_counter;
-		centre_col /= pixle_counter;
-		redObject->x = centre_col - nCols/2;
-		redObject->y = centre_row - nRows/2;
+	if(M00 > PIXLE_THRESHOLD) {
+        *redObjectDetected = true;
+        //int a = M20/M00 - xc * xc;
+        //int b = 2*(M11/M00 - xc * yc);
+        //int c = M02/M00 - xc * xc;
+        //int temp = (int)sqrt(b*b+(a-c)*(a-c));
+        //int l = (int)sqrt((a+b+temp)/2);
+        //int w = (int)sqrt((a+b-temp)/2);
+        
+        int l = (int)(1.8*PIXLE_SKIP*sqrt(M00));
+        int w = (int)(1.8*PIXLE_SKIP*sqrt(M00));
+        
+        redObject->x = M10/M00 - Isrc.cols/2;
+		redObject->y = M01/M00 - Isrc.rows/2;
+        
+        window->x = std::max(M10/M00 - w/2, 0);
+        window->w = std::min(w, Isrc.cols-window->x);
+        window->y = std::max(M01/M00 - l/2, 0);
+        window->l = std::min(l, Isrc.rows-window->y);
 		return true;
 	} else {
-		redObject->x = -1;
-		redObject->y = -1;
+		*redObjectDetected = false;
+        window->x = 0;
+        window->w = Isrc.cols;
+        window->y = 0;
+        window->l = Isrc.rows;
 		return false;
 	}
 }
 
-void CAMERA::drawObjectMarker(Mat img, Point centre) {
+void CAM_SHIFT::drawObjectMarker(Mat img, Point centre) {
 	int thickness = 3;
 	int lineType = 8;
 	Point cross_points[4];
@@ -281,7 +314,20 @@ void CAMERA::drawObjectMarker(Mat img, Point centre) {
 	}
 }
 
-void CAMERA::drawCrosshair(Mat img) {
+void CAM_SHIFT::drawBox(Mat img, CamWindow window) {
+	int thickness = 3;
+	int lineType = 8;
+	Point box_points[4];
+	box_points[0] = Point(window.x,	window.y);
+	box_points[1] = Point(window.x + window.w,	window.y);
+	box_points[2] = Point(window.x + window.w,	window.y + window.l);
+	box_points[3] = Point(window.x,	window.y + window.l);
+	for(int i=0; i<4; i++) {
+		line(img, box_points[i], box_points[(i+1)%4], Scalar(255, 255, 255), thickness, lineType);
+	}
+}
+
+void CAM_SHIFT::drawCrosshair(Mat img) {
 	int thickness = 3;
 	int lineType = 8;
 	int size = 20;
@@ -295,7 +341,7 @@ void CAMERA::drawCrosshair(Mat img) {
 	}
 }
 
-void CAMERA::takePhoto(std::string fileName) {
+void CAM_SHIFT::takePhoto(std::string fileName) {
 	if(!fileName.empty()) imageFileName = fileName;
 	takePhotoThisCycle = true;
 }
