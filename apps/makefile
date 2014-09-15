@@ -4,10 +4,9 @@ CFLAGS = -Wall -c -g
 INCLUDES = -I./include -I/usr/local/include
 LDFLAGS = -L/usr/local/lib -lwiringPi -lboost_thread -lboost_system -lncurses -g
 
-BASE = gpio logger config_parser flightBoard gps_qstarz imu_euler camera
 BASE_INCLUDE = -I../base/include
-BASE_HEADERS = $(addprefix ../base/include/, $(addsuffix .h, $(BASE)))
-BASE_OBJECTS = $(addprefix ../base/obj/, $(addsuffix .o, $(BASE)))
+BASE_HEADERS = $(wildcard ../base/include/*.h)
+BASE_OBJECTS = $(wildcard ../base/obj/*.o)
 
 XSENS_LINKS = -L ../Xsens -lcmt
 XSENS_INCLUDES = -I../Xsens

@@ -88,7 +88,7 @@ int main(int argc, char* argv[]) {
         return -1;
     }
     
-    configFile << "%T" << TAB << "CAMERA" << endl;
+    configFile << "%T" << TAB << "CAMERA_VAR2" << endl;
     configFile << "%F" << TAB << "MIN_HUE" << TAB << "MAX_HUE" << TAB << "PIXLE_THRESHOLD" << endl;
 	configFile << "%R" << TAB << minHue << TAB << maxHue << TAB << PIXLE_THRESHOLD_THIS << endl;
 	configFile << "%E" << endl;

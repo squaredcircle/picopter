@@ -9,7 +9,7 @@
 using namespace std;
 
 
-#include "camera.h"
+#include "camera_var2.h"
 #include "flightBoard.h"
 #include "gpio.h"
 
@@ -56,7 +56,7 @@ int main(int argc, char* argv[]) {
 	FB_Data course = {0, 0, 0, 0};
 	FB_Data stop = {0, 0, 0, 0};
 	
-	CAMERA cam = CAMERA();
+	CAMERA_VAR2 cam = CAMERA_VAR2();
 	if(cam.setup("./config/camera_config.txt") != CAMERA_OK) {
 		cout << "Error setting up camera." << endl;
         fb.stop();
@@ -87,7 +87,7 @@ int main(int argc, char* argv[]) {
 		}
 		
 		cout << "State:\t" << state << endl;
-		cout << "Freamate:\t" << cam.getFramerate() << endl;
+		cout << "Framerate:\t" << cam.getFramerate() << endl;
 
 		switch(state) {
 			case 0:											//Case 0:	Not in auto mode, standby
@@ -138,11 +138,11 @@ void setCourse_faceObject(FB_Data *course, ObjectLocation *red_object) {
 
 void setCourse_moveGimbal(FB_Data *course, ObjectLocation *red_object) {
 	if(red_object->y > GIMBAL_TOL) {
-		course->gimbal += GIMBAL_STEP;
+		course->gimbal -= GIMBAL_STEP;
 	}
     
     if(red_object->y < -GIMBAL_TOL) {
-		course->gimbal -= GIMBAL_STEP;
+		course->gimbal += GIMBAL_STEP;
 	}
     
 	if(course->gimbal < GIMBAL_MIN) course->gimbal = GIMBAL_MIN;
