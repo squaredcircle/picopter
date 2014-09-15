@@ -11,6 +11,10 @@
 
 #include "camera.h"
 
+/*----------------------------------
+	CAMERA class functions here	
+----------------------------------*/
+
 CAMERA::CAMERA() {
 	this->ready = false;
 	this->running = false;
@@ -49,8 +53,8 @@ int CAMERA::setup() {
 	
 	//log = new Logger("camera.log");
 	try {
-		build_lookup_reduce_colourspace(lookup_reduce_colourspace);
-		build_lookup_threshold(lookup_threshold);
+		CAMERA_COMMON::build_lookup_reduce_colourspace(lookup_reduce_colourspace);
+		CAMERA_COMMON::build_lookup_threshold(lookup_threshold, MIN_HUE, MAX_HUE, MIN_SAT, MAX_SAT, MIN_VAL, MAX_VAL);
 		//log->writeLogLine("Lookup tables built.");
 	} catch(...) {
 		//log->writeLogLine("Error building lookup tables.");
@@ -124,19 +128,15 @@ void CAMERA::processImages() {
 		IplImage* image_raspi = raspiCamCvQueryFrame(capture);	//MAYBE DO THIS BETTER
 		Mat image(image_raspi);
 		
-		if(getRedCentre(image, lookup_reduce_colourspace, lookup_threshold, &redObject)) {
-			redObjectDetected = true;
-			drawObjectMarker(image, Point(redObject.x+image.cols/2, redObject.y+image.rows/2));
-		} else {
-			redObjectDetected = false;
+		if(getRedObjectCentre(image, lookup_reduce_colourspace, lookup_threshold, &redObjectDetected, &redObject)) {
+			drawObjectMarker(image, Point(redObject.x+image.cols/2, -redObject.y+image.rows/2));
 		}
 		
 		drawCrosshair(image);
-        
         imshow("Image", image);
         
 		if(takePhotoThisCycle) {
-			//imwrite(std::string("../") + imageFileName, image);
+			//imwrite(std::string("photos/") + imageFileName, image);
 			imwrite(imageFileName, image);
 			takePhotoThisCycle = false;
 		}
@@ -154,7 +154,7 @@ bool CAMERA::objectDetected() {
 
 int CAMERA::getObjectLocation(ObjectLocation *data) {
 	data->x = redObject.x;
-	data->y = -redObject.y;
+	data->y = redObject.y;
     
     if(!redObjectDetected) {
         return -1;
@@ -168,102 +168,42 @@ double CAMERA::getFramerate() {
 	return frame_counter/difftime(end_time, start_time);
 }
 
-void CAMERA::RGB2HSV(int r, int g, int b, int *h, int *s, int *v) {
-	int Vmax = std::max(r, std::max(g, b));
-	int Vmin = std::min(r, std::min(g, b));
-
-	*v = Vmax;
-	
-	int delta = Vmax - Vmin;
-	
-	if (Vmax != 0) {
-		*s = CHAR_SIZE*delta/Vmax;
-	} else {
-		*s = 0;
-		*h = -1;
-	}
-	
-	if(delta == 0) delta = 1;
-	
-	if(r == Vmax) {
-		*h = 60 * (g-b)/delta;
-	} else if(g == Vmax) {
-		*h = 120 + 60 * (b-r)/delta;
-	} else {
-		*h = 240 + 60 * (r-g)/delta;
-	}
-	
-	if (*h < 0) *h += 360;
-}
-
-void CAMERA::build_lookup_threshold(uchar lookup_threshold[][LOOKUP_SIZE][LOOKUP_SIZE]) {
-	int r, g, b, h, s, v;
-	for(r=0; r<LOOKUP_SIZE; r++) {
-		for(g=0; g<LOOKUP_SIZE; g++) {
-			for(b=0; b<LOOKUP_SIZE; b++) {
-				//cout << "r:" << unreduce(r) << " g:" << unreduce(g) << " b:" << unreduce(b) << "\t";
-				RGB2HSV(unreduce(r), unreduce(g), unreduce(b), &h, &s, &v);
-				//cout << "h:" << h << " s:" << s << " v:" << v << endl;
-				
-				if(v < MIN_VAL || v > MAX_VAL) {
-					lookup_threshold[r][g][b] = 0;
-				} else if(s < MIN_SAT || s > MAX_SAT) {
-					lookup_threshold[r][g][b] = 0;
-				} else if(MIN_HUE < MAX_HUE && (h > MIN_HUE && h < MAX_HUE)) {
-					lookup_threshold[r][g][b] = 1;
-				} else if(MIN_HUE > MAX_HUE && (h > MIN_HUE || h < MAX_HUE)) {
-					lookup_threshold[r][g][b] = 1;
-				} else {
-					lookup_threshold[r][g][b] = 0;
-				}
-			}
-		}
-	}
+void CAMERA::takePhoto(std::string fileName) {
+	if(!fileName.empty()) imageFileName = fileName;
+	takePhotoThisCycle = true;
 }
 
 
-void CAMERA::build_lookup_reduce_colourspace(uchar lookup_reduce_colourspace[]) {
-	for (int i=0; i<CHAR_SIZE; i++) {
-		lookup_reduce_colourspace[i] = (uchar)(i*(LOOKUP_SIZE-1)/(CHAR_SIZE-1));
-	}
-}
-
-int CAMERA::unreduce(int x) {
-	return (x*(CHAR_SIZE-1) + (CHAR_SIZE-1)/2) / LOOKUP_SIZE;		//crap! i need to put this factor back.
-}
-
-
-bool CAMERA::getRedCentre(Mat& Isrc, const uchar table_reduce_colorspace[],  const uchar table_threshold[][LOOKUP_SIZE][LOOKUP_SIZE], ObjectLocation *redObject) {
+bool CAMERA::getRedObjectCentre(Mat& Isrc, const uchar table_reduce_colorspace[],  const uchar table_threshold[][LOOKUP_SIZE][LOOKUP_SIZE], bool *redObjectDetected, ObjectLocation *redObject) {
 	int nRows = Isrc.rows;
 	int nCols = Isrc.cols;
 	int nChannels = Isrc.channels();
 	
-	int pixle_counter = 0;
-	int centre_row  = 0;
-	int centre_col = 0;
+	int M00 = 0;		//Mxy
+	int M01 = 0;
+	int M10 = 0;
 
-	int i, j;
+	int i, j, k;		//k = 3*i
 	uchar* p;
-	for(i=0; i<nRows; i += PIXLE_SKIP) {
-		p = Isrc.ptr<uchar>(i);
-		for (j=0; j<nCols; j += PIXLE_SKIP) {
-			if(table_threshold[table_reduce_colorspace[p[j*nChannels+2]]][table_reduce_colorspace[p[j*nChannels+1]]][table_reduce_colorspace[p[j*nChannels]]]) {
-				centre_row += i;
-				centre_col += j;
-				pixle_counter++;
+	for(j=0; j<nRows; j += PIXLE_SKIP) {
+		p = Isrc.ptr<uchar>(j);
+		for (i=0; i<nCols; i += PIXLE_SKIP) {
+			k = i*nChannels;
+			if(table_threshold[table_reduce_colorspace[p[k+2]]][table_reduce_colorspace[p[k+1]]][table_reduce_colorspace[p[k]]]) {
+				M00 += 1;
+				M01 += j;
+				M10 += i;
 			}
 		}
 	}
 	//cout << "red points:" << pixle_counter;
-	if(pixle_counter > PIXLE_THRESHOLD) {
-		centre_row /= pixle_counter;
-		centre_col /= pixle_counter;
-		redObject->x = centre_col - nCols/2;
-		redObject->y = centre_row - nRows/2;
+	if(M00 > PIXLE_THRESHOLD) {
+		*redObjectDetected = true;
+		redObject->x = M10/M00 - nCols/2;
+		redObject->y = -(M01/M00 - nRows/2);
 		return true;
 	} else {
-		redObject->x = -1;
-		redObject->y = -1;
+		*redObjectDetected = false;
 		return false;
 	}
 }
@@ -295,7 +235,73 @@ void CAMERA::drawCrosshair(Mat img) {
 	}
 }
 
-void CAMERA::takePhoto(std::string fileName) {
-	if(!fileName.empty()) imageFileName = fileName;
-	takePhotoThisCycle = true;
+/*----------------------------------
+	CAMERA_COMMON functions here	
+----------------------------------*/
+
+
+void CAMERA_COMMON::RGB2HSV(int r, int g, int b, int *h, int *s, int *v) {
+	int Vmax = std::max(r, std::max(g, b));
+	int Vmin = std::min(r, std::min(g, b));
+
+	*v = Vmax;
+	
+	int delta = Vmax - Vmin;
+	
+	if (Vmax != 0) {
+		*s = CHAR_SIZE*delta/Vmax;
+	} else {
+		*s = 0;
+		*h = -1;
+	}
+	
+	if(delta == 0) delta = 1;
+	
+	if(r == Vmax) {
+		*h = 60 * (g-b)/delta;
+	} else if(g == Vmax) {
+		*h = 120 + 60 * (b-r)/delta;
+	} else {
+		*h = 240 + 60 * (r-g)/delta;
+	}
+	
+	if (*h < 0) *h += 360;
+}
+
+void CAMERA_COMMON::build_lookup_threshold(uchar lookup_threshold[][LOOKUP_SIZE][LOOKUP_SIZE], int minHue, int maxHue, int minSat, int maxSat, int minVal, int maxVal) {
+	int r, g, b, h, s, v;
+	for(r=0; r<LOOKUP_SIZE; r++) {
+		for(g=0; g<LOOKUP_SIZE; g++) {
+			for(b=0; b<LOOKUP_SIZE; b++) {
+				//cout << "r:" << CAMERA_COMMON::unreduce(r) << " g:" << CAMERA_COMMON::unreduce(g) << " b:" << CAMERA_COMMON::unreduce(b) << "\t";
+				CAMERA_COMMON::RGB2HSV(CAMERA_COMMON::unreduce(r), 
+										CAMERA_COMMON::unreduce(g), 
+										CAMERA_COMMON::unreduce(b), &h, &s, &v);
+				//cout << "h:" << h << " s:" << s << " v:" << v << endl;
+				
+				if(v < minVal || v > maxVal) {
+					lookup_threshold[r][g][b] = 0;
+				} else if(s < minSat || s > maxSat) {
+					lookup_threshold[r][g][b] = 0;
+				} else if(minHue < maxHue && (h > minHue && h < maxHue)) {
+					lookup_threshold[r][g][b] = 1;
+				} else if(minHue > maxHue && (h > minHue || h < maxHue)) {
+					lookup_threshold[r][g][b] = 1;
+				} else {
+					lookup_threshold[r][g][b] = 0;
+				}
+			}
+		}
+	}
+}
+
+
+void CAMERA_COMMON::build_lookup_reduce_colourspace(uchar lookup_reduce_colourspace[]) {
+	for (int i=0; i<CHAR_SIZE; i++) {
+		lookup_reduce_colourspace[i] = (uchar)(i*(LOOKUP_SIZE-1)/(CHAR_SIZE-1));
+	}
+}
+
+int CAMERA_COMMON::unreduce(int x) {
+	return (x*(CHAR_SIZE-1) + (CHAR_SIZE-1)/2) / LOOKUP_SIZE;		//crap! i need to put this factor back.
 }

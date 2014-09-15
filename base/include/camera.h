@@ -62,22 +62,20 @@
 #define __CAMERA_H_INCLUDED__
 
 #include <iostream>
+#include <sstream>
 #include "opencv2/highgui/highgui.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
 #include "RaspiCamCV.h"
 #include <time.h>
-#include <boost/thread.hpp>
 #include <string>
 #include <stdio.h>
-#include <fstream>
-#include <sstream>
+#include <boost/thread.hpp>
 
 //#include "logger.h"
 #include "config_parser.h"
 
 using namespace cv;
 
-#define IMAGE_PROCSSING_PARAMETERS_FILE "config/camera_threshold_list.txt"
 
 #define LOOKUP_SIZE 8
 #define CHAR_SIZE 256
@@ -204,14 +202,9 @@ private:
 	
 
 	uchar lookup_threshold[LOOKUP_SIZE][LOOKUP_SIZE][LOOKUP_SIZE];
-	void build_lookup_threshold(uchar lookup_threshold[][LOOKUP_SIZE][LOOKUP_SIZE]);
-	void RGB2HSV(int r, int g, int b, int *h, int *s, int *v);
-
 	uchar lookup_reduce_colourspace[CHAR_SIZE];
-	void build_lookup_reduce_colourspace(uchar lookup_reduce_colourspace[]);
-	int unreduce(int x);
 	
-	bool getRedCentre(Mat& Isrc, const uchar lookup_reduce_colorspace[],  const uchar lookup_threshold[][LOOKUP_SIZE][LOOKUP_SIZE], ObjectLocation *redObject);
+	bool getRedObjectCentre(Mat& Isrc, const uchar lookup_reduce_colorspace[],  const uchar lookup_threshold[][LOOKUP_SIZE][LOOKUP_SIZE], bool *redObjectDected, ObjectLocation *redObject);
 	ObjectLocation redObject;
 	bool redObjectDetected;
 	
@@ -226,5 +219,13 @@ private:
 	bool takePhotoThisCycle;
 	std::string imageFileName;
 };
+
+namespace CAMERA_COMMON {
+	void RGB2HSV(int r, int g, int b, int *h, int *s, int *v);
+	void build_lookup_threshold(uchar lookup_threshold[][LOOKUP_SIZE][LOOKUP_SIZE], int minHue, int maxHue, int minSat, int maxSat, int minVal, int maxVal);
+	void build_lookup_reduce_colourspace(uchar lookup_reduce_colourspace[]);
+	int unreduce(int x);
+}
+
 
 #endif// __CAMERA_H_INCLUDED__

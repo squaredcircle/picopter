@@ -4,7 +4,7 @@
 
 using namespace std;
 
-#include "cam_two.h"
+#include "camera_var2.h"
 #include <wiringPi.h>
 
 
@@ -24,15 +24,15 @@ int main(int argc, char* argv[]) {
 	sigaction(SIGINT,  &signalHandler, NULL);
 
 	//Main program
-	CAM_TWO cam = CAM_TWO();
+	CAMERA_VAR2 cam = CAMERA_VAR2();
 	cam.setup();
 	cam.start();
 	
 	ObjectLocation object_data;
 	
 	while(!exitProgram) {
-		if(cam.objectOneDetected()) {
-			cam.getObjectOneLocation(&object_data);
+		if(cam.objectDetected()) {
+			cam.getObjectLocation(&object_data);
 			cout << "Red object detected at: " << object_data.x << ", " << object_data.y << endl;
 		} else {
 			cout << "No red objects. " << endl;

@@ -1,17 +1,6 @@
-//v1.3	10-9-2014	BAX
-//Documented code and added new config parsing
+#include "camera_var2.h"
 
-//v1.2	10-9-2014	BAX
-//Fixed unreduce. (Scale back from reduced colour space (0-7) to mid-bucket of full colourspace(0-255).
-//eg. 0->15, 1->47, 6->207, 7->239
-
-//v1.1	28-8-2014	BAX
-//Can take photos now
-
-
-#include "cam_shift.h"
-
-CAM_SHIFT::CAM_SHIFT() {
+CAMERA_VAR2::CAMERA_VAR2() {
 	this->ready = false;
 	this->running = false;
 	
@@ -24,7 +13,7 @@ CAM_SHIFT::CAM_SHIFT() {
 	this->MIN_VAL		= 95;
 	this->MAX_VAL		= 255;
 	this->PIXLE_THRESHOLD	= 60;
-    this->PIXLE_SKIP        = 2;
+    this->PIXLE_SKIP        = 3;
     
     this->THREAD_SLEEP_TIME = 0;
 	
@@ -43,18 +32,18 @@ CAM_SHIFT::CAM_SHIFT() {
 	this->imageFileName = "image.jpg";
 }
 
-CAM_SHIFT::CAM_SHIFT(const CAM_SHIFT& orig) {}
-CAM_SHIFT::~CAM_SHIFT() {}
+CAMERA_VAR2::CAMERA_VAR2(const CAMERA_VAR2& orig) {}
+CAMERA_VAR2::~CAMERA_VAR2() {}
 
 
-int CAM_SHIFT::setup() {
+int CAMERA_VAR2::setup() {
 	if(ready) return -1;
 	if(running) return -1;
 	
 	//log = new Logger("camera.log");
 	try {
-		build_lookup_reduce_colourspace(lookup_reduce_colourspace);
-		build_lookup_threshold(lookup_threshold);
+		CAMERA_COMMON::build_lookup_reduce_colourspace(lookup_reduce_colourspace);
+		CAMERA_COMMON::build_lookup_threshold(lookup_threshold, MIN_HUE, MAX_HUE, MIN_SAT, MAX_SAT, MIN_VAL, MAX_VAL);
 		//log->writeLogLine("Lookup tables built.");
 	} catch(...) {
 		//log->writeLogLine("Error building lookup tables.");
@@ -68,7 +57,7 @@ int CAM_SHIFT::setup() {
 	return 0;
 }
 
-int CAM_SHIFT::setup(std::string fileName) {
+int CAMERA_VAR2::setup(std::string fileName) {
     ConfigParser::ParamMap parameters;
     
     parameters.insert("MIN_HUE", &MIN_HUE);
@@ -82,15 +71,15 @@ int CAM_SHIFT::setup(std::string fileName) {
     parameters.insert("PIXLE_SKIP", &PIXLE_SKIP);
     parameters.insert("THREAD_SLEEP_TIME", &THREAD_SLEEP_TIME);
     
-    ConfigParser::loadParameters("CAM_SHIFT", &parameters, fileName);
+    ConfigParser::loadParameters("CAMERA_VAR2", &parameters, fileName);
 	return setup();
 }
 
-int CAM_SHIFT::start() {
+int CAMERA_VAR2::start() {
 	if(!ready) return -1;
 	if(running) return -1;
 	
-	process_thread = new boost::thread(&CAM_SHIFT::processImages, this);
+	process_thread = new boost::thread(&CAMERA_VAR2::processImages, this);
 	process_thread->detach();
 	
 	running = true;
@@ -98,7 +87,7 @@ int CAM_SHIFT::start() {
 	return 0;
 }
 
-int CAM_SHIFT::stop() {
+int CAMERA_VAR2::stop() {
 	if(!running) return -1;
 	
 	running = false;
@@ -106,7 +95,7 @@ int CAM_SHIFT::stop() {
 	return 0;
 }
 
-int CAM_SHIFT::close() {
+int CAMERA_VAR2::close() {
     if(running) stop();
 	if(running) return -1;
 	if(!ready) return -1;
@@ -120,7 +109,7 @@ int CAM_SHIFT::close() {
 
 
 //this thread does all the work
-void CAM_SHIFT::processImages() {
+void CAMERA_VAR2::processImages() {
 	time(&start_time);
 	frame_counter = 0;
 	while(running) {
@@ -128,19 +117,15 @@ void CAM_SHIFT::processImages() {
 		IplImage* image_raspi = raspiCamCvQueryFrame(capture);	//MAYBE DO THIS BETTER
 		Mat image(image_raspi);
 		
-		if(getRedCentre(image, lookup_reduce_colourspace, lookup_threshold, &redObjectDetected, &redObject, &window)) {
-			drawObjectMarker(image, Point(redObject.x+image.cols/2, redObject.y+image.rows/2));
-            drawBox(image, window);
-		} else {
-			redObjectDetected = false;
+		if(getRedObjectCentre(image, lookup_reduce_colourspace, lookup_threshold, &redObjectDetected, &redObject, &window)) {
+			drawObjectMarker(image, Point(redObject.x+image.cols/2, -redObject.y+image.rows/2));
 		}
-		
+		drawBox(image, window);
 		drawCrosshair(image);
-        
         imshow("Image", image);
         
 		if(takePhotoThisCycle) {
-			//imwrite(std::string("../") + imageFileName, image);
+			//imwrite(std::string("photos/") + imageFileName, image);
 			imwrite(imageFileName, image);
 			takePhotoThisCycle = false;
 		}
@@ -152,13 +137,13 @@ void CAM_SHIFT::processImages() {
 	}
 }
 
-bool CAM_SHIFT::objectDetected() {
+bool CAMERA_VAR2::objectDetected() {
 	return redObjectDetected;
 }
 
-int CAM_SHIFT::getObjectLocation(ObjectLocation *data) {
+int CAMERA_VAR2::getObjectLocation(ObjectLocation *data) {
 	data->x = redObject.x;
-	data->y = -redObject.y;
+	data->y = redObject.y;
     
     if(!redObjectDetected) {
         return -1;
@@ -167,106 +152,47 @@ int CAM_SHIFT::getObjectLocation(ObjectLocation *data) {
     }
 }
 
-double CAM_SHIFT::getFramerate() {
+double CAMERA_VAR2::getFramerate() {
 	time(&end_time);
 	return frame_counter/difftime(end_time, start_time);
 }
 
-void CAM_SHIFT::RGB2HSV(int r, int g, int b, int *h, int *s, int *v) {
-	int Vmax = std::max(r, std::max(g, b));
-	int Vmin = std::min(r, std::min(g, b));
-
-	*v = Vmax;
-	
-	int delta = Vmax - Vmin;
-	
-	if (Vmax != 0) {
-		*s = CHAR_SIZE*delta/Vmax;
-	} else {
-		*s = 0;
-		*h = -1;
-	}
-	
-	if(delta == 0) delta = 1;
-	
-	if(r == Vmax) {
-		*h = 60 * (g-b)/delta;
-	} else if(g == Vmax) {
-		*h = 120 + 60 * (b-r)/delta;
-	} else {
-		*h = 240 + 60 * (r-g)/delta;
-	}
-	
-	if (*h < 0) *h += 360;
-}
-
-void CAM_SHIFT::build_lookup_threshold(uchar lookup_threshold[][LOOKUP_SIZE][LOOKUP_SIZE]) {
-	int r, g, b, h, s, v;
-	for(r=0; r<LOOKUP_SIZE; r++) {
-		for(g=0; g<LOOKUP_SIZE; g++) {
-			for(b=0; b<LOOKUP_SIZE; b++) {
-				//cout << "r:" << unreduce(r) << " g:" << unreduce(g) << " b:" << unreduce(b) << "\t";
-				RGB2HSV(unreduce(r), unreduce(g), unreduce(b), &h, &s, &v);
-				//cout << "h:" << h << " s:" << s << " v:" << v << endl;
-				
-				if(v < MIN_VAL || v > MAX_VAL) {
-					lookup_threshold[r][g][b] = 0;
-				} else if(s < MIN_SAT || s > MAX_SAT) {
-					lookup_threshold[r][g][b] = 0;
-				} else if(MIN_HUE < MAX_HUE && (h > MIN_HUE && h < MAX_HUE)) {
-					lookup_threshold[r][g][b] = 1;
-				} else if(MIN_HUE > MAX_HUE && (h > MIN_HUE || h < MAX_HUE)) {
-					lookup_threshold[r][g][b] = 1;
-				} else {
-					lookup_threshold[r][g][b] = 0;
-				}
-			}
-		}
-	}
+void CAMERA_VAR2::takePhoto(std::string fileName) {
+	if(!fileName.empty()) imageFileName = fileName;
+	takePhotoThisCycle = true;
 }
 
 
-void CAM_SHIFT::build_lookup_reduce_colourspace(uchar lookup_reduce_colourspace[]) {
-	for (int i=0; i<CHAR_SIZE; i++) {
-		lookup_reduce_colourspace[i] = (uchar)(i*(LOOKUP_SIZE-1)/(CHAR_SIZE-1));
-	}
-}
-
-int CAM_SHIFT::unreduce(int x) {
-	return (x*(CHAR_SIZE-1) + (CHAR_SIZE-1)/2) / LOOKUP_SIZE;		//crap! i need to put this factor back.
-}
-
-
-bool CAM_SHIFT::getRedCentre(Mat& Isrc, const uchar table_reduce_colorspace[],  const uchar table_threshold[][LOOKUP_SIZE][LOOKUP_SIZE], bool *redObjectDetected, ObjectLocation *redObject, CamWindow *window) {
+bool CAMERA_VAR2::getRedObjectCentre(Mat& Isrc, const uchar table_reduce_colorspace[],  const uchar table_threshold[][LOOKUP_SIZE][LOOKUP_SIZE], bool *redObjectDetected, ObjectLocation *redObject, CamWindow *window) {
 	int rowStart = window->y;
 	int rowEnd = rowStart + window->l;
     int colStart = window->x;
 	int colEnd = colStart + window->w;
 	int nChannels = Isrc.channels();
     
-    int xc = redObject->x + Isrc.cols/2;
-    int yc = redObject->y + Isrc.rows/2;
+    //int xc = redObject->x + Isrc.cols/2;
+    //int yc = redObject->y + Isrc.rows/2;
 	
-	int M00 = 0;
+	int M00 = 0;	//Mxy
     int M01 = 0;
-    int M02 = 0;
+    //int M02 = 0;
 	int M10 = 0;
-    int M11 = 0;
-    int M20 = 0;
+    //int M11 = 0;
+    //int M20 = 0;
 
-	int i, j;
+	int i, j, k;
 	uchar* p;
-	for(i=rowStart; i<rowEnd; i += PIXLE_SKIP) {
-		p = Isrc.ptr<uchar>(i);
-		for (j=colStart; j<colEnd; j += PIXLE_SKIP) {
-			if(table_threshold[table_reduce_colorspace[p[j*nChannels+2]]][table_reduce_colorspace[p[j*nChannels+1]]][table_reduce_colorspace[p[j*nChannels]]]) {
+	for(j=rowStart; j<rowEnd; j += PIXLE_SKIP) {
+		p = Isrc.ptr<uchar>(j);
+		for (i=colStart; i<colEnd; i += PIXLE_SKIP) {
+			k = i*nChannels;
+			if(table_threshold[table_reduce_colorspace[p[k+2]]][table_reduce_colorspace[p[k+1]]][table_reduce_colorspace[p[k]]]) {
                 M00 += 1;
-                M01 += i;
-                M02 += i*i;
-                M10 += j;
-                M11 += i*j;
-                M20 += j*j;
-                
+                M01 += j;
+                //M02 += j*j;
+                M10 += i;
+                //M11 += i*j;
+                //M20 += i*i;
 			}
 		}
 	}
@@ -281,10 +207,11 @@ bool CAM_SHIFT::getRedCentre(Mat& Isrc, const uchar table_reduce_colorspace[],  
         //int w = (int)sqrt((a+b-temp)/2);
         
         int l = (int)(1.8*PIXLE_SKIP*sqrt(M00));
-        int w = (int)(1.8*PIXLE_SKIP*sqrt(M00));
+        //int w = (int)(1.8*PIXLE_SKIP*sqrt(M00));
+        int w = l;
         
         redObject->x = M10/M00 - Isrc.cols/2;
-		redObject->y = M01/M00 - Isrc.rows/2;
+		redObject->y = -(M01/M00 - Isrc.rows/2);
         
         window->x = std::max(M10/M00 - w/2, 0);
         window->w = std::min(w, Isrc.cols-window->x);
@@ -301,7 +228,7 @@ bool CAM_SHIFT::getRedCentre(Mat& Isrc, const uchar table_reduce_colorspace[],  
 	}
 }
 
-void CAM_SHIFT::drawObjectMarker(Mat img, Point centre) {
+void CAMERA_VAR2::drawObjectMarker(Mat img, Point centre) {
 	int thickness = 3;
 	int lineType = 8;
 	Point cross_points[4];
@@ -314,20 +241,7 @@ void CAM_SHIFT::drawObjectMarker(Mat img, Point centre) {
 	}
 }
 
-void CAM_SHIFT::drawBox(Mat img, CamWindow window) {
-	int thickness = 3;
-	int lineType = 8;
-	Point box_points[4];
-	box_points[0] = Point(window.x,	window.y);
-	box_points[1] = Point(window.x + window.w,	window.y);
-	box_points[2] = Point(window.x + window.w,	window.y + window.l);
-	box_points[3] = Point(window.x,	window.y + window.l);
-	for(int i=0; i<4; i++) {
-		line(img, box_points[i], box_points[(i+1)%4], Scalar(255, 255, 255), thickness, lineType);
-	}
-}
-
-void CAM_SHIFT::drawCrosshair(Mat img) {
+void CAMERA_VAR2::drawCrosshair(Mat img) {
 	int thickness = 3;
 	int lineType = 8;
 	int size = 20;
@@ -341,7 +255,15 @@ void CAM_SHIFT::drawCrosshair(Mat img) {
 	}
 }
 
-void CAM_SHIFT::takePhoto(std::string fileName) {
-	if(!fileName.empty()) imageFileName = fileName;
-	takePhotoThisCycle = true;
+void CAMERA_VAR2::drawBox(Mat img, CamWindow window) {
+	int thickness = 3;
+	int lineType = 8;
+	Point box_points[4];
+	box_points[0] = Point(window.x,	window.y);
+	box_points[1] = Point(window.x + window.w,	window.y);
+	box_points[2] = Point(window.x + window.w,	window.y + window.l);
+	box_points[3] = Point(window.x,	window.y + window.l);
+	for(int i=0; i<4; i++) {
+		line(img, box_points[i], box_points[(i+1)%4], Scalar(255, 255, 255 ), thickness, lineType);
+	}
 }
