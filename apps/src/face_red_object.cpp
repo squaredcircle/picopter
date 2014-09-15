@@ -111,7 +111,6 @@ int main(int argc, char* argv[]) {
 				fb.setFB_Data(&course);
 				printFB_Data(&course);							//STOP
 				cout << "No object." << endl;					//PRINT: NO OBJECT FOUND.
-				cout << "Switch in and out of auto mode to restart search." << endl;
 				break;
 		}
 		
