@@ -18,6 +18,7 @@
 #include <string>
 #include <sstream>
 #include <deque>
+#include <csignal>
 
 using namespace std;
 
@@ -61,10 +62,20 @@ double getYaw(IMU*);
 bool checkInPerth(Coord_rad*);
 void printFB_Data(FB_Data*);
 
+bool exitProgram = false;
+void terminate(int);
 
 int main(int argc, char* argv[]) {
 	//start system
 	cout << "Starting program" << endl;
+	
+	struct sigaction signalHandler;	
+	signalHandler.sa_handler = terminate;
+	sigemptyset(&signalHandler.sa_mask);
+	signalHandler.sa_flags = 0;
+	
+	sigaction(SIGTERM, &signalHandler, NULL);
+	sigaction(SIGINT,  &signalHandler, NULL);
 	
 	gpio::startWiringPi();
 	
@@ -125,7 +136,7 @@ int main(int argc, char* argv[]) {
 																		//State 1:	PID to waypoint
 																		//State 2:	At waypoint
 																		//State 3:	GPS in error								
-	while(true) {														
+	while(!exitProgram) {														
 		currentCoord = getCoord(&gps);
 		yaw = getYaw(&imu);
 		distaceToNextWaypoint = calculate_distance(currentCoord, waypoints_list.front());
@@ -285,4 +296,10 @@ void printFB_Data(FB_Data* data) {
 	cout << "E: " << data->elevator << "\t";
 	cout << "R: " << data->rudder << "\t";
 	cout << "G: " << data->gimbal << endl;
+}
+
+
+void terminate(int signum) {
+	cout << "Signal " << signum << " received. Stopping waypoints program. Exiting." << endl;
+	exitProgram = true;
 }

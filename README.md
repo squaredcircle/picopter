@@ -35,7 +35,7 @@ Now wouldn't be a bad time to also select the time zone and keyboard from the "3
 3.  Install dwm
 ---------------------------------------------
 
-dwm (dynamic window manager) is a simple tiling desktop environment.  It runs an X window server, so images can be displayed through OpenCV.  Installation of dwm is not essential, but is more conventient than using LXDE.
+dwm (dynamic window manager) is a simple tiling desktop environment.  It runs an X window server, so images can be displayed through OpenCV.  Installation of dwm is not essential, but is more convenient than using LXDE.
 
     sudo apt-get install xterm dwm
 
@@ -48,7 +48,7 @@ See http://dwm.suckless.org for more information.
 
 boost is a library of tools that extends the c++ standard libraries.  In this project, we use it  largely for multithreading.
 
-nCurses is a library used for printing text to the screen in a fasionable way.
+nCurses is a library used for printing text to the screen in a fashionable way.
 
 
     sudo apt-get install libboost-all-dev
@@ -167,8 +167,8 @@ The Xsens is the IMU (incl. compass) we use on the copter.
 
 This set of classes forms the low-level system and wraps many of the previously introduced programs.  The low-level systems are multi-threaded, so they gather data in the background, while a higher level control system runs in the foreground.  Test programs (examples) are also included in the bin folder.
 
-    cd ~/picopter/picopter-base
-    mkdir obj bin logs
+    cd ~/picopter/base
+    mkdir obj bin
     make
 
 
@@ -176,11 +176,19 @@ This set of classes forms the low-level system and wraps many of the previously 
 
 This set of programs controls the picopter as it sets to follow waypoints and track red objects.
 
-    cd ~/picopter/picopter-objects
-    mkdir obj bin logs photos
+    cd ~/picopter/apps
+    mkdir obj bin photos
     make
     
 
+*10.4   Create logs directory*
+
+Logs will magically appear here.  See logger.h to change the path.
+
+    cd ~/picopter
+    mkdir logs
+    
+    
 ---------------------------------------------
 11.  Have fun!
 ---------------------------------------------
