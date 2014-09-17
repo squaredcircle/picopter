@@ -13,9 +13,9 @@ THRIFT_INC        = -Igen-cpp -I/usr/local/include/thrift
 ##### picopter-base
 BASE              = gpio logger flightBoard gps_qstarz 
 #camera imu_euler 
-BASE_INCLUDE      = -I../base/include
-BASE_HEADERS      = $(addprefix ../base/include/, $(addsuffix .h, $(BASE)))
-BASE_OBJECTS      = $(addprefix ../base/obj/, $(addsuffix .o, $(BASE)))
+BASE_INCLUDE      = -I../picopter-base/include
+BASE_HEADERS      = $(addprefix ../picopter-base/include/, $(addsuffix .h, $(BASE)))
+BASE_OBJECTS      = $(addprefix ../picopter-base/obj/, $(addsuffix .o, $(BASE)))
 
 ##### XSens
 #XSENS_FLAGS       =

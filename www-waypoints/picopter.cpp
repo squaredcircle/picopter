@@ -27,6 +27,7 @@
 #include <csignal>
 #include <stdio.h>
 #include <string>
+#include <deque>
 
 #include "gen-cpp/webInterface.h"
 
@@ -87,22 +88,24 @@ class webInterfaceHandler : virtual public webInterfaceIf {
 		 *		Returns what the hexacopter is currently doing.
 		 */
 		void requestStatus(string& msg) {
-			cout << "[THRIFT] Status requested." << endl;
-			
+			stringstream ss;
+
 			switch(state) {
 				case 0:
-					msg = "All stop. Manual mode engaged.";
+					ss << "All stop. Manual mode engaged.";
 					break;
 				case 1:
-					msg = "Travelling to waypoint.";
+					ss << "Travelling to waypoint " << wp_it << ".";
 					break;
 				case 2:
-					msg = "Waiting at waypoint.";
+					ss << "Waiting at waypoint " << wp_it << ".";
 					break;
 				case 3:
-					msg = "GPS Error.";
+					ss << "GPS Error.";
 					break;
 			}
+
+			msg = ss.str();
 		}
 		
 		/*
@@ -113,10 +116,28 @@ class webInterfaceHandler : virtual public webInterfaceIf {
 			Coord_rad gp = getCoordDeg(&gps);
 			wp.lat = gp.lat * 180 / PI;
 			wp.lon = gp.lon * 180 / PI;
+		//	cout << "[THRIFT] Coords requested: (" << wp.lat << ", " << wp.lon << ")" << endl;
 			//wp.lat = 40.34242;
 			//wp.lon = 1023.54354353453;
 		}
 
+		/*
+ 		 *	requestNextWaypoint
+		 *		Returns the next waypoint the hexacopter will travel to.
+		 */ 
+		void requestNextWaypoint(coordDeg& wp) {
+			cout << "[THRIFT] Current waypoints:" << endl;
+		
+			if (waypoints_list.size() != 0) {
+				cout << "(" << waypoints_list[wp_it].lat << ", " << waypoints_list[wp_it].lon << ")" << endl;	
+			} else {
+				cout << "Empty" << endl;			
+			}
+
+			wp.lat = waypoints_list[wp_it].lat * 180 / PI;
+			wp.lon = waypoints_list[wp_it].lon * 180 / PI;
+		}
+	
 		/*
 		 *	addWaypoint
 		 *		Adds a new waypoint to the end of the queue.
@@ -125,10 +146,20 @@ class webInterfaceHandler : virtual public webInterfaceIf {
 			cout << "[THRIFT] Adding waypoint (" << wp.lat << ", " << wp.lon << ")" << endl;
 			
 			Coord_rad waypoint;
-			waypoint.lat *= PI/180;
-			waypoint.lon *= PI/180;
+			waypoint.lat = wp.lat * PI/180;
+			waypoint.lon = wp.lon * PI/180;
 			waypoints_list.push_back(waypoint);
+		
+			cout << "[THRIFT] Waypoint (" << waypoints_list.back().lat << ", " <<  waypoints_list.back().lon << ") added." << endl;
+	
+			return true;
+		}
+
+		bool updateWaypoint(const coordDeg& wp, const int32_t no) {
+			cout << "[THRIFT] Updating waypoint " << no << " to (" << wp.lat << ", " << wp.lon << ")" << endl;
 			
+			waypoints_list[no].lat = wp.lat * PI/180;
+			waypoints_list[no].lon = wp.lon * PI/180;
 			return true;
 		}
 
@@ -136,9 +167,12 @@ class webInterfaceHandler : virtual public webInterfaceIf {
 		 *	removeWaypoint
 		 *		Removes a specific waypoint. If no waypoint specified, remove the last waypoint.
 		 */
-		bool removeWaypoints() {
+		bool removeWaypoints(int32_t no) {
 			cout << "[THRIFT] Removing waypoint." << endl;
-			return false;
+			
+			waypoints_list.erase(waypoints_list.begin()+no);
+			
+			return true;
 		}
 
 		/*
@@ -146,9 +180,16 @@ class webInterfaceHandler : virtual public webInterfaceIf {
 		 *		Remove all waypoints.
 		 */
 		bool resetWaypoints() {
-			cout << "[THRIFT] Resetting waypoint." << endl;
+			cout << "[THRIFT] Resetting waypoints. Current waypoints:" << endl;
+			
+			cout << "(" << waypoints_list.front().lat << ", " << waypoints_list.front().lon << ")" << endl;	
+			cout << "(" << waypoints_list.back().lat << ", " << waypoints_list.back().lon << ")" << endl;	
+
 			waypoints_list.clear();
-			return true;
+			
+			cout << "[THRIFT] Waypoints reset. Current waypoints:" << endl;	
+
+			return (waypoints_list.size() == 0);
 		}
 
 };

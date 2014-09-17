@@ -61,9 +61,10 @@ void		waypointsFlightLoop();
 
 /* External variables */
 extern deque<Coord_rad>	waypoints_list;
-extern GPS         		gps;
-extern bool        		exitProgram;
-extern int        		state;
-extern int				userState;
+extern GPS         	gps;
+extern bool        	exitProgram;
+extern int        	state;
+extern int		userState;
+extern size_t		wp_it;
 
 #endif
