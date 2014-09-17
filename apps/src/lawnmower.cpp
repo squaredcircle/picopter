@@ -19,17 +19,18 @@
 
 using namespace std;
 
-#define BMIN 0
-#define BMAX 180 //180 works
-#define GMIN 0
-#define GMAX 180 //200 works
-#define RMIN 120//120 works
-#define RMAX 256
+#define HMIN 320
+#define HMAX 40
+#define SMIN 95
+#define SMAX 255
+#define VALMIN 95	//VMIN already used
+#define VALMAX 255
 #define REDTHRESH 50	//Number of red pixels need to see in an image
 #define FRAME_WAIT 11 	//Number of frames to wait
 
-#define SPACING 4			//Distance between points in m
-#define LOCATION_WAIT 1500	//Time in ms Copter waits at each point
+#define SWEEP_SPACING 4		//Distance between parallel sweeps in m
+#define SPACING 4 			//Distance beteen points on the same sweep
+#define LOCATION_WAIT 0		//Time in ms Copter waits at each point
 #define LOOP_WAIT 100 		//Time in ms Copter wait in each loop
 #define GPS_DATA_FILE "config/waypoints_list.txt"
 #define WAYPOINT_RADIUS 1.200		//In m - needs to be large enough that can speed not too low
@@ -42,7 +43,7 @@ using namespace std;
 #define MINLON 115.817162
 #define MINLAT -31.980634
 #define MAXLON 115.818709
-#define PIXEL_RADIUS 0 		//Number of surrounding pixels to turn 'Red'. Can probably be left as 0, unless get really fine image.
+#define PIXEL_RADIUS 1 		//Number of surrounding pixels to turn 'Red'. Can probably be left as 0, unless get really fine image.
 
 /*Things needed for 'flyTo'*/
 //---------------------------
@@ -61,6 +62,7 @@ void readPosition(Pos*, int);
 double calculate_distance(Pos, Pos);
 double calculate_bearing(Pos, Pos);
 void setCourse(FB_Data*, double, double, double);
+void populateMainVector(vector<Pos>*, Logger*);
 void populateVector(Pos, Pos, vector<Pos>*);
 void flyTo(FlightBoard*, GPS*, GPS_Data*, IMU*, IMU_Data*, double, double, double, Logger*, Logger* , RaspiCamCvCapture*, int, Mat);
 double determineBearing(FlightBoard*, GPS*, GPS_Data*);
@@ -102,7 +104,7 @@ int main() {
 	RaspiCamCvCapture* capture = raspiCamCvCreateCameraCapture(0);
 
 	Logger lawnlog = Logger("Lawn.log");	//Initalises log
-	Logger rawgpslog = Logger("Lawn_Raw_GPS.log");
+	Logger rawgpslog = Logger("Lawn_Raw_GPS.txt");
 	char str[BUFSIZ];
 
 	//Loads image of James Oval
@@ -112,57 +114,8 @@ int main() {
 		return -1;
 	}
 
-	//Determines waypoints
-	Pos corners[4];
-	readPosition(&corners[0], 0);	//First line
-	cout << "Corner #1 read as: " << (corners[0].lat) << " " << (corners[0].lon) << endl;
-	sprintf(str, "Corner #1 read as: %f %f", (corners[0].lat), (corners[0].lon));
-	lawnlog.writeLogLine(str);	
-	readPosition(&corners[3], 1);	//Second line
-	cout << "Corner #4 read as: " << (corners[3].lat) << " " << (corners[3].lon) << endl;
-	sprintf(str, "Corner #4 read as: %f %f", (corners[3].lat), (corners[3].lon));
-	lawnlog.writeLogLine(str);	
-	corners[1].lat = corners[0].lat;
-	corners[1].lon = corners[3].lon;
-	cout << "Corner #2 calculated as: " << (corners[1].lat) << " " << (corners[1].lon) << endl;
-	sprintf(str, "Corner #2 calculated as: %f %f", (corners[1].lat), (corners[1].lon));
-	lawnlog.writeLogLine(str);	
-	corners[2].lat = corners[3].lat;
-	corners[2].lon = corners[0].lon;
-	cout << "Corner #3 calculated as: " << (corners[2].lat) << " " << (corners[2].lon) << endl;
-	sprintf(str, "Corner #3 calculated as: %f %f", (corners[2].lat), (corners[2].lon));
-	lawnlog.writeLogLine(str);
-
-	vector<Pos> sideA;
-	vector<Pos> sideB;
 	vector<Pos> gpsPoints;
-	populateVector(corners[0], corners[1], &sideA);
-	for(int i = 0; i < (int)sideA.size(); i++) {
-		sprintf(str, "Point %d of sideA is %f %f", i+1, (sideA[i].lat), (sideA[i].lon));
-		lawnlog.writeLogLine(str);
-	}
-	populateVector(corners[2], corners[3], &sideB);
-	for(int i = 0; i < (int)sideB.size(); i++) {
-		sprintf(str, "Point %d of sideB is %f %f", i+1, (sideB[i].lat), (sideB[i].lon));
-		lawnlog.writeLogLine(str);
-	}
-	int minVectorLength = sideA.size();
-	if ((int)sideB.size() < minVectorLength) minVectorLength = sideB.size(); //Checks which is smallest
-	
-	for (int i = 0; i < minVectorLength; i++) {
-		if (i%2 == 0) {	//Even?
-			//sprintf(str, "%d %d- Even", i,minVectorLength);
-			//lawnlog.writeLogLine(str);
-			gpsPoints.push_back(sideA[i]);
-			gpsPoints.push_back(sideB[i]);
-		}
-		else if (i%2 == 1) {//Odd?
-			//sprintf(str, "%d %d - Odd", i, minVectorLength);
-			//lawnlog.writeLogLine(str);
-			gpsPoints.push_back(sideB[i]);
-			gpsPoints.push_back(sideA[i]);
-		}
-	}
+	populateMainVector(&gpsPoints, &lawnlog);
 	
 	cout << endl;
 	for(int i = 0; i < (int)gpsPoints.size(); i++) {
@@ -248,7 +201,9 @@ void flyTo(FlightBoard *fbPtr, GPS *gpsPtr, GPS_Data *dataPtr, IMU *imuPtr, IMU_
 		fbPtr->setFB_Data(&course);
 //		checkRed(camPtr);
 		IplImage* view = raspiCamCvQueryFrame(camPtr);
-		Mat image(view);
+		Mat imBGR(view);
+		Mat image;
+		cvtColor(imBGR, image, CV_BGR2HSV)
 		timer++;
 		if ((timer > 0) && checkRed(image, logPtr)) {	//Is there red?
 			sawRed = true;
@@ -318,7 +273,7 @@ bool checkRed(Mat image, Logger *logPtr) {
 	for(int i = 0; i < nRows; i++) {
 		p = image.ptr<uchar>(i);
 		for (int j = 0; j < nCols; j=j+3) {
-			if ((p[j] > BMIN) && (p[j] < BMAX) && (p[j] > GMIN) && (p[j] < GMAX) && (p[j] > RMIN) && (p[j] < RMAX)) {
+			if (((p[j] > HMIN) || (p[j] < HMAX)) && (p[j] > SMIN) && (p[j] < SMAX) && (p[j] > VALMIN) && (p[j] < VALMAX)) {
 				nRed++;
 			}
 		}
@@ -341,7 +296,7 @@ double redComDist(Mat image) {
 	for(int i = 0; i < nRows; i++) {
 		p = image.ptr<uchar>(i);
 		for (int j = 0; j < nCols; j=j+3) {
-			if ((p[j] > BMIN) && (p[j] < BMAX) && (p[j] > GMIN) && (p[j] < GMAX) && (p[j] > RMIN) && (p[j] < RMAX)) {
+			if (((p[j] > HMIN) || (p[j] < HMAX)) && (p[j] > SMIN) && (p[j] < SMAX) && (p[j] > VALMIN) && (p[j] < VALMAX)) {
 				nRed++;
 				xMean = xMean + j/3;
 				yMean = yMean + i;
@@ -362,7 +317,7 @@ void updatePicture(Mat oval, double latitude, double longitude) {
 	if ((row + PIXEL_RADIUS) > oval.rows) row = oval.rows - PIXEL_RADIUS;
 	if ((column - PIXEL_RADIUS) < 0) column = PIXEL_RADIUS;
 	if ((column + PIXEL_RADIUS) > oval.cols) column = oval.cols - PIXEL_RADIUS;
-	for (int i = row - PIXEL_RADIUS; i <= row + PIXEL_RADIUS; i++) {
+	for (int i = row; i <= row + PIXEL_RADIUS; i++) {
 		for (int j = column - PIXEL_RADIUS; j <= column + PIXEL_RADIUS; j++){
 			uchar *pixelPtr = oval.ptr<uchar>(i, j);
 			pixelPtr[0] = 0;	//Draw a black line
@@ -431,13 +386,97 @@ double calculate_bearing(Pos pos1, Pos pos2) {
 	return bearing*(180/PI);	//In degrees
 }
 
+void populateMainVector(vector<Pos> *list, Logger *logPtr) {
+	char str[BUFSIZ];
+	Pos corners[4];
+	readPosition(&corners[0], 0);	//First line
+	cout << "Corner #1 read as: " << (corners[0].lat) << " " << (corners[0].lon) << endl;
+	sprintf(str, "Corner #1 read as: %f %f", (corners[0].lat), (corners[0].lon));
+	logPtr->writeLogLine(str);	
+	readPosition(&corners[3], 1);	//Second line
+	cout << "Corner #4 read as: " << (corners[3].lat) << " " << (corners[3].lon) << endl;
+	sprintf(str, "Corner #4 read as: %f %f", (corners[3].lat), (corners[3].lon));
+	logPtr->writeLogLine(str);	
+	corners[1].lat = corners[0].lat;
+	corners[1].lon = corners[3].lon;
+	cout << "Corner #2 calculated as: " << (corners[1].lat) << " " << (corners[1].lon) << endl;
+	sprintf(str, "Corner #2 calculated as: %f %f", (corners[1].lat), (corners[1].lon));
+	logPtr->writeLogLine(str);	
+	corners[2].lat = corners[3].lat;
+	corners[2].lon = corners[0].lon;
+	cout << "Corner #3 calculated as: " << (corners[2].lat) << " " << (corners[2].lon) << endl;
+	sprintf(str, "Corner #3 calculated as: %f %f", (corners[2].lat), (corners[2].lon));
+	logPtr->writeLogLine(str);
+
+	double latDistance = calculate_distance(corners[0], corners[1]);	//Find minimum distance between top of square and bottom
+	double otherDist = calculate_distance(corners[2], corners[3]);
+	if (otherDist < latDistance) latDistance = otherDist;
+	int latPoints = latDistance/SPACING;							//Number of points along each sweep
+	Pos firstSide[latPoints], secondSide[latPoints];
+	double fraction, distance, angle;
+	int direction = -1;
+	if (corners[0].lon < corners[1].lon) {
+		direction = 1;	//Are we going S->N instead of N->S on our first sweep? //Assumes in Southern Hemisphere
+	} 
+	firstSide.push_back(corners[0]);
+	secondSide.push_back(corners[2]);
+	for (int i = 1; i < latPoint;, i++) {
+		fraction = (double)i/latPoints;
+		distance = fraction*endDistance;
+		angle = distance/(RADIUS_OF_EARTH*(PI/180)))*(180/PI);	//Great circle distance
+		Pos position;
+		position.lat = corners[0].lat;							//firstSide has corners 0 & 1
+		position.lon = corners[0].lon + (double)direction*angle;
+		firstSide.push_back(position);
+		position.lat = corners[2].lat;							//secondSide has corners 2 & 3
+		position.lon = corners[2].lon + (double)direction*angle;
+		secondSide.push_back(position);
+	}
+	firstSide.push_back(corners[1]);
+	secondSide.push_back(corners[3]);
+
+	vector<Pos> sweeps[latPoints+1];
+	int minVectorLength = 999999999999;	//Really large number
+	for (int i = 0; i < sweeps.size(), i++) {
+		int direction = 1;
+		if (secondSide[i].lon < firstSide[i].lon) {
+			direction = -1;	//Are we going E->W instead of W->E?
+		}
+		double endDistance = calculate_distance(start, secondSide[i]);	//Great circle distance, but ~ straight line distance for close points
+		int points = (endDistance/SWEEP_SPACING);
+		sweeps[i].push_back(firstSide[i]);
+		for (int j = 1; j < points; i++) {
+			fraction = (double)j/points;
+			distance = fraction*endDistance;
+			angle = distance/(RADIUS_OF_EARTH*cos((start.lat)*(PI/180)))*(180/PI);	//Both points have the same latitude
+			Pos position;
+			position.lat = firstSide[i].lat;
+			position.lon = firstSide[i].lon + (double)direction*angle;
+			sweeps[i].push_back(position);
+		}
+		sweeps[i].push_back(end);
+		if (minVectorLength > sweeps[i].size()) minVectorLength = sweeps[i].size();
+	}
+
+	for (int i = 0; i < minVectorLength; i++) {
+		for (int j = 0; j < sweeps.size(); j++) {
+			if (i%2 == 0) {	//'Even'?
+				list->push_back(sweeps[j][i]);;
+			}
+			else if (i%2 == 1) {//'Odd'?
+				list->push_back(sweeps[sweeps.size() - j - 1][i]);;
+			}
+		}
+	}
+}
+
 void populateVector(Pos start, Pos end, vector<Pos> *list) {
 	int direction = 1;
 	if (end.lon < start.lon) {
 		direction = -1;	//Are we going E->W instead of W->E?
 	}
 	double endDistance = calculate_distance(start, end);	//Great circle distance, but ~ straight line distance for close points
-	int points = (endDistance/SPACING);
+	int points = (endDistance/SWEEP_SPACING);
 	double fraction, distance, angle;
 	list->push_back(start);
 	for (int i = 1; i < points; i++) {
@@ -451,34 +490,6 @@ void populateVector(Pos start, Pos end, vector<Pos> *list) {
 	}
 	list->push_back(end);
 }
-
-/* 	Old function - has errors with poles
-void populateVector(Pos start, Pos end, vector<Pos> *list) {
-	double lat1 = (start.lat)*(PI/180);	//Convert into radians
-	double lon1 = (start.lon)*(PI/180);
-	double lat2 = (end.lat)*(PI/180);
-	double lon2 = (end.lon)*(PI/180);
-	double endDistance = calculate_distance(start, end);
-	int numberOfIntermediates = (endDistance/SPACING);	//Assumes SPACING (distance between adjacaent points) is given
-	list->push_back(start);
-	for (int i = 1; i < numberOfIntermediates; i++) {
-		double fraction = (double)i/(double)numberOfIntermediates;
-		double a = sin((1-fraction)*endDistance)/sin(endDistance);
-		double b = sin(fraction*endDistance)/sin(endDistance);
-		double x = a*cos(lat1)*cos(lon1) + b*cos(lat2)*cos(lon2);
-		double y = a*cos(lat1)*sin(lon1) + b*cos(lat2)*sin(lon2);
-		double z = a*sin(lat1) + b*sin(lat2);
-		Pos position;
-		position.lat = (atan2(z, sqrt(x*x + y*y)))*(180/PI);
-		position.lon = (atan2(y, x))*(180/PI);
-		if (abs(position.lat + start.lat) < 0.01) {	//Checks formula not giving wrong values compared to the start (should have roughly constant latitude)
-			position.lat = -position.lat;
-			position.lon = position.lon + 180;
-		}
-		list->push_back(position);
-	}
-	list->push_back(end);
-}*/
 
 void readPosition(Pos* locPtr, int skip) {
 	ifstream waypointsFile(GPS_DATA_FILE);
