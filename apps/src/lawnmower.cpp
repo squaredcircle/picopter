@@ -10,9 +10,10 @@
 #include <gpio.h>
 #include <flightBoard.h>
 #include <gps_qstarz.h>		//This will be changed later when Piksi has been integrated
-//#include header_file_for_compass
+#include <imu_euler.h>
 #include <sstream>
 #include <ncurses.h>
+#include "opencv2/core/core.hpp"
 #include "opencv2/highgui/highgui.hpp"
 #include "camera.h"
 
@@ -28,30 +29,26 @@ using namespace std;
 #define FRAME_WAIT 11 	//Number of frames to wait
 
 #define SPACING 4			//Distance between points in m
-#define LOCATION_WAIT 2000	//Time in ms Copter waits at each point
+#define LOCATION_WAIT 1500	//Time in ms Copter waits at each point
 #define LOOP_WAIT 100 		//Time in ms Copter wait in each loop
 #define GPS_DATA_FILE "config/waypoints_list.txt"
-#define WAYPOINT_RADIUS 1.000		//In m - should be no less than 3 or 4
-#define Kp 8						//proportional controller constant
+#define WAYPOINT_RADIUS 1.200		//In m - needs to be large enough that can speed not too low
+
+#define Kp 10						//Proportional controller constant - 8 seems to be too small
+#define SPEED_LIMIT 35		//Percentage
 
 #define OVAL_IMAGE_PATH "config/James_Oval.png"
-#define TOPLAT -31.979422	//Properties of image file of James Oval & represent min & max corners - are in degrees
-#define TOPLON 115.817162
-#define BOTTOMLAT -31.980634
-#define BOTTOMLON 115.818709
-
-void flyTo(FlightBoard*, GPS*, GPS_Data*, double, double, double, Logger*, Logger* , RaspiCamCvCapture*, int);
-double determineBearing(FlightBoard*, GPS*, GPS_Data*);
-void captureImage(int, GPS_Data*);
-bool checkRed(Mat, Logger*);
-double redComDist(Mat);
+#define MAXLAT -31.979422	//Properties of image file of James Oval & represent min & max corners - are in degrees
+#define MINLON 115.817162
+#define MINLAT -31.980634
+#define MAXLON 115.818709
+#define PIXEL_RADIUS 0 		//Number of surrounding pixels to turn 'Red'. Can probably be left as 0, unless get really fine image.
 
 /*Things needed for 'flyTo'*/
 //---------------------------
 #define PI 3.14159265359
 #define RADIUS_OF_EARTH 6364963	//m
 #define sin2(x) (sin(x)*sin(x))
-#define SPEED_LIMIT 35				//Want to go slowly as wil lbe analysing images
 #define DIRECTION_TEST_SPEED 40
 #define DIRECTION_TEST_DURATION 6000
 
@@ -65,7 +62,16 @@ double calculate_distance(Pos, Pos);
 double calculate_bearing(Pos, Pos);
 void setCourse(FB_Data*, double, double, double);
 void populateVector(Pos, Pos, vector<Pos>*);
+void flyTo(FlightBoard*, GPS*, GPS_Data*, IMU*, IMU_Data*, double, double, double, Logger*, Logger* , RaspiCamCvCapture*, int, Mat);
+double determineBearing(FlightBoard*, GPS*, GPS_Data*);
+
+void captureImage(int, GPS_Data*);
+bool checkRed(Mat, Logger*);
+double redComDist(Mat);
+void updatePicture(Mat, double, double);
+
 bool exitProgram = false;
+bool usingIMU = true;
 void terminate(int);
 
 int main() {
@@ -74,23 +80,37 @@ int main() {
 	gpio::startWiringPi();			//Initailises wiringPi
 	FlightBoard fb = FlightBoard();	//Initialises flightboard
 	if(fb.setup() != FB_OK) {
-		cout << "Error setting up flight board.  Terminating program" << endl;
+		cout << "Error setting up flight board. Terminating program." << endl;
 		return -1;
 	}
 	fb.start();
 	GPS gps = GPS();				//Initialises GPS
 	if(gps.setup() != GPS_OK) {
-		cout << "Error setting up gps.  Terminating program" << endl;
+		cout << "Error setting up gps. Terminating program." << endl;
 		return -1;
 	}
 	gps.start();
 	GPS_Data data;
+	IMU imu = IMU();
+	if(imu.setup() != IMU_OK) {		//Initialises compass
+        cout << "Error opening imu: Will navigate using GPS only." << endl;
+        usingIMU = false;
+    }
+    imu.start();
+	IMU_Data compassdata;
 	//Start the camera up
 	RaspiCamCvCapture* capture = raspiCamCvCreateCameraCapture(0);
 
 	Logger lawnlog = Logger("Lawn.log");	//Initalises log
 	Logger rawgpslog = Logger("Lawn_Raw_GPS.log");
 	char str[BUFSIZ];
+
+	//Loads image of James Oval
+	Mat oval = imread(OVAL_IMAGE_PATH);
+	if (oval.empty()) {	//Checks for loading errors
+		cout << "Error loading the image file " << OVAL_IMAGE_PATH << " Terminating program." << endl;
+		return -1;
+	}
 
 	//Determines waypoints
 	Pos corners[4];
@@ -118,13 +138,11 @@ int main() {
 	vector<Pos> gpsPoints;
 	populateVector(corners[0], corners[1], &sideA);
 	for(int i = 0; i < (int)sideA.size(); i++) {
-		//cout << "Point " << i+1 << " of sideA is " << (sideA[i].lat) << " " << (sideA[i].lon) << endl;
 		sprintf(str, "Point %d of sideA is %f %f", i+1, (sideA[i].lat), (sideA[i].lon));
 		lawnlog.writeLogLine(str);
 	}
 	populateVector(corners[2], corners[3], &sideB);
 	for(int i = 0; i < (int)sideB.size(); i++) {
-		//cout << "Point " << i+1 << " of sideB is " << (sideB[i].lat) << " " << (sideB[i].lon) << endl;
 		sprintf(str, "Point %d of sideB is %f %f", i+1, (sideB[i].lat), (sideB[i].lon));
 		lawnlog.writeLogLine(str);
 	}
@@ -133,13 +151,13 @@ int main() {
 	
 	for (int i = 0; i < minVectorLength; i++) {
 		if (i%2 == 0) {	//Even?
-			sprintf(str, "%d %d- Even", i,minVectorLength);
+			//sprintf(str, "%d %d- Even", i,minVectorLength);
 			//lawnlog.writeLogLine(str);
 			gpsPoints.push_back(sideA[i]);
 			gpsPoints.push_back(sideB[i]);
 		}
 		else if (i%2 == 1) {//Odd?
-			sprintf(str, "%d %d - Odd", i, minVectorLength);
+			//sprintf(str, "%d %d - Odd", i, minVectorLength);
 			//lawnlog.writeLogLine(str);
 			gpsPoints.push_back(sideB[i]);
 			gpsPoints.push_back(sideA[i]);
@@ -158,36 +176,52 @@ int main() {
 	while(!gpio::isAutoMode()) delay(100);	//Hexacopter waits until put into auto mode
 	cout << "Autonomous Mode has been Entered" << endl;
 
-	double yaw = determineBearing(&fb, &gps, &data);	//Hexacopter determines which way it is facing
-	sprintf(str, "Bearing found: Copter is facing %f degrees.", yaw);
+	double yaw;
+	if (usingIMU) {
+		imu.getIMU_Data(&compassdata);
+		yaw = compassdata.yaw;
+		cout << "Using compass: Copter is facing " << yaw << " degrees." << endl;
+		sprintf(str, "Using compass: Copter is facing %f degrees.", yaw);
+	}
+	else {
+		yaw = determineBearing(&fb, &gps, &data);	//Hexacopter determines which way it is facing
+		sprintf(str, "Bearing found with GPS: Copter is facing %f degrees.", yaw);
+	}
 	lawnlog.writeLogLine(str);
 	gps.getGPS_Data(&data);		//Hexacopter works out where it is
 	cout << "Location and Orienation determined" << endl;
 	
 	for (int i = 0; i < (int)gpsPoints.size(); i++) {
-		flyTo(&fb, &gps, &data, gpsPoints[i].lat, gpsPoints[i].lon, yaw, &lawnlog, &rawgpslog, capture, i);
-		//captureImage(i, &data);
+		flyTo(&fb, &gps, &data, &imu, &compassdata, gpsPoints[i].lat, gpsPoints[i].lon, yaw, &lawnlog, &rawgpslog, capture, i, oval);
 		if (i == 0) {	//Are we at the first point?
-			rawgpslog.clearLog();	//Flush data in there
+			rawgpslog.clearLog();	//Flush data in there - also removers header
+			oval = imread(OVAL_IMAGE_PATH);	//Wipe any extra lines caused by flying to first point
 		}
 		if(exitProgram) {
 			break;
 		}
 	}
 
+	sprintf(str, "photos/James_Oval_%d.jpg", (int)((data.time)*100));
+	imwrite(str, oval);
 	raspiCamCvReleaseCapture(&capture);
 	cout << "Done!" << endl;
 	lawnlog.writeLogLine("Finished!");
 	return 0;
 }
 
-void flyTo(FlightBoard *fbPtr, GPS *gpsPtr, GPS_Data *dataPtr, double targetLat, double targetLon, double yaw, Logger *logPtr, Logger *rawLogPtr, RaspiCamCvCapture *camPtr, int index) {
+void flyTo(FlightBoard *fbPtr, GPS *gpsPtr, GPS_Data *dataPtr, IMU *imuPtr, IMU_Data *compDataPtr, double targetLat, double targetLon, double yaw, Logger *logPtr, Logger *rawLogPtr, RaspiCamCvCapture *camPtr, int index, Mat oval) {
 	FB_Data stop = {0, 0, 0, 0};
 	FB_Data course = {0, 0, 0, 0};
-	Pos start;
-	Pos end;
+	Pos start, end;
 
 	gpsPtr->getGPS_Data(dataPtr);
+	if (usingIMU){
+		imuPtr->getIMU_Data(compDataPtr);
+		yaw = compDataPtr->yaw;
+	}
+	imshow("Oval Map", oval);
+	waitKey(1);
 	start.lat = (dataPtr->latitude);
 	start.lon = (dataPtr->longitude);
 	end.lat = targetLat;
@@ -199,6 +233,7 @@ void flyTo(FlightBoard *fbPtr, GPS *gpsPtr, GPS_Data *dataPtr, double targetLat,
 	double distance = calculate_distance(start, end);
 	double bearing = calculate_bearing(start, end);
 	cout << "Distance: " << distance << " m\tBearing: " << bearing << " degrees" << endl;
+
 	Mat bestImg;
 	Mat currentImg;
 	int timer = 0;
@@ -210,7 +245,6 @@ void flyTo(FlightBoard *fbPtr, GPS *gpsPtr, GPS_Data *dataPtr, double targetLat,
 		//cout << "Course set to: {" << course.aileron << " (A), " << course.elevator << " (E)}" << endl;
 		sprintf(str, "Course set to : {%d (A), %d (E)}", course.aileron, course.elevator);
 		logPtr->writeLogLine(str);
-		gpsPtr->getGPS_Data(dataPtr);
 		fbPtr->setFB_Data(&course);
 //		checkRed(camPtr);
 		IplImage* view = raspiCamCvQueryFrame(camPtr);
@@ -230,10 +264,9 @@ void flyTo(FlightBoard *fbPtr, GPS *gpsPtr, GPS_Data *dataPtr, double targetLat,
 		else {
 			if (sawRed && (timer > 0))  {	//Only resets first time image leaves 
 				timer = 0-FRAME_WAIT;
-				char dummy[BUFSIZ];
-				sprintf(dummy, "photos/Lawnmower_%d_%d_%d.jpg", (int)((dataPtr->latitude)*1000), (int)((dataPtr->longitude)*1000), (int)((dataPtr->time)*100));
-				imwrite(dummy, bestImg);
-				imshow("Last Red Object", bestImg);
+				sprintf(str, "photos/Lawnmower_%d_%d_%d.jpg", (int)((dataPtr->latitude)*1000), (int)((dataPtr->longitude)*1000), (int)((dataPtr->time)*100));
+				imwrite(str, bestImg);
+				//imshow("Last Red Object", bestImg);
 				waitKey(1);
 				haveBest = false;
 			}
@@ -242,6 +275,14 @@ void flyTo(FlightBoard *fbPtr, GPS *gpsPtr, GPS_Data *dataPtr, double targetLat,
 		
 		delay(LOOP_WAIT);	//Wait for instructions
 		gpsPtr->getGPS_Data(dataPtr);
+		if (usingIMU) {
+			imuPtr->getIMU_Data(compDataPtr);
+			yaw = compDataPtr->yaw;
+		}
+		updatePicture(oval, dataPtr->latitude, dataPtr->longitude);	
+		namedWindow("Oval Map", CV_WINDOW_AUTOSIZE);
+		imshow("Oval Map", oval);
+		waitKey(1); 
 		start.lat = (dataPtr->latitude);
 		start.lon = (dataPtr->longitude);
 		cout << "Needs to move from: " << dataPtr->latitude << ", " << dataPtr->longitude << "\n\tto : " << targetLat << ", " << targetLon << endl;
@@ -257,6 +298,10 @@ void flyTo(FlightBoard *fbPtr, GPS *gpsPtr, GPS_Data *dataPtr, double targetLat,
 		sprintf(str, "Distance: %f m\tBearing : %f degrees", distance, bearing);
 		logPtr->writeLogLine(str);
 		// snapRed(camPtr);
+		if (!gpio::isAutoMode()) {
+			terminate(0);
+			return;
+		}
 	}
 	cout << "Arrived" << endl;
 	sprintf(str, "Arrived at %f %f\n-----------------------------\n", end.lat, end.lon);
@@ -309,11 +354,22 @@ double redComDist(Mat image) {
 	return sqrt(pow(xMean-(double)(nCols/2), 2) + pow(yMean-(double)(nRows/2), 2));
 }
 
-void captureImage(int point, GPS_Data *dataPtr) {
-	cout << "Taking photo..." << endl;
-	char syscall[128];
-	sprintf(syscall, "raspistill -o lawnmower_run_%i_%f.jpg", point, dataPtr->time);
-	system(syscall);
+void updatePicture(Mat oval, double latitude, double longitude) {
+	if ((latitude < MINLAT) || (latitude > MAXLAT) || (longitude < MINLON) || (longitude > MAXLON)) return; //Are we inside the image?
+	int row = (oval.rows)*(latitude - MAXLAT)/(MINLAT - MAXLAT);
+	int column = (oval.cols)*(longitude - MINLON)/(MAXLON - MINLON);
+	if ((row - PIXEL_RADIUS) < 0) row = PIXEL_RADIUS;					//Check if we are going out of bnounds of the image
+	if ((row + PIXEL_RADIUS) > oval.rows) row = oval.rows - PIXEL_RADIUS;
+	if ((column - PIXEL_RADIUS) < 0) column = PIXEL_RADIUS;
+	if ((column + PIXEL_RADIUS) > oval.cols) column = oval.cols - PIXEL_RADIUS;
+	for (int i = row - PIXEL_RADIUS; i <= row + PIXEL_RADIUS; i++) {
+		for (int j = column - PIXEL_RADIUS; j <= column + PIXEL_RADIUS; j++){
+			uchar *pixelPtr = oval.ptr<uchar>(i, j);
+			pixelPtr[0] = 0;	//Draw a black line
+			pixelPtr[1] = 0;
+			pixelPtr[2] = 0;
+		}
+	}
 }
 
 //Old bearing function - GPS only -----------------------------------------
@@ -376,6 +432,28 @@ double calculate_bearing(Pos pos1, Pos pos2) {
 }
 
 void populateVector(Pos start, Pos end, vector<Pos> *list) {
+	int direction = 1;
+	if (end.lon < start.lon) {
+		direction = -1;	//Are we going E->W instead of W->E?
+	}
+	double endDistance = calculate_distance(start, end);	//Great circle distance, but ~ straight line distance for close points
+	int points = (endDistance/SPACING);
+	double fraction, distance, angle;
+	list->push_back(start);
+	for (int i = 1; i < points; i++) {
+		fraction = (double)i/points;
+		distance = fraction*endDistance;
+		angle = distance/(RADIUS_OF_EARTH*cos((start.lat)*(PI/180)))*(180/PI);	//Both points have the same latitude
+		Pos position;
+		position.lat = start.lat;
+		position.lon = start.lon + (double)direction*angle;
+		list->push_back(position);
+	}
+	list->push_back(end);
+}
+
+/* 	Old function - has errors with poles
+void populateVector(Pos start, Pos end, vector<Pos> *list) {
 	double lat1 = (start.lat)*(PI/180);	//Convert into radians
 	double lon1 = (start.lon)*(PI/180);
 	double lat2 = (end.lat)*(PI/180);
@@ -383,7 +461,7 @@ void populateVector(Pos start, Pos end, vector<Pos> *list) {
 	double endDistance = calculate_distance(start, end);
 	int numberOfIntermediates = (endDistance/SPACING);	//Assumes SPACING (distance between adjacaent points) is given
 	list->push_back(start);
-	for (int i = 1; i < numberOfIntermediates; i++){
+	for (int i = 1; i < numberOfIntermediates; i++) {
 		double fraction = (double)i/(double)numberOfIntermediates;
 		double a = sin((1-fraction)*endDistance)/sin(endDistance);
 		double b = sin(fraction*endDistance)/sin(endDistance);
@@ -400,7 +478,7 @@ void populateVector(Pos start, Pos end, vector<Pos> *list) {
 		list->push_back(position);
 	}
 	list->push_back(end);
-}
+}*/
 
 void readPosition(Pos* locPtr, int skip) {
 	ifstream waypointsFile(GPS_DATA_FILE);
@@ -419,6 +497,6 @@ void readPosition(Pos* locPtr, int skip) {
 }
 
 void terminate(int signum) {
-	cout << "Signal " << signum << " received. Stopping waypoints program. Exiting." << endl;
+	cout << "Signal " << signum << " received. Quitting lawnmower program." << endl;
 	exitProgram = true;
 }
