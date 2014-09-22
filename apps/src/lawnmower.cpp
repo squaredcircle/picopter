@@ -16,6 +16,8 @@
 #include "opencv2/core/core.hpp"
 #include "opencv2/highgui/highgui.hpp"
 #include "camera.h"
+#include "config_parser.h"
+
 #include "run_lawnmower.h"
 
 void readPosition(Pos*, int);

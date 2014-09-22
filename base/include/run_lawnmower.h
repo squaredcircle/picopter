@@ -24,37 +24,24 @@
 #include "opencv2/core/core.hpp"
 #include "opencv2/highgui/highgui.hpp"
 #include "camera.h"
+#include "config_parser.h"
 
 using namespace std;
 
-#define HMIN 320
-#define HMAX 40
-#define SMIN 95
-#define SMAX 255
-#define VALMIN 95	//VMIN already used
-#define VALMAX 255
 #define REDTHRESH 50	//Number of red pixels need to see in an image
 #define FRAME_WAIT 11 	//Number of frames to wait
 
-#define SWEEP_SPACING 6		//Distance between parallel sweeps in m
-#define SPACING 3 			//Separation between intermediate points
 #define LOCATION_WAIT 0		//Time in ms Copter waits at each point
 #define LOOP_WAIT 100 		//Time in ms Copter wait in each loop
 #define GPS_DATA_FILE "config/waypoints_list.txt"
-#define WAYPOINT_RADIUS 1.200		//In m - needs to be large enough that can speed not too low
 
-#define KPh 10				//Horizontal proportional controller constant - 8 seems to be too small
-#define SPEED_LIMIT 35		//Percentage
-
-#define OVAL_IMAGE_PATH "../picopter-base/config/James_Oval.png"
+#define OVAL_IMAGE_PATH "../base/config/James_Oval.png"
 #define MAXLAT -31.979422	//Properties of image file of James Oval & represent min & max corners - are in degrees
 #define MINLON 115.817162
 #define MINLAT -31.980634
 #define MAXLON 115.818709
-#define PIXEL_RADIUS 1 		//Number of surrounding pixels to turn 'Red'. Can probably be left as 0, unless get really fine image.
+#define PIXEL_RADIUS 1 		//Number of surrounding pixels to turn Black. Can probably be left as 0, unless get really fine image.
 
-/*Things needed for 'flyTo'*/
-//---------------------------
 #define PI 3.14159265359
 #define RADIUS_OF_EARTH 6364963	//m
 #define sin2(x) (sin(x)*sin(x))

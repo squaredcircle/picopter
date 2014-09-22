@@ -2,12 +2,50 @@
 //Written by Omid Targhagh, based on work done by Michael Baxter
 
 #include "run_lawnmower.h"
+
 bool exitLawnmower = false;
 bool usingIMU = true;
+
+#define CONFIG_FILE "../base/config/config.txt"
+int SPEED_LIMIT = 35;		//Config file parameters - need to be initialised as globals
+double SWEEP_SPACING = 6;
+double POINT_SPACING = 3;
+double WAYPOINT_RADIUS = 1.2;
+int KPh = 10;
+int KIh = 0;
+int KPv = 0;
+int KIv = 0;
+int MIN_HUE = 320;
+int MAX_HUE = 40;
+int MIN_SAT=  95;
+int MAX_SAT = 255;
+int MIN_VAL = 95;
+int MAX_VAL = 255;
+int PIXLE_THRESHOLD = 5;	//Don't actually use, but listed in there
 
 void run_lawnmower(FlightBoard *fbPtr, GPS *gpsPtr, GPS_Data *dataPtr, IMU *imuPtr, IMU_Data *compDataPtr, Pos start, Pos end) {
 
 	cout << "Starting to run lawnmower..." << endl;
+	
+	ConfigParser::ParamMap lawnParameters;
+    lawnParameters.insert("SPEED_LIMIT", &SPEED_LIMIT);
+    lawnParameters.insert("SWEEP_SPACING", &SWEEP_SPACING);
+    lawnParameters.insert("POINT_SPACING", &POINT_SPACING);
+    lawnParameters.insert("WAYPOINT_RADIUS", &WAYPOINT_RADIUS);
+    lawnParameters.insert("KPh", &KPh);
+    lawnParameters.insert("KIh", &KIh);
+    lawnParameters.insert("KPv", &KPv);
+    lawnParameters.insert("KIv", &KIv);
+    ConfigParser::loadParameters("LAWNMOWER", &lawnParameters, CONFIG_FILE);
+    ConfigParser::ParamMap camParameters; 
+    camParameters.insert("MIN_HUE", &MIN_HUE);
+    camParameters.insert("MAX_HUE", &MAX_HUE);
+    camParameters.insert("MIN_SAT", &MIN_SAT);
+    camParameters.insert("MAX_SAT", &MAX_SAT);
+    camParameters.insert("MIN_VAL", &MIN_VAL);
+    camParameters.insert("MAX_VAL", &MAX_VAL);
+    ConfigParser::loadParameters("CAMERA", &camParameters, CONFIG_FILE);
+	
 	if(imuPtr->setup() != IMU_OK) {		//Check if IMU
         cout << "Error opening imu: Will navigate using GPS only." << endl;
         usingIMU = false;
@@ -21,7 +59,7 @@ void run_lawnmower(FlightBoard *fbPtr, GPS *gpsPtr, GPS_Data *dataPtr, IMU *imuP
 	}
 
 	Logger lawnlog = Logger("Lawn.log");	//Initalise logs
-	Logger rawgpslog = Logger("Lawn_Raw_GPS.txt");
+	Logger rawgpslog = Logger("Lawn_Raw_GPS.txt");	//Easier to read into M/Matica
 	char str[BUFSIZ];
 
 	vector<Pos> gpsPoints;
@@ -179,7 +217,7 @@ bool checkRed(Mat image, Logger *logPtr) {
 	for(int i = 0; i < nRows; i++) {
 		p = image.ptr<uchar>(i);
 		for (int j = 0; j < nCols; j=j+3) {
-			if (((p[j] > HMIN) || (p[j] < HMAX)) && (p[j] > SMIN) && (p[j] < SMAX) && (p[j] > VALMIN) && (p[j] < VALMAX)) {
+			if (((p[j] > MIN_HUE) || (p[j] < MAX_HUE)) && (p[j] > MIN_SAT) && (p[j] < MAX_SAT) && (p[j] > MIN_VAL) && (p[j] < MAX_VAL)) {
 				nRed++;
 			}
 		}
@@ -202,7 +240,7 @@ double redComDist(Mat image) {
 	for(int i = 0; i < nRows; i++) {
 		p = image.ptr<uchar>(i);
 		for (int j = 0; j < nCols; j=j+3) {
-			if (((p[j] > HMIN) || (p[j] < HMAX)) && (p[j] > SMIN) && (p[j] < SMAX) && (p[j] > VALMIN) && (p[j] < VALMAX)) {
+			if (((p[j] > MIN_HUE) || (p[j] < MAX_HUE)) && (p[j] > MIN_SAT) && (p[j] < MAX_SAT) && (p[j] > MIN_VAL) && (p[j] < MAX_VAL)) {
 				nRed++;
 				xMean = xMean + j/3;
 				yMean = yMean + i;
@@ -218,7 +256,7 @@ void updatePicture(Mat oval, double latitude, double longitude) {
 	if ((latitude < MINLAT) || (latitude > MAXLAT) || (longitude < MINLON) || (longitude > MAXLON)) return; //Are we inside the image?
 	int row = (oval.rows)*(latitude - MAXLAT)/(MINLAT - MAXLAT);
 	int column = (oval.cols)*(longitude - MINLON)/(MAXLON - MINLON);
-	if ((row - PIXEL_RADIUS) < 0) row = PIXEL_RADIUS;					//Check if we are going out of bnounds of the image
+	if ((row - PIXEL_RADIUS) < 0) row = PIXEL_RADIUS;					//Check if we are going out of bounds of the image
 	if ((row + PIXEL_RADIUS) > oval.rows) row = oval.rows - PIXEL_RADIUS;
 	if ((column - PIXEL_RADIUS) < 0) column = PIXEL_RADIUS;
 	if ((column + PIXEL_RADIUS) > oval.cols) column = oval.cols - PIXEL_RADIUS;
@@ -313,7 +351,7 @@ void populateMainVector(vector<Pos> *list, Logger *logPtr, Pos start, Pos end) {
 	double lonDistance = calculate_distance(corners[0], corners[2]);	//Find separation of 'top' and 'bottom' of sweep
 	double otherDist = calculate_distance(corners[1], corners[3]);
 	if (otherDist < lonDistance) lonDistance = otherDist;
-	int lonPoints = (int)(lonDistance/SPACING) + 1;							//Number of points along each sweep
+	int lonPoints = (int)(lonDistance/POINT_SPACING) + 1;							//Number of points along each sweep
 	int direction = 1;
 	if (corners[0].lon > corners[3].lon) {
 		direction = -1;	//Is corners[0] East of corners[3] instead of West?
@@ -363,7 +401,7 @@ void populateMainVector(vector<Pos> *list, Logger *logPtr, Pos start, Pos end) {
 void addPoints(vector<Pos> *list, Pos start, Pos end, int way) {
 	//cout << "Adding points..." << endl;
 	double endDistance = calculate_distance(start, end);
-	int points = (int)(endDistance/SPACING) + 1;	//Number of intermediate points
+	int points = (int)(endDistance/POINT_SPACING) + 1;	//Number of intermediate points
 	double fraction, distance, angle;
 	Pos dummyPos;
 	int direction = 1;
