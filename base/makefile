@@ -19,12 +19,12 @@ EXAMPLE_SOURCES = $(addprefix src/, $(addsuffix .cpp, $(EXAMPLE)))
 EXECUTABLES = $(addprefix bin/, $(EXAMPLE))
 
 
-XSENS_LINKS = -L../Xsens -lcmt
-XSENS_INCLUDES = -I../Xsens
-XSENS_OBJECTS = $(addprefix ../Xsens/, cmt1.o cmt2.o cmt3.o cmtmessage.o cmtpacket.o cmtscan.o xsens_std.o xsens_time.o xsens_exception.o)
+XSENS_LINKS = -L../../lib/Xsens -lcmt
+XSENS_INCLUDES = -I../../lib/Xsens
+XSENS_OBJECTS = $(addprefix ../../lib/Xsens/, cmt1.o cmt2.o cmt3.o cmtmessage.o cmtpacket.o cmtscan.o xsens_std.o xsens_time.o xsens_exception.o)
 
-RASPICAM_LINKS = -L../../robidouille/raspicam_cv -L../../userland/build/lib -lraspicamcv -lmmal_core -lmmal -lmmal_util -lvcos -lbcm_host
-RASPICAM_INCLUDES = -I../../robidouille/raspicam_cv
+RASPICAM_LINKS = -L../../lib/robidouille/raspicam_cv -L../../lib/raspberrypi/userland/build/lib -lraspicamcv -lmmal_core -lmmal -lmmal_util -lvcos -lbcm_host
+RASPICAM_INCLUDES = -I../../lib/robidouille/raspicam_cv
 OPEN_CV = `pkg-config --cflags --libs opencv`
 
 
