@@ -92,7 +92,7 @@ void IMU::uploadData() {
 			euler_data = msg->getOriEuler();
 			currentData.pitch = euler_data.m_pitch;
 			currentData.roll = euler_data.m_roll;
-			currentData.yaw = euler_data.m_yaw;
+			currentData.yaw = -euler_data.m_yaw;
 			
 			sprintf(strBuf, "Pitch:\t%3.3f, Roll:\t%3.3f, Yaw:\t%3.3f.", currentData.pitch, currentData.roll, currentData.yaw);					
 			log->writeLogLine(std::string(strBuf));
