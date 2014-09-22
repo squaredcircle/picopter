@@ -172,7 +172,17 @@ This set of classes forms the low-level system and wraps many of the previously 
     make
 
 
-*10.3   Building controller applications*
+*10.3   Building application modules*
+
+This set of programs are modularised snippets of code common to both application executables and the applications launched by the web server.
+
+    cd ~/picopter/modules
+    mkdir obj
+    make
+    
+
+
+*10.4   Building controller applications*
 
 This set of programs controls the picopter as it sets to follow waypoints and track red objects.
 
@@ -181,7 +191,7 @@ This set of programs controls the picopter as it sets to follow waypoints and tr
     make
     
 
-*10.4   Create logs directory*
+*10.5   Create logs directory*
 
 Logs will magically appear here.  See logger.h to change the path.
 
