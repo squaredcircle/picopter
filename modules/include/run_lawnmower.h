@@ -25,6 +25,7 @@
 #include "opencv2/highgui/highgui.hpp"
 #include "camera.h"
 #include "config_parser.h"
+#include "detectObjects.h"
 
 using namespace std;
 
