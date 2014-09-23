@@ -64,19 +64,19 @@ void run_lawnmower(FlightBoard *fbPtr, GPS *gpsPtr, GPS_Data *dataPtr, IMU *imuP
 	lawnlog.writeLogLine(str);
 	sprintf(str, "\tSPEED_LIMIT\t%d\n", SPEED_LIMIT);
 	lawnlog.writeLogLine(str);
-	sprintf(str, "\tSWEEP_SPACING\t%d\n", SWEEP_SPACING);
+	sprintf(str, "\tSWEEP_SPACING\t%f\n", SWEEP_SPACING);
 	lawnlog.writeLogLine(str);
-	sprintf(str, "\tPOINT_SPACING\t%d\n", POINT_SPACING);
+	sprintf(str, "\tPOINT_SPACING\t%f\n", POINT_SPACING);
 	lawnlog.writeLogLine(str);
-	sprintf(str, "\tWAYPOINT_RADIUS\t%d\n", WAYPOINT_RADIUS);
+	sprintf(str, "\tWAYPOINT_RADIUS\t%f\n", WAYPOINT_RADIUS);
 	lawnlog.writeLogLine(str);
-	sprintf(str, "\tKPh\t%d\n", KPh);
+	sprintf(str, "\tKPh\t%f\n", KPh);
 	lawnlog.writeLogLine(str);
-	sprintf(str, "\tKIh\t%d\n", KIh);
+	sprintf(str, "\tKIh\t%f\n", KIh);
 	lawnlog.writeLogLine(str);
-	sprintf(str, "\tKPv\t%d\n", KPv);
+	sprintf(str, "\tKPv\t%f\n", KPv);
 	lawnlog.writeLogLine(str);
-	sprintf(str, "\tKIv\t%d\n", KIv);
+	sprintf(str, "\tKIv\t%f\n", KIv);
 	lawnlog.writeLogLine(str);
 
 	vector<Pos> gpsPoints;
@@ -129,7 +129,7 @@ void run_lawnmower(FlightBoard *fbPtr, GPS *gpsPtr, GPS_Data *dataPtr, IMU *imuP
 void flyTo(FlightBoard *fbPtr, GPS *gpsPtr, GPS_Data *dataPtr, IMU *imuPtr, IMU_Data *compDataPtr, Pos end, double yaw, Logger *logPtr, Logger *rawLogPtr, RaspiCamCvCapture *camPtr, int index, Mat oval) {
 	FB_Data stop = {0, 0, 0, 0};
 	FB_Data course = {0, 0, 0, 0};
-	Pos start, end;
+	Pos start;
 	gpsPtr->getGPS_Data(dataPtr);
 	if (usingIMU){
 		imuPtr->getIMU_Data(compDataPtr);
@@ -157,6 +157,7 @@ void flyTo(FlightBoard *fbPtr, GPS *gpsPtr, GPS_Data *dataPtr, IMU *imuPtr, IMU_
 	int timer = 0;
 	bool sawRed = false;
 	bool haveBest = false;
+	int objCount = 0;
 
 	while (!exitLawnmower && distance > WAYPOINT_RADIUS) {
 		setLawnCourse(&course, distance, pastDistances, bearing, yaw);
@@ -166,9 +167,18 @@ void flyTo(FlightBoard *fbPtr, GPS *gpsPtr, GPS_Data *dataPtr, IMU *imuPtr, IMU_
 		IplImage* view = raspiCamCvQueryFrame(camPtr);
 		Mat imBGR(view);
 		Mat image;
+		Mat imBinary;
 		cvtColor(imBGR, image, CV_BGR2HSV);
+		HSV2Bin(image,imBinary);
+		int centres[2][10];
+		for (int i = 0; i <10;i++){
+			centres[0][i] = -1;
+			centres[1][i] = -1;
+		}
 		timer++;
-		if ((timer > 0) && checkRed(image, logPtr)) {	//Is there red?
+		objCount = findRedObjects(imBinary,centres);
+		cout<<"Number of Red Objects Detected: " << objCount<<endl;
+		if ((timer > 0) && (objCount >0)) {	//Is there red?
 			sawRed = true;
 			image.copyTo(currentImg);
 			if (!haveBest) {
@@ -315,7 +325,7 @@ double determineBearing(FlightBoard *fbPtr, GPS *gpsPtr, GPS_Data *dataPtr) {
 	return yaw;
 }
 
-void setLawnCourse(FB_Data *instruction, double distance, double pastDistances, double bearing, double yaw) {
+void setLawnCourse(FB_Data *instruction, double distance, double pastDistances[], double bearing, double yaw) {
 	double average = 0;
 	for (int i = 0; i < PAST_DIST; i++) {
 		average = average + pastDistances[i];

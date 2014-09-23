@@ -2,7 +2,7 @@ CC = g++
 
 CFLAGS = -Wall -c -g -static
 INCLUDES = -I./include -I/usr/local/include
-LDFLAGS = -L/usr/local/lib -lwiringPi -lboost_thread -lboost_system -lncurses -g
+LDFLAGS = -L/usr/local/lib -lwiringPi -lboost_thread -lboost_system -lpthread -lncurses -g
 
 CORE = gpio logger config_parser
 CORE_SOURCES = $(addprefix src/, $(addsuffix .cpp, $(CORE)))
@@ -19,7 +19,7 @@ EXAMPLE_SOURCES = $(addprefix src/, $(addsuffix .cpp, $(EXAMPLE)))
 EXECUTABLES = $(addprefix bin/, $(EXAMPLE))
 
 
-XSENS_LINKS = -L../../lib/Xsens -lcmt
+XSENS_LINKS = -L../../lib/Xsens -lcmt -lpthread -lrt
 XSENS_INCLUDES = -I../../lib/Xsens
 XSENS_OBJECTS = $(addprefix ../../lib/Xsens/, cmt1.o cmt2.o cmt3.o cmtmessage.o cmtpacket.o cmtscan.o xsens_std.o xsens_time.o xsens_exception.o)
 

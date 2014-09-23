@@ -2,7 +2,7 @@ CC = g++
 
 CFLAGS = -Wall -c -g
 INCLUDES = -I./include -I/usr/local/include
-LDFLAGS = -L/usr/local/lib -lwiringPi -lboost_thread -lboost_system -lncurses -g
+LDFLAGS = -L/usr/local/lib -lwiringPi -lboost_thread -lboost_system -lncurses -lpthread -g
 
 BASE_INCLUDE = -I../base/include
 BASE_HEADERS = $(wildcard ../base/include/*.h)
@@ -12,7 +12,7 @@ MODULES_INCLUDE = -I../modules/include
 MODULES_HEADERS = $(wildcard ../modules/include/*.h)
 MODULES_OBJECTS = $(wildcard ../modules/obj/*.o) 
 
-XSENS_LINKS = -L ../../lib/Xsens -lcmt
+XSENS_LINKS = -L ../../lib/Xsens -lcmt -lpthread -lrt
 XSENS_INCLUDES = -I../../lib/Xsens
 XSENS_OBJECTS = $(addprefix ../../lib/Xsens/, cmt1.o cmt2.o cmt3.o cmtmessage.o cmtpacket.o cmtscan.o xsens_std.o xsens_time.o xsens_exception.o)
 
