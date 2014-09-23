@@ -85,7 +85,7 @@ int ConfigParser::loadParameters(std::string className, ParamMap *parameters, st
     std::istringstream iss;
     
     while(getline(configFile, line)) {
-        std::cout << "LOAD:\tgot line:" << line << std::endl;
+        //std::cout << "LOAD:\tgot line:" << line << std::endl;
         if(line.empty()) continue;
         if(line.at(0) == ' ' || line.at(0) == '\t') continue;
         if(line.at(0) == '#') continue;
@@ -99,7 +99,7 @@ int ConfigParser::loadParameters(std::string className, ParamMap *parameters, st
                 iss.str(line.substr(2, std::string::npos));
                 iss.clear();
                 iss >> std::ws >> word;
-                std::cout << "LOAD:\tgot title:" << word << std::endl;
+                //std::cout << "LOAD:\tgot title:" << word << std::endl;
                 if(word.compare(className) == 0) {
                     inTable = true;
                 } else {
@@ -109,12 +109,12 @@ int ConfigParser::loadParameters(std::string className, ParamMap *parameters, st
                 
             case 'F':
                 if(inTable) {
-                    std::cout << "LOAD:\tup to f:" << std::endl;
+                    //std::cout << "LOAD:\tup to f:" << std::endl;
                     iss.str(line.substr(2, std::string::npos));
                     iss.clear();
                     while(!iss.str().empty()) {
                         iss >> std::ws >> word;
-                        std::cout << "LOAD:\tword:" << word << std::endl;
+                        //std::cout << "LOAD:\tword:" << word << std::endl;
                         fields.push(word);
                         iss.str(iss.str().substr(iss.str().find(word) + word.length(), std::string::npos));
                         //Haters gonna hate.
@@ -131,27 +131,30 @@ int ConfigParser::loadParameters(std::string className, ParamMap *parameters, st
                         if(fields.empty()) {
                             break;
                         }
-                        std::cout << "LOAD:\tfields:" << fields.front() << std::endl;
+                        //std::cout << "LOAD:\tfields:" << fields.front() << std::endl;
                         char type = parameters->getType(fields.front());
-                        std::cout << "LOAD:\ttype:" << type << std::endl;
+                        //std::cout << "LOAD:\ttype:" << type << std::endl;
                         switch(type) {
                             case 'i':
                                 intPtr = parameters->getInt(fields.front());
-                                std::cout << "LOAD:\tintPtr:" << *intPtr << std::endl;
+                                //std::cout << "LOAD:\tintPtr:" << *intPtr << std::endl;
                                 iss >> std::ws >> *intPtr;
-                                std::cout << "LOAD:\tintPtr:" << *intPtr << std::endl;
+                                //std::cout << "LOAD:\tintPtr:" << *intPtr << std::endl;
+                                std::cout << "LOAD:\t" << fields.front() << " = " << *intPtr << std::endl;
                                 break;
                             case 'd':
                                 doublePtr = parameters->getDouble(fields.front());
-                                std::cout << "LOAD:\tdoublePtr:" << *doublePtr << std::endl;
+                                //std::cout << "LOAD:\tdoublePtr:" << *doublePtr << std::endl;
                                 iss >> std::ws >> *doublePtr;
-                                std::cout << "LOAD:\tdoublePtr:" << *doublePtr << std::endl;
+                                //std::cout << "LOAD:\tdoublePtr:" << *doublePtr << std::endl;
+                                std::cout << "LOAD:\t" << fields.front() << " = " << *doublePtr << std::endl;
                                 break;
                             case 'c':
                                 charPtr = parameters->getChar(fields.front());
-                                std::cout << "LOAD:\tcharPtr:" << *charPtr << std::endl;
+                                //std::cout << "LOAD:\tcharPtr:" << *charPtr << std::endl;
                                 iss >> std::ws >> *charPtr;
-                                std::cout << "LOAD:\tcharPtr:" << *charPtr << std::endl;
+                                //std::cout << "LOAD:\tcharPtr:" << *charPtr << std::endl;
+                                std::cout << "LOAD:\t" << fields.front() << " = " << *charPtr << std::endl;
                                 break;
                             default:
                                 std::cout << "Error loading parameters: field "<< fields.front() << " is not a variable" << std::endl;
