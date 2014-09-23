@@ -164,7 +164,7 @@ void flyTo(FlightBoard *fbPtr, GPS *gpsPtr, GPS_Data *dataPtr, IMU *imuPtr, IMU_
 		sprintf(str, "Course set to : {%d (A), %d (E)}", course.aileron, course.elevator);
 		logPtr->writeLogLine(str);
 		fbPtr->setFB_Data(&course);
-		IplImage* view = raspiCamCvQueryFrame(camPtr);
+		/*IplImage* view = raspiCamCvQueryFrame(camPtr);
 		Mat imBGR(view);
 		Mat image;
 		Mat imBinary;
@@ -176,7 +176,7 @@ void flyTo(FlightBoard *fbPtr, GPS *gpsPtr, GPS_Data *dataPtr, IMU *imuPtr, IMU_
 			centres[1][i] = -1;
 		}
 		timer++;
-		objCount = findRedObjects(imBinary,centres);
+		objCount = findRedObjects(imBinary, centres);
 		cout<<"Number of Red Objects Detected: " << objCount<<endl;
 		if ((timer > 0) && (objCount >0)) {	//Is there red?
 			sawRed = true;
@@ -192,14 +192,14 @@ void flyTo(FlightBoard *fbPtr, GPS *gpsPtr, GPS_Data *dataPtr, IMU *imuPtr, IMU_
 		else {
 			if (sawRed && (timer > 0))  {	//Only resets first time image leaves frame
 				timer = 0-FRAME_WAIT;
-				sprintf(str, "photos/Lawnmower_%d_%d_%d.jpg", (int)((dataPtr->latitude)*1000), (int)((dataPtr->longitude)*1000), (int)((dataPtr->time)*100));
+				sprintf(str, "photos/Lawnmower_%d_%d_%d_%d.jpg", (int)((dataPtr->latitude)*1000), (int)((dataPtr->longitude)*1000), (int)((dataPtr->time)*100), objCount);
 				imwrite(str, bestImg);
 				//imshow("Last Red Object", bestImg);
 				waitKey(1);
 				haveBest = false;
 			}
 			sawRed = false;
-		}
+		}*/
 		
 		delay(LOOP_WAIT);	//Wait for instructions
 		gpsPtr->getGPS_Data(dataPtr);
