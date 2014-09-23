@@ -35,7 +35,7 @@ using namespace std;
 #define LOOP_WAIT 100 		//Time in ms Copter wait in each loop
 #define GPS_DATA_FILE "config/waypoints_list.txt"
 
-#define OVAL_IMAGE_PATH "../base/config/James_Oval.png"
+#define OVAL_IMAGE_PATH "../modules/config/James_Oval.png"
 #define MAXLAT -31.979422	//Properties of image file of James Oval & represent min & max corners - are in degrees
 #define MINLON 115.817162
 #define MINLAT -31.980634
@@ -47,6 +47,7 @@ using namespace std;
 #define sin2(x) (sin(x)*sin(x))
 #define DIRECTION_TEST_SPEED 40
 #define DIRECTION_TEST_DURATION 6000
+#define PAST_DIST 10 	//HUmber of past points to save for integral contol
 
 typedef struct{		//These are in degrees now.
 	double lat;
@@ -56,10 +57,10 @@ typedef struct{		//These are in degrees now.
 void run_lawnmower(FlightBoard*, GPS*, GPS_Data*, IMU*, IMU_Data*, Pos, Pos);
 double calculate_distance(Pos, Pos);
 double calculate_bearing(Pos, Pos);
-void setLawnCourse(FB_Data*, double, double, double);
+void setLawnCourse(FB_Data*, double, double[], double, double);
 void populateMainVector(vector<Pos>*, Logger*, Pos, Pos);
 void addPoints(vector<Pos>*, Pos, Pos, int);
-void flyTo(FlightBoard*, GPS*, GPS_Data*, IMU*, IMU_Data*, double, double, double, Logger*, Logger* , RaspiCamCvCapture*, int, Mat);
+void flyTo(FlightBoard*, GPS*, GPS_Data*, IMU*, IMU_Data*, Pos, double, Logger*, Logger* , RaspiCamCvCapture*, int, Mat);
 double determineBearing(FlightBoard*, GPS*, GPS_Data*);
 
 void captureImage(int, GPS_Data*);

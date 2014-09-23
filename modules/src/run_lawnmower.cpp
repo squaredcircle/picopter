@@ -6,28 +6,27 @@
 bool exitLawnmower = false;
 bool usingIMU = true;
 
-#define CONFIG_FILE "../base/config/config.txt"
+#define CONFIG_FILE "../modules/config/config.txt"
 int SPEED_LIMIT = 35;		//Config file parameters - need to be initialised as globals
 double SWEEP_SPACING = 6;
 double POINT_SPACING = 3;
 double WAYPOINT_RADIUS = 1.2;
-int KPh = 10;
-int KIh = 0;
-int KPv = 0;
-int KIv = 0;
+double KPh = 10;
+double KIh = 0;
+double KPv = 0;
+double KIv = 0;
 int MIN_HUE = 320;
 int MAX_HUE = 40;
 int MIN_SAT=  95;
 int MAX_SAT = 255;
 int MIN_VAL = 95;
 int MAX_VAL = 255;
-int PIXLE_THRESHOLD = 5;	//Don't actually use, but listed in there
 
 void run_lawnmower(FlightBoard *fbPtr, GPS *gpsPtr, GPS_Data *dataPtr, IMU *imuPtr, IMU_Data *compDataPtr, Pos start, Pos end) {
 
 	cout << "Starting to run lawnmower..." << endl;
 	
-	ConfigParser::ParamMap lawnParameters;
+	ConfigParser::ParamMap lawnParameters;		//Load parametersfrom config file
     lawnParameters.insert("SPEED_LIMIT", &SPEED_LIMIT);
     lawnParameters.insert("SWEEP_SPACING", &SWEEP_SPACING);
     lawnParameters.insert("POINT_SPACING", &POINT_SPACING);
@@ -61,10 +60,27 @@ void run_lawnmower(FlightBoard *fbPtr, GPS *gpsPtr, GPS_Data *dataPtr, IMU *imuP
 	Logger lawnlog = Logger("Lawn.log");	//Initalise logs
 	Logger rawgpslog = Logger("Lawn_Raw_GPS.txt");	//Easier to read into M/Matica
 	char str[BUFSIZ];
+	sprintf(str, "Config parameters set to:\n");	//Record parameters
+	lawnlog.writeLogLine(str);
+	sprintf(str, "\tSPEED_LIMIT\t%d\n", SPEED_LIMIT);
+	lawnlog.writeLogLine(str);
+	sprintf(str, "\tSWEEP_SPACING\t%d\n", SWEEP_SPACING);
+	lawnlog.writeLogLine(str);
+	sprintf(str, "\tPOINT_SPACING\t%d\n", POINT_SPACING);
+	lawnlog.writeLogLine(str);
+	sprintf(str, "\tWAYPOINT_RADIUS\t%d\n", WAYPOINT_RADIUS);
+	lawnlog.writeLogLine(str);
+	sprintf(str, "\tKPh\t%d\n", KPh);
+	lawnlog.writeLogLine(str);
+	sprintf(str, "\tKIh\t%d\n", KIh);
+	lawnlog.writeLogLine(str);
+	sprintf(str, "\tKPv\t%d\n", KPv);
+	lawnlog.writeLogLine(str);
+	sprintf(str, "\tKIv\t%d\n", KIv);
+	lawnlog.writeLogLine(str);
 
 	vector<Pos> gpsPoints;
 	populateMainVector(&gpsPoints, &lawnlog, start, end);
-	
 	cout << endl;
 	for(int i = 0; i < (int)gpsPoints.size(); i++) {
 		cout << setprecision(15) << "Point " << i+1 << " is " << (gpsPoints[i].lat) << " " << (gpsPoints[i].lon) << endl;
@@ -93,7 +109,7 @@ void run_lawnmower(FlightBoard *fbPtr, GPS *gpsPtr, GPS_Data *dataPtr, IMU *imuP
 	cout << "Location and Orienation determined" << endl;
 	
 	for (int i = 0; i < (int)gpsPoints.size(); i++) {
-		flyTo(fbPtr, gpsPtr, dataPtr, imuPtr, compDataPtr, gpsPoints[i].lat, gpsPoints[i].lon, yaw, &lawnlog, &rawgpslog, capture, i, oval);
+		flyTo(fbPtr, gpsPtr, dataPtr, imuPtr, compDataPtr, gpsPoints[i], yaw, &lawnlog, &rawgpslog, capture, i, oval);
 		if (i == 0) {	//Are we at the first point?
 			rawgpslog.clearLog();			//Flush data in there - also removers header
 			oval = imread(OVAL_IMAGE_PATH);	//Wipe any extra lines caused by flying to first point
@@ -110,11 +126,10 @@ void run_lawnmower(FlightBoard *fbPtr, GPS *gpsPtr, GPS_Data *dataPtr, IMU *imuP
 	lawnlog.writeLogLine("Finished!");
 }
 
-void flyTo(FlightBoard *fbPtr, GPS *gpsPtr, GPS_Data *dataPtr, IMU *imuPtr, IMU_Data *compDataPtr, double targetLat, double targetLon, double yaw, Logger *logPtr, Logger *rawLogPtr, RaspiCamCvCapture *camPtr, int index, Mat oval) {
+void flyTo(FlightBoard *fbPtr, GPS *gpsPtr, GPS_Data *dataPtr, IMU *imuPtr, IMU_Data *compDataPtr, Pos end, double yaw, Logger *logPtr, Logger *rawLogPtr, RaspiCamCvCapture *camPtr, int index, Mat oval) {
 	FB_Data stop = {0, 0, 0, 0};
 	FB_Data course = {0, 0, 0, 0};
 	Pos start, end;
-
 	gpsPtr->getGPS_Data(dataPtr);
 	if (usingIMU){
 		imuPtr->getIMU_Data(compDataPtr);
@@ -124,15 +139,18 @@ void flyTo(FlightBoard *fbPtr, GPS *gpsPtr, GPS_Data *dataPtr, IMU *imuPtr, IMU_
 	waitKey(1);
 	start.lat = (dataPtr->latitude);
 	start.lon = (dataPtr->longitude);
-	end.lat = targetLat;
-	end.lon = targetLon;
-	cout << setprecision(15) << "Flying to " << targetLat << " " << targetLon << ", facing " << yaw << " degrees" << endl;
+	cout << setprecision(15) << "Flying to " << end.lat << " " << end.lon << ", facing " << yaw << " degrees" << endl;
 	char str[BUFSIZ];
 	sprintf(str, "%f %f %d", dataPtr->longitude, dataPtr->latitude, index);
 	rawLogPtr->writeLogLine(str, false);
 	double distance = calculate_distance(start, end);
 	double bearing = calculate_bearing(start, end);
 	cout << "Distance: " << distance << " m\tBearing: " << bearing << " degrees" << endl;
+
+	double pastDistances[PAST_DIST];		//Array of past distance values
+	for (int i = 0; i < PAST_DIST; i++) {
+		pastDistances[i] = 0;
+	}
 
 	Mat bestImg;
 	Mat currentImg;
@@ -141,7 +159,7 @@ void flyTo(FlightBoard *fbPtr, GPS *gpsPtr, GPS_Data *dataPtr, IMU *imuPtr, IMU_
 	bool haveBest = false;
 
 	while (!exitLawnmower && distance > WAYPOINT_RADIUS) {
-		setLawnCourse(&course, distance, bearing, yaw);
+		setLawnCourse(&course, distance, pastDistances, bearing, yaw);
 		sprintf(str, "Course set to : {%d (A), %d (E)}", course.aileron, course.elevator);
 		logPtr->writeLogLine(str);
 		fbPtr->setFB_Data(&course);
@@ -185,7 +203,7 @@ void flyTo(FlightBoard *fbPtr, GPS *gpsPtr, GPS_Data *dataPtr, IMU *imuPtr, IMU_
 		waitKey(1); 
 		start.lat = (dataPtr->latitude);
 		start.lon = (dataPtr->longitude);
-		cout << "Needs to move from: " << dataPtr->latitude << ", " << dataPtr->longitude << "\n\tto : " << targetLat << ", " << targetLon << endl;
+		cout << "Needs to move from: " << dataPtr->latitude << " " << dataPtr->longitude << "\n\tto : " <<end.lat << " " << end.lon << endl;
 		sprintf(str, "Currently at %f %f", dataPtr->latitude, dataPtr->longitude);
 		logPtr->writeLogLine(str);
 		sprintf(str, "%f %f %d", dataPtr->longitude, dataPtr->latitude, index);
@@ -196,6 +214,10 @@ void flyTo(FlightBoard *fbPtr, GPS *gpsPtr, GPS_Data *dataPtr, IMU *imuPtr, IMU_
 		bearing = calculate_bearing(start, end);
 		cout << "Distance: " << distance << " m\tBearing: " << bearing << endl;
 		sprintf(str, "Distance: %f m\tBearing : %f degrees", distance, bearing);
+		for (int i = 0; i < PAST_DIST-1; i++) {
+			pastDistances[i] = pastDistances[i+1];	//Shift down distance values
+		}
+		pastDistances[PAST_DIST-1] = distance;	//Add on to the end
 		logPtr->writeLogLine(str);
 		if (!gpio::isAutoMode()) {
 			terminateLawn(0);
@@ -293,9 +315,14 @@ double determineBearing(FlightBoard *fbPtr, GPS *gpsPtr, GPS_Data *dataPtr) {
 	return yaw;
 }
 
-void setLawnCourse(FB_Data *instruction, double distance, double bearing, double yaw) {
-	double speed = KPh * distance;
-	if(speed > SPEED_LIMIT) {											//P controler with limits.
+void setLawnCourse(FB_Data *instruction, double distance, double pastDistances, double bearing, double yaw) {
+	double average = 0;
+	for (int i = 0; i < PAST_DIST; i++) {
+		average = average + pastDistances[i];
+	}
+	average = average/PAST_DIST;
+	double speed = KPh * distance + KIh * average;
+	if(speed > SPEED_LIMIT) {											//PI controler with limits.
 		speed = SPEED_LIMIT;
 	}
 	instruction->aileron = (int) (speed * sin((bearing-yaw)*(PI/180)));
