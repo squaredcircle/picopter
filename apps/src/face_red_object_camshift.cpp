@@ -173,7 +173,7 @@ int main(int argc, char* argv[]) {
 				cout << "No object." << endl;					//PRINT: NO OBJECT FOUND.
 				*/
 				wprintw(msg_window, "No red objects detected\n");
-				wprintw(msg_window, "%s", (stringFB_Data(&stop)).c_str());
+				wprintw(msg_window, "%s", (stringFB_Data(&course)).c_str());
 				break;
 		}
 		
@@ -202,11 +202,11 @@ void setCourse_faceObject(FB_Data *course, ObjectLocation *red_object) {
 
 void setCourse_moveGimbal(FB_Data *course, ObjectLocation *red_object) {
 	if(red_object->y > GIMBAL_TOL) {
-		course->gimbal -= GIMBAL_STEP;
+		course->gimbal += GIMBAL_STEP;
 	}
     
     if(red_object->y < -GIMBAL_TOL) {
-		course->gimbal += GIMBAL_STEP;
+		course->gimbal -= GIMBAL_STEP;
 	}
     
 	if(course->gimbal < GIMBAL_MIN) course->gimbal = GIMBAL_MIN;
