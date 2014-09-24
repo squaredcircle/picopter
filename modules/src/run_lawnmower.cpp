@@ -60,24 +60,25 @@ void run_lawnmower(FlightBoard *fbPtr, GPS *gpsPtr, GPS_Data *dataPtr, IMU *imuP
 	Logger lawnlog = Logger("Lawn.log");	//Initalise logs
 	Logger rawgpslog = Logger("Lawn_Raw_GPS.txt");	//Easier to read into M/Matica
 	char str[BUFSIZ];
-	sprintf(str, "Config parameters set to:\n");	//Record parameters
+	sprintf(str, "Config parameters set to:");	//Record parameters
 	lawnlog.writeLogLine(str);
-	sprintf(str, "\tSPEED_LIMIT\t%d\n", SPEED_LIMIT);
+	sprintf(str, "\tSPEED_LIMIT\t%d", SPEED_LIMIT);
 	lawnlog.writeLogLine(str);
-	sprintf(str, "\tSWEEP_SPACING\t%f\n", SWEEP_SPACING);
+	sprintf(str, "\tSWEEP_SPACING\t%f", SWEEP_SPACING);
 	lawnlog.writeLogLine(str);
-	sprintf(str, "\tPOINT_SPACING\t%f\n", POINT_SPACING);
+	sprintf(str, "\tPOINT_SPACING\t%f", POINT_SPACING);
 	lawnlog.writeLogLine(str);
-	sprintf(str, "\tWAYPOINT_RADIUS\t%f\n", WAYPOINT_RADIUS);
+	sprintf(str, "\tWAYPOINT_RADIUS\t%f", WAYPOINT_RADIUS);
 	lawnlog.writeLogLine(str);
-	sprintf(str, "\tKPh\t%f\n", KPh);
+	sprintf(str, "\tKPh\t%f", KPh);
 	lawnlog.writeLogLine(str);
-	sprintf(str, "\tKIh\t%f\n", KIh);
+	sprintf(str, "\tKIh\t%f", KIh);
 	lawnlog.writeLogLine(str);
-	sprintf(str, "\tKPv\t%f\n", KPv);
+	sprintf(str, "\tKPv\t%f", KPv);
 	lawnlog.writeLogLine(str);
-	sprintf(str, "\tKIv\t%f\n", KIv);
+	sprintf(str, "\tKIv\t%f", KIv);
 	lawnlog.writeLogLine(str);
+	lawnlog.writeLogLine("\n");
 
 	vector<Pos> gpsPoints;
 	populateMainVector(&gpsPoints, &lawnlog, start, end);
@@ -87,6 +88,7 @@ void run_lawnmower(FlightBoard *fbPtr, GPS *gpsPtr, GPS_Data *dataPtr, IMU *imuP
 		sprintf(str, "Point %d is %f %f", i+1, (gpsPoints[i].lat), (gpsPoints[i].lon));
 		lawnlog.writeLogLine(str);
 	}
+	lawnlog.writeLogLine("\n");
 	cout << endl;
 
 	cout  << "Waiting to enter autonomous mode..." << endl;
@@ -154,10 +156,10 @@ void flyTo(FlightBoard *fbPtr, GPS *gpsPtr, GPS_Data *dataPtr, IMU *imuPtr, IMU_
 
 	Mat bestImg;
 	Mat currentImg;
-	int timer = 0;
+	/*int timer = 0;
 	bool sawRed = false;
 	bool haveBest = false;
-	int objCount = 0;
+	int objCount = 0;*/
 
 	while (!exitLawnmower && distance > WAYPOINT_RADIUS) {
 		setLawnCourse(&course, distance, pastDistances, bearing, yaw);
@@ -229,6 +231,7 @@ void flyTo(FlightBoard *fbPtr, GPS *gpsPtr, GPS_Data *dataPtr, IMU *imuPtr, IMU_
 		}
 		pastDistances[PAST_DIST-1] = distance;	//Add on to the end
 		logPtr->writeLogLine(str);
+		logPtr->writeLogLine("\n");
 		if (!gpio::isAutoMode()) {
 			terminateLawn(0);
 			return;
@@ -366,11 +369,11 @@ double calculate_bearing(Pos pos1, Pos pos2) {
 void populateMainVector(vector<Pos> *list, Logger *logPtr, Pos start, Pos end) {
 	char str[BUFSIZ];
 	Pos corners[4];
-	corners[0] = start;
+	corners[0] = start;	
+	corners[3] = end;
 	cout << "Corner #1 read as: " << (corners[0].lat) << " " << (corners[0].lon) << endl;
 	sprintf(str, "Corner #1 read as: %f %f", (corners[0].lat), (corners[0].lon));
 	logPtr->writeLogLine(str);	
-	corners[3] = end;
 	cout << "Corner #4 read as: " << (corners[3].lat) << " " << (corners[3].lon) << endl;
 	sprintf(str, "Corner #4 read as: %f %f", (corners[3].lat), (corners[3].lon));
 	logPtr->writeLogLine(str);	
@@ -385,92 +388,58 @@ void populateMainVector(vector<Pos> *list, Logger *logPtr, Pos start, Pos end) {
 	sprintf(str, "Corner #3 calculated as: %f %f", (corners[2].lat), (corners[2].lon));
 	logPtr->writeLogLine(str);
 
-	double lonDistance = calculate_distance(corners[0], corners[2]);	//Find separation of 'top' and 'bottom' of sweep
-	double otherDist = calculate_distance(corners[1], corners[3]);
-	if (otherDist < lonDistance) lonDistance = otherDist;
-	int lonPoints = (int)(lonDistance/POINT_SPACING) + 1;							//Number of points along each sweep
-	int direction = 1;
-	if (corners[0].lon > corners[3].lon) {
-		direction = -1;	//Is corners[0] East of corners[3] instead of West?
+	vector<Pos> sideA;
+	vector<Pos> sideB;
+	populateVector(corners[0], corners[1], &sideA);
+	for(int i = 0; i < (int)sideA.size(); i++) {
+		sprintf(str, "Point %d of sideA is %f %f", i+1, (sideA[i].lat), (sideA[i].lon));
+		logPtr->writeLogLine(str);
 	}
-	vector<Pos> topSide, bottomSide;	//Ends of sweeps
-	double fraction, distance, angle;
-	Pos dummyPos;
-	for (int i = 0; i < lonPoints; i++) {
-		fraction = (double)i/lonPoints;
-		distance = fraction/lonDistance;
-		angle = distance/(RADIUS_OF_EARTH*cos((corners[0].lat)*(PI/180)))*(180/PI);	//'Top' side on same latitude as corners[0]
-		dummyPos.lat = corners[0].lat;
-		dummyPos.lon = corners[0].lon + (double)direction*angle;
-		topSide.push_back(dummyPos);
-		cout << "Point " << dummyPos.lat << " " << dummyPos.lon << " added." << endl;
-		angle = distance/(RADIUS_OF_EARTH*cos((corners[2].lat)*(PI/180)))*(180/PI);	//'Bottom' side on same latitude as corners[2]
-		dummyPos.lat = corners[2].lat;
-		dummyPos.lon = corners[2].lon + (double)direction*angle;
-		bottomSide.push_back(dummyPos);
-		cout << "Point " << dummyPos.lat << " " << dummyPos.lon << " added." << endl;
+	populateVector(corners[2], corners[3], &sideB);
+	for(int i = 0; i < (int)sideB.size(); i++) {
+		sprintf(str, "Point %d of sideB is %f %f", i+1, (sideB[i].lat), (sideB[i].lon));
+		logPtr->writeLogLine(str);
 	}
-	int sweeps = topSide.size();
-	cout << "Sides calculated... Each side contains " << sweeps+1 << " points." << endl;
-	list->push_back(corners[0]);	//Start of lawnmower pattern
-	for (int i = 0; i < sweeps - 1; i++) {
-		cout <<i<<endl;
-		if (i % 2 == 0) {	//Going from 'top' to 'bottom', then along 'bottom'
-			cout << "Even" << endl;
-			addPoints(list, topSide[i], bottomSide[i], 1);
-			addPoints(list, bottomSide[i], bottomSide[i+1], 2);
+	int minVectorLength = sideA.size();
+	if ((int)sideB.size() < minVectorLength) minVectorLength = sideB.size(); //Checks which is smallest
+	
+	for (int i = 0; i < minVectorLength; i++) {
+		if (i%2 == 0) {	//Even?
+			//sprintf(str, "%d %d- Even", i,minVectorLength);
+			//lawnlog.writeLogLine(str);
+			list->push_back(sideA[i]);
+			list->push_back(sideB[i]);
 		}
-		else {	//Other way
-			cout << "Odd" << endl;
-			addPoints(list, bottomSide[i], topSide[i], 1);
-			addPoints(list, topSide[i], topSide[i+1], 2);
+		else if (i%2 == 1) {//Odd?
+			//sprintf(str, "%d %d - Odd", i, minVectorLength);
+			//lawnlog.writeLogLine(str);
+			list->push_back(sideB[i]);
+			list->push_back(sideA[i]);
 		}
 	}
-	if (sweeps % 2 == 1) {	//Need to add in last 'top' to 'bottom' sweep
-		addPoints(list, topSide[sweeps-1], bottomSide[sweeps-1], 1);
-	}
-	else {	//... Or 'bottom' to 'top'
-		addPoints(list, bottomSide[sweeps-1], topSide[sweeps-1], 1);
-	}
-	cout << "All waypoints calulated." << endl;
+
+	cout << "All waypoints calculated." << endl;
 }
 
-void addPoints(vector<Pos> *list, Pos start, Pos end, int way) {
-	//cout << "Adding points..." << endl;
-	double endDistance = calculate_distance(start, end);
-	int points = (int)(endDistance/POINT_SPACING) + 1;	//Number of intermediate points
-	double fraction, distance, angle;
-	Pos dummyPos;
+void populateVector(Pos start, Pos end, vector<Pos> *list) {
 	int direction = 1;
-	if (way == 1) {	//Starting and ending on same longitude
-		if (start.lat < end.lat) {
-			direction = -1;	//Are we going 'up' instaed?
-		}
-		for (int i = 1; i < points; i++) {	//Start point already added
-			fraction = (double)i/points;
-			distance = fraction/endDistance;
-			angle = distance/RADIUS_OF_EARTH*(180/PI);	//'Top' side on same latitude as corners[0]
-			dummyPos.lat = start.lat + (double)direction*angle;
-			dummyPos.lon = start.lon;
-			list->push_back(dummyPos);
-			//cout << "Point " << dummyPos.lat << " " << dummyPos.lon << " added." << endl;
-		}
+	if (end.lon < start.lon) {
+		direction = -1;	//Are we going E->W instead of W->E?
 	}
-	else if (way == 2) {	//Starting and ending on same latitude
-		if (start.lon > end.lon) {
-			direction = -1;	//Are we going 'left' instead?
-		}
-		for (int i = 1; i < points; i++) {	//Start point already added
-			fraction = (double)i/points;
-			distance = fraction/endDistance;
-			angle = distance/(RADIUS_OF_EARTH*cos((start.lat)*(PI/180)))*(180/PI);	//'Top' side on same latitude as corners[0]
-			dummyPos.lat = start.lat;
-			dummyPos.lon = start.lon + (double)direction*angle;
-			list->push_back(dummyPos);
-			cout << "Point " << dummyPos.lat << " " << dummyPos.lon << " added." << endl;
-		}
+	double endDistance = calculate_distance(start, end);	//Great circle distance, but ~ straight line distance for close points
+	int points = (endDistance/SWEEP_SPACING);
+	double fraction, distance, angle;
+	list->push_back(start);
+	for (int i = 1; i < points; i++) {
+		fraction = (double)i/points;
+		distance = fraction*endDistance;
+		angle = distance/(RADIUS_OF_EARTH*cos((start.lat)*(PI/180)))*(180/PI);	//Both points have the same latitude
+		Pos position;
+		position.lat = start.lat;
+		position.lon = start.lon + (double)direction*angle;
+		list->push_back(position);
 	}
-	list->push_back(end);	//Add end point
+	list->push_back(end);
 }
 
 void terminateLawn(int signum) {

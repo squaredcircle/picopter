@@ -59,6 +59,7 @@ void run_lawnmower(FlightBoard*, GPS*, GPS_Data*, IMU*, IMU_Data*, Pos, Pos);
 double calculate_distance(Pos, Pos);
 double calculate_bearing(Pos, Pos);
 void setLawnCourse(FB_Data*, double, double[], double, double);
+void populateVector(Pos, Pos, vector<Pos>*);
 void populateMainVector(vector<Pos>*, Logger*, Pos, Pos);
 void addPoints(vector<Pos>*, Pos, Pos, int);
 void flyTo(FlightBoard*, GPS*, GPS_Data*, IMU*, IMU_Data*, Pos, double, Logger*, Logger* , RaspiCamCvCapture*, int, Mat);
