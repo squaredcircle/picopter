@@ -11,7 +11,7 @@
 using namespace std;
 
 
-#include "camera.h"
+#include "camera_var2.h"
 #include "flightBoard.h"
 #include "gpio.h"
 #include "config_parser.h"
@@ -74,7 +74,7 @@ int main(int argc, char* argv[]) {
 	FB_Data course = {0, 0, 0, 0};
 	FB_Data stop = {0, 0, 0, 0};
 	
-	CAMERA cam = CAMERA();
+	CAMERA_VAR2 cam = CAMERA_VAR2();
 	if(cam.setup("./config/camera_config.txt") != CAMERA_OK) {
 		cout << "Error setting up camera." << endl;
         fb.stop();
@@ -107,7 +107,7 @@ int main(int argc, char* argv[]) {
 	wattron(title_window, COLOR_PAIR(1));
 	wborder(title_window, ' ' , ' ' , '-', '-' , '-', '-', '-', '-');
 	wmove(title_window, 1, 0);
-	wprintw(title_window, "\t%s\t\n", "FACE_RED_OBJECT");
+	wprintw(title_window, "\t%s\t\n", "FACE_RED_OBJECT_CAMSHIFT");
 	wprintw(title_window, "\t%s\t\n", "Hexacopter will rotate on spot to look at red object.");
 	wrefresh(title_window);
 	
