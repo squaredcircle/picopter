@@ -4,21 +4,15 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <cmath>
-#include <ctime>
 
 #include <gpio.h>
 #include <flightBoard.h>
 #include <gps_qstarz.h>		//This will be changed later when Piksi has been integrated
 #include <imu_euler.h>
-#include <sstream>
-#include <ncurses.h>
-#include "opencv2/core/core.hpp"
-#include "opencv2/highgui/highgui.hpp"
-#include "camera.h"
-#include "config_parser.h"
 
 #include "run_lawnmower.h"
+
+#define GPS_DATA_FILE "/home/pi/picopter/apps/config/waypoints_list.txt"
 
 void readPosition(Pos*, int);
 
@@ -33,14 +27,12 @@ int main() {
 	fb.start();
 	GPS gps = GPS();		//Initialises GPS
 	if(gps.setup() != GPS_OK) {
-		cout << "Error setting up gps. Terminating program." << endl;
+		cout << "Error setting up gps (check that it has been switched on). Terminating program." << endl;
 		return -1;
 	}
 	gps.start();
-	GPS_Data data;
 	IMU imu = IMU();		//Initialises compass
-    imu.start();
-	IMU_Data compassdata;
+	imu.start();
 	
 	Pos start, end;
 	readPosition(&start, 0);	//First line
@@ -48,7 +40,7 @@ int main() {
 
 	cout << "Set-up complete" << endl;
 
-	run_lawnmower(&fb, &gps, &data, &imu, &compassdata, start, end);
+	run_lawnmower(&fb, &gps, &imu, start, end);
 	
 	return 0;
 }

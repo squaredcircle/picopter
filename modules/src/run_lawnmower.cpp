@@ -6,15 +6,15 @@
 bool exitLawnmower = false;
 bool usingIMU = true;
 
-#define CONFIG_FILE "../modules/config/config.txt"
+#define CONFIG_FILE "/home/pi/picopter/modules/config/config.txt"
 int SPEED_LIMIT = 35;		//Config file parameters - need to be initialised as globals
 double SWEEP_SPACING = 6;
 double POINT_SPACING = 3;
 double WAYPOINT_RADIUS = 1.2;
-double KPh = 10;
-double KIh = 0;
-double KPv = 0;
-double KIv = 0;
+double KPxy = 10;
+double KIxy= 0;
+double KPz = 0;
+double KIz = 0;
 int MIN_HUE = 320;
 int MAX_HUE = 40;
 int MIN_SAT=  95;
@@ -22,7 +22,7 @@ int MAX_SAT = 255;
 int MIN_VAL = 95;
 int MAX_VAL = 255;
 
-void run_lawnmower(FlightBoard *fbPtr, GPS *gpsPtr, GPS_Data *dataPtr, IMU *imuPtr, IMU_Data *compDataPtr, Pos start, Pos end) {
+void run_lawnmower(FlightBoard *fbPtr, GPS *gpsPtr, IMU *imuPtr, Pos start, Pos end) {
 
 	cout << "Starting to run lawnmower..." << endl;
 	
@@ -31,10 +31,10 @@ void run_lawnmower(FlightBoard *fbPtr, GPS *gpsPtr, GPS_Data *dataPtr, IMU *imuP
     lawnParameters.insert("SWEEP_SPACING", &SWEEP_SPACING);
     lawnParameters.insert("POINT_SPACING", &POINT_SPACING);
     lawnParameters.insert("WAYPOINT_RADIUS", &WAYPOINT_RADIUS);
-    lawnParameters.insert("KPh", &KPh);
-    lawnParameters.insert("KIh", &KIh);
-    lawnParameters.insert("KPv", &KPv);
-    lawnParameters.insert("KIv", &KIv);
+    lawnParameters.insert("KPxy", &KPxy);
+    lawnParameters.insert("KIxy", &KIxy);
+    lawnParameters.insert("KPz", &KPz);
+    lawnParameters.insert("KIz", &KIz);
     ConfigParser::loadParameters("LAWNMOWER", &lawnParameters, CONFIG_FILE);
     ConfigParser::ParamMap camParameters; 
     camParameters.insert("MIN_HUE", &MIN_HUE);
@@ -49,6 +49,8 @@ void run_lawnmower(FlightBoard *fbPtr, GPS *gpsPtr, GPS_Data *dataPtr, IMU *imuP
         cout << "Error opening imu: Will navigate using GPS only." << endl;
         usingIMU = false;
     }
+    IMU_Data compassdata;   
+	GPS_Data data;
 	//Start the camera up & load image of James Oval
 	RaspiCamCvCapture* capture = raspiCamCvCreateCameraCapture(0);
 	Mat oval = imread(OVAL_IMAGE_PATH);
@@ -97,21 +99,21 @@ void run_lawnmower(FlightBoard *fbPtr, GPS *gpsPtr, GPS_Data *dataPtr, IMU *imuP
 
 	double yaw;
 	if (usingIMU) {
-		imuPtr->getIMU_Data(compDataPtr);
-		yaw = compDataPtr->yaw;
+		imuPtr->getIMU_Data(&compassdata);
+		yaw = compassdata.yaw;
 		cout << "Using compass: Copter is facing " << yaw << " degrees." << endl;
 		sprintf(str, "Using compass: Copter is facing %f degrees.", yaw);
 	}
 	else {
-		yaw = determineBearing(fbPtr, gpsPtr, dataPtr);	//Hexacopter determines which way it is facing
+		yaw = determineBearing(fbPtr, gpsPtr, &data);	//Hexacopter determines which way it is facing
 		sprintf(str, "Bearing found with GPS: Copter is facing %f degrees.", yaw);
 	}
 	lawnlog.writeLogLine(str);
-	gpsPtr->getGPS_Data(dataPtr);		//Hexacopter works out where it is
+	gpsPtr->getGPS_Data(&data);		//Hexacopter works out where it is
 	cout << "Location and Orienation determined" << endl;
 	
 	for (int i = 0; i < (int)gpsPoints.size(); i++) {
-		flyTo(fbPtr, gpsPtr, dataPtr, imuPtr, compDataPtr, gpsPoints[i], yaw, &lawnlog, &rawgpslog, capture, i, oval);
+		flyTo(fbPtr, gpsPtr, &data, imuPtr, &compassdata, gpsPoints[i], yaw, &lawnlog, &rawgpslog, capture, i, oval);
 		if (i == 0) {	//Are we at the first point?
 			rawgpslog.clearLog();			//Flush data in there - also removers header
 			oval = imread(OVAL_IMAGE_PATH);	//Wipe any extra lines caused by flying to first point
@@ -121,7 +123,7 @@ void run_lawnmower(FlightBoard *fbPtr, GPS *gpsPtr, GPS_Data *dataPtr, IMU *imuP
 		}
 	}
 
-	sprintf(str, "photos/James_Oval_%d.jpg", (int)((dataPtr->time)*100));
+	sprintf(str, "photos/James_Oval_%d.jpg", (int)((data.time)*100));
 	imwrite(str, oval);
 	raspiCamCvReleaseCapture(&capture);
 	cout << "Done!" << endl;
@@ -149,8 +151,8 @@ void flyTo(FlightBoard *fbPtr, GPS *gpsPtr, GPS_Data *dataPtr, IMU *imuPtr, IMU_
 	double bearing = calculate_bearing(start, end);
 	cout << "Distance: " << distance << " m\tBearing: " << bearing << " degrees" << endl;
 
-	double pastDistances[PAST_DIST];		//Array of past distance values
-	for (int i = 0; i < PAST_DIST; i++) {
+	double pastDistances[PAST_POINTS];		//Array of past distance values
+	for (int i = 0; i < PAST_POINTS; i++) {
 		pastDistances[i] = 0;
 	}
 
@@ -207,7 +209,10 @@ void flyTo(FlightBoard *fbPtr, GPS *gpsPtr, GPS_Data *dataPtr, IMU *imuPtr, IMU_
 		gpsPtr->getGPS_Data(dataPtr);
 		if (usingIMU) {
 			imuPtr->getIMU_Data(compDataPtr);
-			yaw = compDataPtr->yaw;
+			yaw = compDataPtr->yaw;	
+			cout << "Yaw measured as: " << yaw << endl;
+			sprintf(str, "Yaw measured	as %f", yaw);
+			logPtr->writeLogLine(str);
 		}
 		updatePicture(oval, dataPtr->latitude, dataPtr->longitude);	
 		namedWindow("Oval Map", CV_WINDOW_AUTOSIZE);
@@ -222,16 +227,16 @@ void flyTo(FlightBoard *fbPtr, GPS *gpsPtr, GPS_Data *dataPtr, IMU *imuPtr, IMU_
 		rawLogPtr->writeLogLine(str, false);
 		sprintf(str, "Going to %f %f", end.lat, end.lon);
 		logPtr->writeLogLine(str);
+		logPtr->writeLogLine(str);
+		logPtr->writeLogLine("\n");
 		distance = calculate_distance(start, end);
 		bearing = calculate_bearing(start, end);
 		cout << "Distance: " << distance << " m\tBearing: " << bearing << endl;
 		sprintf(str, "Distance: %f m\tBearing : %f degrees", distance, bearing);
-		for (int i = 0; i < PAST_DIST-1; i++) {
+		for (int i = 0; i < PAST_POINTS-1; i++) {
 			pastDistances[i] = pastDistances[i+1];	//Shift down distance values
 		}
-		pastDistances[PAST_DIST-1] = distance;	//Add on to the end
-		logPtr->writeLogLine(str);
-		logPtr->writeLogLine("\n");
+		pastDistances[PAST_POINTS-1] = distance;	//Add on to the end
 		if (!gpio::isAutoMode()) {
 			terminateLawn(0);
 			return;
@@ -330,10 +335,10 @@ double determineBearing(FlightBoard *fbPtr, GPS *gpsPtr, GPS_Data *dataPtr) {
 
 void setLawnCourse(FB_Data *instruction, double distance, double pastDistances[], double bearing, double yaw) {
 	double average = 0;
-	for (int i = 0; i < PAST_DIST; i++) {
+	for (int i = 0; i < PAST_POINTS; i++) {
 		average = average + pastDistances[i];
 	}
-	average = average/PAST_DIST;
+	average = average/PAST_POINTS;
 	double speed = KPh * distance + KIh * average;
 	if(speed > SPEED_LIMIT) {											//PI controler with limits.
 		speed = SPEED_LIMIT;
