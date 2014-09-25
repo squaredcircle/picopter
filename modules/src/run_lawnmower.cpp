@@ -1,32 +1,17 @@
 //Basic function that causes the Hexacpter to search a square, lawnmower fashion
 //Written by Omid Targhagh, based on work done by Michael Baxter
+//Includes image detection of Merrick Cloete
 
 #include "run_lawnmower.h"
 
 bool exitLawnmower = false;
 bool usingIMU = true;
 
-#define CONFIG_FILE "/home/pi/picopter/modules/config/config.txt"
-int SPEED_LIMIT = 35;		//Config file parameters - need to be initialised as globals
-double SWEEP_SPACING = 6;
-double POINT_SPACING = 3;
-double WAYPOINT_RADIUS = 1.2;
-double KPxy = 10;
-double KIxy= 0;
-double KPz = 0;
-double KIz = 0;
-int MIN_HUE = 320;
-int MAX_HUE = 40;
-int MIN_SAT=  95;
-int MAX_SAT = 255;
-int MIN_VAL = 95;
-int MAX_VAL = 255;
-
 void run_lawnmower(FlightBoard *fbPtr, GPS *gpsPtr, IMU *imuPtr, Pos start, Pos end) {
 
 	cout << "Starting to run lawnmower..." << endl;
 	
-	ConfigParser::ParamMap lawnParameters;		//Load parametersfrom config file
+	ConfigParser::ParamMap lawnParameters;		//Load parameters from config file
     lawnParameters.insert("SPEED_LIMIT", &SPEED_LIMIT);
     lawnParameters.insert("SWEEP_SPACING", &SWEEP_SPACING);
     lawnParameters.insert("POINT_SPACING", &POINT_SPACING);
@@ -37,12 +22,19 @@ void run_lawnmower(FlightBoard *fbPtr, GPS *gpsPtr, IMU *imuPtr, Pos start, Pos 
     lawnParameters.insert("KIz", &KIz);
     ConfigParser::loadParameters("LAWNMOWER", &lawnParameters, CONFIG_FILE);
     ConfigParser::ParamMap camParameters; 
-    camParameters.insert("MIN_HUE", &MIN_HUE);
-    camParameters.insert("MAX_HUE", &MAX_HUE);
-    camParameters.insert("MIN_SAT", &MIN_SAT);
-    camParameters.insert("MAX_SAT", &MAX_SAT);
-    camParameters.insert("MIN_VAL", &MIN_VAL);
-    camParameters.insert("MAX_VAL", &MAX_VAL);
+    camParameters.insert("HMIN", &HMIN);
+    camParameters.insert("HMAX", &HMAX);
+    camParameters.insert("SMIN", &SMIN);
+    camParameters.insert("SMAX", &SMAX);
+    camParameters.insert("VMINIMUM", &VMINIMUM);
+    camParameters.insert("VMAX", &VMAX);
+    camParameters.insert("WHITE", &WHITE);
+    camParameters.insert("BLACK", &BLACK);
+    camParameters.insert("COLSIZE", &COLSIZE);
+    camParameters.insert("ROWSIZE", &ROWSIZE);
+    camParameters.insert("PIXELTHRESH", &PIXELTHRESH);
+    camParameters.insert("DILATE_ELEMENT", &DILATE_ELEMENT);
+    camParameters.insert("ERODE_ELEMENT", &ERODE_ELEMENT);
     ConfigParser::loadParameters("CAMERA", &camParameters, CONFIG_FILE);
 	
 	if(imuPtr->setup() != IMU_OK) {		//Check if IMU
@@ -72,13 +64,13 @@ void run_lawnmower(FlightBoard *fbPtr, GPS *gpsPtr, IMU *imuPtr, Pos start, Pos 
 	lawnlog.writeLogLine(str);
 	sprintf(str, "\tWAYPOINT_RADIUS\t%f", WAYPOINT_RADIUS);
 	lawnlog.writeLogLine(str);
-	sprintf(str, "\tKPh\t%f", KPh);
+	sprintf(str, "\tKPxy\t%f", KPxy);
 	lawnlog.writeLogLine(str);
-	sprintf(str, "\tKIh\t%f", KIh);
+	sprintf(str, "\tKIxy\t%f", KIxy);
 	lawnlog.writeLogLine(str);
-	sprintf(str, "\tKPv\t%f", KPv);
+	sprintf(str, "\tKPz\t%f", KPz);
 	lawnlog.writeLogLine(str);
-	sprintf(str, "\tKIv\t%f", KIv);
+	sprintf(str, "\tKIz\t%f", KIz);
 	lawnlog.writeLogLine(str);
 	lawnlog.writeLogLine("\n");
 
@@ -155,55 +147,51 @@ void flyTo(FlightBoard *fbPtr, GPS *gpsPtr, GPS_Data *dataPtr, IMU *imuPtr, IMU_
 	for (int i = 0; i < PAST_POINTS; i++) {
 		pastDistances[i] = 0;
 	}
-
-	Mat bestImg;
-	Mat currentImg;
-	/*int timer = 0;
-	bool sawRed = false;
-	bool haveBest = false;
-	int objCount = 0;*/
+	
+	Mat bestImg, currentImg, imHSV, imBin, BGRTemp, image;
+	IplImage* view;
+	int nObjects = 0;
+	int centres[OBJECT_LIMIT][2];
+	int radii[OBJECT_LIMIT];
+	bool photoTaken[OBJECT_LIMIT];
+	for (int i = 0; i < OBJECT_LIMIT; i++) {
+		radii[i] = sqrt(PIXELTHRESH);
+		photoTaken[i] = false;
+	}
+	int loopCount = 0;
+	int frame;
 
 	while (!exitLawnmower && distance > WAYPOINT_RADIUS) {
 		setLawnCourse(&course, distance, pastDistances, bearing, yaw);
 		sprintf(str, "Course set to : {%d (A), %d (E)}", course.aileron, course.elevator);
 		logPtr->writeLogLine(str);
 		fbPtr->setFB_Data(&course);
-		/*IplImage* view = raspiCamCvQueryFrame(camPtr);
-		Mat imBGR(view);
-		Mat image;
-		Mat imBinary;
-		cvtColor(imBGR, image, CV_BGR2HSV);
-		HSV2Bin(image,imBinary);
-		int centres[2][10];
-		for (int i = 0; i <10;i++){
-			centres[0][i] = -1;
-			centres[1][i] = -1;
+		
+		view = raspiCamCvQueryFrame(camPtr);
+		BGRTemp = cvarrToMat(view);
+		resize(BGRTemp, image, Size(COLSIZE, ROWSIZE), 0, 0, INTER_LINEAR);
+		cvtColor(image, imHSV, CV_BGR2HSV);
+		cvtColor(image, imBin, CV_BGR2GRAY);
+		HSV2Bin(imHSV, imBin);
+		loopCount++;
+		if (loopCount%20 == 0) {
+			nObjects = findRedObjects(imBin, centres);	//Finds centres
 		}
-		timer++;
-		objCount = findRedObjects(imBinary, centres);
-		cout<<"Number of Red Objects Detected: " << objCount<<endl;
-		if ((timer > 0) && (objCount >0)) {	//Is there red?
-			sawRed = true;
-			image.copyTo(currentImg);
-			if (!haveBest) {
-				currentImg.copyTo(bestImg);
-				haveBest = true;
+		
+		for (frame = 0; frame < nObjects; frame++) {
+			if (radii[frame] != 0) {
+				radii[frame] = sqrt(camShift(centres[frame], radii[frame], imBin));
+				if ((centres[frame][1] < (2.0/3.0)*ROWSIZE) && (centres[frame][1] > (1.0/3.0)*ROWSIZE) && !photoTaken[frame]) {
+					photoTaken[frame] = true;
+					sprintf(str, "/home/pi/picopter/apps/photos/Lawnmower_lat_%d_ lon_%d_time_%d_obj_%d.jpg", (int)((dataPtr->latitude)*1000), (int)((dataPtr->longitude)*1000), (int)((dataPtr->time)*100), nObjects);
+					imwrite(str, bestImg);
+				}
 			}
-			else if (redComDist(currentImg) < redComDist(bestImg)) {
-				currentImg.copyTo(bestImg);
+			else {
+				centres[frame][0] = -1;
+				centres[frame][1] = -1;
 			}
 		}
-		else {
-			if (sawRed && (timer > 0))  {	//Only resets first time image leaves frame
-				timer = 0-FRAME_WAIT;
-				sprintf(str, "photos/Lawnmower_%d_%d_%d_%d.jpg", (int)((dataPtr->latitude)*1000), (int)((dataPtr->longitude)*1000), (int)((dataPtr->time)*100), objCount);
-				imwrite(str, bestImg);
-				//imshow("Last Red Object", bestImg);
-				waitKey(1);
-				haveBest = false;
-			}
-			sawRed = false;
-		}*/
 		
 		delay(LOOP_WAIT);	//Wait for instructions
 		gpsPtr->getGPS_Data(dataPtr);
@@ -257,7 +245,7 @@ bool checkRed(Mat image, Logger *logPtr) {
 	for(int i = 0; i < nRows; i++) {
 		p = image.ptr<uchar>(i);
 		for (int j = 0; j < nCols; j=j+3) {
-			if (((p[j] > MIN_HUE) || (p[j] < MAX_HUE)) && (p[j] > MIN_SAT) && (p[j] < MAX_SAT) && (p[j] > MIN_VAL) && (p[j] < MAX_VAL)) {
+			if (((p[j] > HMIN) || (p[j] < HMAX)) && (p[j] > SMIN) && (p[j] < SMAX) && (p[j] > VMINIMUM) && (p[j] < VMAX)) {
 				nRed++;
 			}
 		}
@@ -280,7 +268,7 @@ double redComDist(Mat image) {
 	for(int i = 0; i < nRows; i++) {
 		p = image.ptr<uchar>(i);
 		for (int j = 0; j < nCols; j=j+3) {
-			if (((p[j] > MIN_HUE) || (p[j] < MAX_HUE)) && (p[j] > MIN_SAT) && (p[j] < MAX_SAT) && (p[j] > MIN_VAL) && (p[j] < MAX_VAL)) {
+			if (((p[j] > HMIN) || (p[j] < HMAX)) && (p[j] > SMIN) && (p[j] < SMAX) && (p[j] > VMINIMUM) && (p[j] < VMAX)) {
 				nRed++;
 				xMean = xMean + j/3;
 				yMean = yMean + i;
@@ -339,8 +327,8 @@ void setLawnCourse(FB_Data *instruction, double distance, double pastDistances[]
 		average = average + pastDistances[i];
 	}
 	average = average/PAST_POINTS;
-	double speed = KPh * distance + KIh * average;
-	if(speed > SPEED_LIMIT) {											//PI controler with limits.
+	double speed = KPxy * distance + KIxy * average;
+	if(speed > SPEED_LIMIT) {		//PI controler with limits.
 		speed = SPEED_LIMIT;
 	}
 	instruction->aileron = (int) (speed * sin((bearing-yaw)*(PI/180)));
@@ -450,4 +438,208 @@ void populateVector(Pos start, Pos end, vector<Pos> *list) {
 void terminateLawn(int signum) {
 	cout << "Signal " << signum << " received. Quitting lawnmower program." << endl;
 	exitLawnmower = true;
+}
+
+//Merrick's stuff----------------------------------------------------------
+
+void HSV2Bin(Mat &HSVImage, Mat (&binaryImage)){
+	uchar* p;
+	uchar* q;
+	for(int i = 0; i < HSVImage.rows; i++) {
+                p = HSVImage.ptr<uchar>(i);
+		q = binaryImage.ptr<uchar>(i);
+		for(int j = 0; j < HSVImage.cols; j++) {
+			if(((p[3*j] > HMIN) || (p[3*j] < HMAX)) && (p[3*j+1] > SMIN) && (p[3*j+1]<SMAX) && (p[3*j+2] > VMINIMUM) && (p[3*j+2] < VMAX)){
+				q[j] = WHITE;
+			} else{
+				q[j] = BLACK;
+			}
+		}
+	}
+	return;
+}
+
+int findRedObjects(Mat &binaryImage,  int (&redCentres)[OBJECT_LIMIT][2]) {
+	//cout<<"1" <<endl;
+	uchar* p;
+	int count = 0;
+	queue<vec2> que;
+	int connComp[binaryImage.rows][binaryImage.cols];
+	for(int i = 0; i<binaryImage.rows; i++){
+		for(int j = 0; j<binaryImage.cols; j++){
+			connComp[i][j]=0;
+		}
+	}
+	
+	vec2 temp;
+	vec2 temp2;
+	int label = 1;
+	int pixCount[OBJECT_LIMIT];
+	Mat elementErode(ERODE_ELEMENT,ERODE_ELEMENT,CV_8U,Scalar(255));
+	Mat elementDilate(DILATE_ELEMENT,DILATE_ELEMENT,CV_8U,Scalar(255));
+	dilate(binaryImage,binaryImage,elementDilate);
+	erode(binaryImage,binaryImage,elementErode);
+	for(int i = 0; i < binaryImage.rows; i++) {
+		p = binaryImage.ptr<uchar>(i);
+		for(int j = 0; j < binaryImage.cols; j++) {
+			if(p[j] == WHITE) {
+				if(connComp[i][j]==0){
+					connComp[i][j]=label;///
+					temp.a=i;
+					temp.b=j;
+					que.push(temp);
+					pixCount[label-1] = 1;
+					while(!que.empty()){
+						temp.a=que.front().a;
+						temp.b=que.front().b;
+						que.pop();
+						if((temp.a<binaryImage.rows-1)&&(connComp[temp.a+1][temp.b]==0)&&(binaryImage.ptr<uchar>(temp.a+1)[temp.b]==WHITE)){
+							connComp[temp.a+1][temp.b]=label;
+							temp2.a=temp.a+1;
+							temp2.b=temp.b;
+							que.push(temp2);
+							pixCount[label-1]++;
+						}
+						if((temp.b<binaryImage.cols-1)&&(connComp[temp.a][temp.b+1]==0)&&(binaryImage.ptr<uchar>(temp.a)[temp.b+1]==WHITE)){
+                                                        connComp[temp.a][temp.b+1]=label;
+                                                        temp2.a=temp.a;
+							temp2.b=temp.b+1;
+                                                        que.push(temp2);
+							pixCount[label-1]++;
+                                                }
+						if((temp.b>0)&&(connComp[temp.a][temp.b-1]==0)&&(binaryImage.ptr<uchar>(temp.a)[temp.b-1]==WHITE)){
+                                                        connComp[temp.a][temp.b-1]=label;
+                                                        temp2.a=temp.a;
+							temp2.b=temp.b-1;
+                                                        que.push(temp2);
+                                                	pixCount[label-1]++;
+						}
+						if((temp.a>0)&&(connComp[temp.a-1][temp.b]==0)&&(binaryImage.ptr<uchar>(temp.a-1)[temp.b]==WHITE)){
+                                                        connComp[temp.a-1][temp.b]=label;
+                                                        temp2.a=temp.a-1;
+							temp2.b=temp.b;
+                                                        que.push(temp2);
+							pixCount[label-1]++;
+                                                }
+					}
+					label++;
+					if (label>OBJECT_LIMIT) break;
+				}
+			}
+		}
+	}
+	
+	int pixelCount;
+	int xCentre;
+	int yCentre;
+	for(int k = 1; k<label; k++){
+		if(pixCount[k-1]<PIXELTHRESH) continue;
+		pixelCount= 0;
+		xCentre = 0;
+		yCentre = 0;
+		for(int i = 0; i < binaryImage.rows; i++){
+			for(int j = 0; j <binaryImage.cols; j++){
+				if(connComp[i][j]==k){
+					pixelCount++;
+					xCentre += j;
+					yCentre += i;
+				}
+			}
+		}
+		if (pixelCount > PIXELTHRESH) {
+			redCentres[count][0] = xCentre/pixelCount;
+			//cout<<redCentres[k-1][0]<<endl;
+			//cout<<binaryImage.rows<<endl;
+			redCentres[count][1] = yCentre/pixelCount;	
+			//cout<<redCentres[k-1][1]<<endl;
+			//cout<<binaryImage.cols<<endl;
+			count++;
+		}
+	}
+	return count;
+}
+int camShift(int (&centre)[2], int size, Mat binImage) {
+	int x;
+	int y;
+	int xCentre = 0;
+	int yCentre = 0;
+	int pixelCount=0;
+	uchar* p;
+	for(int i=0-size; i<size; i++) {
+		y = centre[1] + i;
+		if((y>=0)&&(y<binImage.rows)){
+			p=binImage.ptr<uchar>(y);
+			for(int j = 0-size; j<size;j++) {
+				x = centre[0] + j;
+				if((i*i+j*j <= size*size) && (x>=0)&&(x<binImage.cols)&&(p[x]==WHITE)) {
+					xCentre += x;
+					yCentre += y;
+					pixelCount++;
+				}
+			}
+		}
+	}
+	//cout<<xCentre<<" "<<yCentre<<" "<<pixelCount<<endl;
+	if (pixelCount>0) {
+	centre[0]=xCentre/pixelCount;
+	centre[1]=yCentre/pixelCount;
+	cout<<centre[0]<<", "<<centre[1]<<endl;
+	return pixelCount;
+	} else return 0;	
+}
+
+
+void runDetection(RaspiCamCvCapture *capture) {
+	//capture image
+	//RaspiCamCvCapture *capture = raspiCamCvCreateCameraCapture(0); // Index doesn't really matter
+	cvNamedWindow("RaspiCamTest", 0);
+	int centres[OBJECT_LIMIT][2];
+	Mat binImg;
+	Mat imHSV;
+	IplImage* image;
+	Mat BGRImage;
+	Mat BGRTemp;
+	int numObjects;
+	int radii[OBJECT_LIMIT];
+	int frame;
+	timespec ts;
+	timespec bs;
+	for (int k = 0; k < OBJECT_LIMIT; k++) {
+		radii[k]=20;
+                centres[k][0]=-1;
+                centres[k][1]=-1;
+        }
+	
+	while(cvWaitKey(10) < 0){
+		clock_gettime(CLOCK_REALTIME, &ts);
+		
+		image = raspiCamCvQueryFrame(capture);
+		BGRTemp =cvarrToMat(image);
+		resize(BGRTemp, BGRImage, Size(160,120),0, 0, INTER_LINEAR);
+		//imshow("RaspiCamTest",BGRImage);
+		
+		cvtColor(BGRImage,imHSV,CV_BGR2HSV);
+		
+		cvtColor(BGRImage,binImg,CV_BGR2GRAY);
+		HSV2Bin(imHSV,binImg);
+		numObjects = findRedObjects(binImg,centres);
+		cout<<"Red Objects Detected:"<<numObjects<<endl;
+		for (frame=0; frame < numObjects; frame++) {
+			if (radii[frame] != 0) {
+				radii[frame] = sqrt(camShift(centres[frame] , radii[frame]  ,binImg));
+			}
+			else {
+				centres[frame][0] = -1;
+				centres[frame][1] = -1;
+			}
+		}
+		imshow("RaspiCamTest",BGRImage);
+		namedWindow("Connected Components");
+		imshow("Connected Components",binImg);
+		clock_gettime(CLOCK_REALTIME,&bs);
+		cout<<1000.0/((bs.tv_nsec-ts.tv_nsec)/1000000)<<" fps"<<endl;
+	}
+
+	cvDestroyWindow("RaspiCamTest");
+	//raspiCamCvReleaseCapture(&capture);
 }

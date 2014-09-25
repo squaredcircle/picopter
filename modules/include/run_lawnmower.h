@@ -25,7 +25,6 @@
 #include "opencv2/highgui/highgui.hpp"
 #include "camera.h"
 #include "config_parser.h"
-//#include "detectObjects.h"
 
 using namespace std;
 
@@ -71,5 +70,50 @@ void updatePicture(Mat, double, double);
 void terminateLawn(int);
 
 extern bool exitLawnmower;
+
+#define CONFIG_FILE "/home/pi/picopter/modules/config/config.txt"
+int SPEED_LIMIT = 35;		//Config file parameters - need to be initialised as globals
+double SWEEP_SPACING = 6;
+double POINT_SPACING = 3;
+double WAYPOINT_RADIUS = 1.2;
+double KPxy = 10;
+double KIxy= 0;
+double KPz = 0;
+double KIz = 0;
+
+//Merrick's Stuff---------------------------------------------------------------------
+
+#include <iostream>
+#include <RaspiCamCV.h>
+#include "opencv2/imgproc/imgproc.hpp"
+#include <queue>
+#include <math.h>
+#include <sys/time.h>
+
+#define OBJECT_LIMIT 5
+
+using namespace cv;
+
+typedef uchar uchar;
+typedef struct vec2{int a; int b;} vec2;
+
+int HMIN = 320;
+int HMAX = 40;
+int SMIN=  95;
+int SMAX = 255;
+int VMINIMUM = 95;
+int VMAX = 255;
+int WHITE = 255;
+int BLACK = 0;
+int COLSIZE = 160;
+int ROWSIZE = 120; 
+int PIXELTHRESH = 12;
+int DILATE_ELEMENT = 6;
+int ERODE_ELEMENT = 6;
+
+int camShift(int (&) [2], int, Mat);
+int findRedObjects(Mat&, int (&) [OBJECT_LIMIT][2]);
+void HSV2Bin(Mat&, Mat&);
+void runDetection(RaspiCamCvCapture*);
 
 #endif// __RUN_LAWNMOWER_INCLUDED__
