@@ -7,6 +7,29 @@
 bool exitLawnmower = false;
 bool usingIMU = true;
 
+int SPEED_LIMIT = 35;		//Config file parameters - need to be initialised as globals
+double SWEEP_SPACING = 6;
+double POINT_SPACING = 3;
+double WAYPOINT_RADIUS = 1.2;
+double KPxy = 10;
+double KIxy= 0;
+double KPz = 0;
+double KIz = 0;
+
+int HMIN = 320;
+int HMAX = 40;
+int SMIN=  95;
+int SMAX = 255;
+int VMINIMUM = 95;
+int VMAX = 255;
+int WHITE = 255;
+int BLACK = 0;
+int COLSIZE = 160;
+int ROWSIZE = 120; 
+int PIXELTHRESH = 12;
+int DILATE_ELEMENT = 6;
+int ERODE_ELEMENT = 6;
+
 void run_lawnmower(FlightBoard *fbPtr, GPS *gpsPtr, IMU *imuPtr, Pos start, Pos end) {
 
 	cout << "Starting to run lawnmower..." << endl;
@@ -152,6 +175,7 @@ void flyTo(FlightBoard *fbPtr, GPS *gpsPtr, GPS_Data *dataPtr, IMU *imuPtr, IMU_
 	IplImage* view;
 	int nObjects = 0;
 	int centres[OBJECT_LIMIT][2];
+	int tempCentres[OBJECT_LIMIT][2];
 	int radii[OBJECT_LIMIT];
 	bool photoTaken[OBJECT_LIMIT];
 	for (int i = 0; i < OBJECT_LIMIT; i++) {
@@ -174,7 +198,7 @@ void flyTo(FlightBoard *fbPtr, GPS *gpsPtr, GPS_Data *dataPtr, IMU *imuPtr, IMU_
 		cvtColor(image, imBin, CV_BGR2GRAY);
 		HSV2Bin(imHSV, imBin);
 		loopCount++;
-		if (loopCount%20 == 0) {
+		if ((loopCount%5 == 0) && (findRedObjects(imBin,tempCentres)!=nObjects)) {
 			nObjects = findRedObjects(imBin, centres);	//Finds centres
 		}
 		
@@ -185,6 +209,7 @@ void flyTo(FlightBoard *fbPtr, GPS *gpsPtr, GPS_Data *dataPtr, IMU *imuPtr, IMU_
 					photoTaken[frame] = true;
 					sprintf(str, "/home/pi/picopter/apps/photos/Lawnmower_lat_%d_ lon_%d_time_%d_obj_%d.jpg", (int)((dataPtr->latitude)*1000), (int)((dataPtr->longitude)*1000), (int)((dataPtr->time)*100), nObjects);
 					imwrite(str, bestImg);
+					updatePicture(oval, dataPtr->latitude, dataPtr->longitude, 1);
 				}
 			}
 			else {
@@ -192,6 +217,10 @@ void flyTo(FlightBoard *fbPtr, GPS *gpsPtr, GPS_Data *dataPtr, IMU *imuPtr, IMU_
 				centres[frame][1] = -1;
 			}
 		}
+		namedWindow("RaspiCamTest");
+		imshow("RaspiCamTest", image);
+		namedWindow("Connected Components");
+		imshow("Connected Components", imBin);
 		
 		delay(LOOP_WAIT);	//Wait for instructions
 		gpsPtr->getGPS_Data(dataPtr);
@@ -202,7 +231,7 @@ void flyTo(FlightBoard *fbPtr, GPS *gpsPtr, GPS_Data *dataPtr, IMU *imuPtr, IMU_
 			sprintf(str, "Yaw measured	as %f", yaw);
 			logPtr->writeLogLine(str);
 		}
-		updatePicture(oval, dataPtr->latitude, dataPtr->longitude);	
+		updatePicture(oval, dataPtr->latitude, dataPtr->longitude, 0);	
 		namedWindow("Oval Map", CV_WINDOW_AUTOSIZE);
 		imshow("Oval Map", oval);
 		waitKey(1); 
@@ -280,7 +309,7 @@ double redComDist(Mat image) {
 	return sqrt(pow(xMean-(double)(nCols/2), 2) + pow(yMean-(double)(nRows/2), 2));	//Mean distance
 }
 
-void updatePicture(Mat oval, double latitude, double longitude) {
+void updatePicture(Mat oval, double latitude, double longitude, int type) {
 	if ((latitude < MINLAT) || (latitude > MAXLAT) || (longitude < MINLON) || (longitude > MAXLON)) return; //Are we inside the image?
 	int row = (oval.rows)*(latitude - MAXLAT)/(MINLAT - MAXLAT);
 	int column = (oval.cols)*(longitude - MINLON)/(MAXLON - MINLON);
@@ -288,12 +317,26 @@ void updatePicture(Mat oval, double latitude, double longitude) {
 	if ((row + PIXEL_RADIUS) > oval.rows) row = oval.rows - PIXEL_RADIUS;
 	if ((column - PIXEL_RADIUS) < 0) column = PIXEL_RADIUS;
 	if ((column + PIXEL_RADIUS) > oval.cols) column = oval.cols - PIXEL_RADIUS;
-	for (int i = row; i <= row + PIXEL_RADIUS; i++) {
-		for (int j = column - PIXEL_RADIUS; j <= column + PIXEL_RADIUS; j++){
-			uchar *pixelPtr = oval.ptr<uchar>(i, j);
-			pixelPtr[0] = 0;	//Draw a black line
+	if (type == 0) {	//Draws black line on oval image
+		for (int i = row; i <= row + PIXEL_RADIUS; i++) {
+			for (int j = column - PIXEL_RADIUS; j <= column + PIXEL_RADIUS; j++){
+				uchar *pixelPtr = oval.ptr<uchar>(i, j);
+				pixelPtr[0] = 0;
+				pixelPtr[1] = 0;
+				pixelPtr[2] = 0;
+			}
+		}
+	}
+	else if (type == 1) { 	//Draws red cross where found object
+		for (int i = - PIXEL_RADIUS; i <= PIXEL_RADIUS; i++) {
+			uchar *pixelPtr = oval.ptr<uchar>(row + i, row + i);
+			pixelPtr[0] = 0;
 			pixelPtr[1] = 0;
-			pixelPtr[2] = 0;
+			pixelPtr[2] = 255;
+			pixelPtr = oval.ptr<uchar>(row - i, row + i);
+			pixelPtr[0] = 0;
+			pixelPtr[1] = 0;
+			pixelPtr[2] = 255;
 		}
 	}
 }
