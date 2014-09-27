@@ -85,7 +85,7 @@ int main(int argc, char* argv[]) {
 									//State 4;	Object detected, gimbal pitched -> move forwards and pitch gimbal down
 									//State 5;	No object -> give up
 	
-	delay(800);	//wait for laggy camera stream							
+	usleep(800);	//wait for laggy camera stream							
 	cout << "System set up; starting main loop" << endl;
 	
 	while(!exitProgram) {
@@ -119,7 +119,7 @@ int main(int argc, char* argv[]) {
 				fb.setFB_Data(&stop);									//Stop moving
 				printFB_Data(&stop);
 				cout << "In manual mode, standby" << endl;				//PRINT SOMETHING
-				delay(50);												//VERY SMALL DELAY
+				usleep(50);												//VERY SMALL DELAY
 				break;
 			
 			case 1:													//Case 1:	Object detected, move towards it
@@ -127,7 +127,7 @@ int main(int argc, char* argv[]) {
 				setCourse_followObject(&course, &red_object, &red_object_old);		//PI ON OBJECT
 				fb.setFB_Data(&course);
 				printFB_Data(&course);
-				delay(200);												//SMALL DELAY
+				usleep(200);												//SMALL DELAY
 				break;
 			
 			case 2:													//Case 2:	No object detected, look for it
@@ -137,7 +137,7 @@ int main(int argc, char* argv[]) {
 				fb.setFB_Data(&course);
 				printFB_Data(&course);
 				if(raise_gimbal) last_raised_gimbal_time = now;
-				delay(200);												//SMALL DELAY
+				usleep(200);												//SMALL DELAY
 				break;
 			
 			case 3:													//Case 3:	Object found, need to face it
@@ -145,7 +145,7 @@ int main(int argc, char* argv[]) {
 				setCourse_faceObject(&course, &red_object);				//PID YAW
 				fb.setFB_Data(&course);
 				printFB_Data(&course);
-				delay(100);
+				usleep(100);
 				break;
 			
 			case 4:													//Case 4:	Object found and facing it, move forwards
@@ -153,7 +153,7 @@ int main(int argc, char* argv[]) {
 				setCourse_forwardsLowerGimbal(&course, &red_object);	//MOVE FORWARDS and Lower Gimbal
 				fb.setFB_Data(&course);
 				printFB_Data(&course);
-				delay(100);												//SMALL DELAY
+				usleep(100);												//SMALL DELAY
 				break;
 			
 			case 5:													//Case 5:	Give up
@@ -162,7 +162,7 @@ int main(int argc, char* argv[]) {
 				printFB_Data(&stop);									//STOP
 				cout << "No objects detected." << endl;					//PRINT: NO OBJECT FOUND.  SWITCH IN AND OUT OF AUTO MODE TO RESTART SEARCH
 				cout << "Switch in and out of auto mode to restart search." << endl;
-				delay(50);												//VERY SMALL DELAY
+				usleep(50);												//VERY SMALL DELAY
 				break;
 			
 		}

@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <iostream>
 
 #include <gpio.h>
 #include <flightBoard.h>
@@ -13,6 +14,8 @@
 #include "run_lawnmower.h"
 
 #define GPS_DATA_FILE "/home/pi/picopter/apps/config/waypoints_list.txt"
+
+using namespace std;
 
 void readPosition(Pos*, int);
 
@@ -40,7 +43,7 @@ int main() {
 
 	cout << "Set-up complete" << endl;
 
-	run_lawnmower(&fb, &gps, &imu, start, end);
+	run_lawnmower(fb, gps, imu, start, end);
 	
 	return 0;
 }

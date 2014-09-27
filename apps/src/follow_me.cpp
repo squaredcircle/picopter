@@ -85,7 +85,7 @@ int main(int argc, char* argv[]) {
                             //State 3;	Blue object only
                             //State 4;	No objects, wait patiently.
 	
-	delay(800);	//wait for laggy camera stream							
+	usleep(800);	//wait for laggy camera stream							
 	cout << "System set up; starting main loop" << endl;
 	
 	while(!exitProgram) {

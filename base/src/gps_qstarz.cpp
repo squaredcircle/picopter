@@ -7,6 +7,15 @@
 //v1.4	26-8-2014	BAX
 //BIG CHANGE: no more nmea.  Straight into degrees.  Less confusion for all.
 
+#include <string>
+#include <sstream>
+#include <iostream>
+#include <ctime>
+
+#include "gpio.h"
+#include <wiringSerial.h>
+
+#include "config_parser.h"
 
 #include "gps_qstarz.h"
 

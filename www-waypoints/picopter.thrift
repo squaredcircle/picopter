@@ -24,10 +24,15 @@ struct coordDeg {
 }
 
 service webInterface {
+	bool		beginWaypointsThread();
+	bool		beginLawnmowerThread();
+	
 	bool		allStop();
-	bool		beginWaypointTraversal();
+	
 	string		requestStatus();
 	coordDeg	requestCoords();
+	
+	bool		beginWaypointTraversal();
 	coordDeg	requestNextWaypoint();
 	bool		addWaypoint(1: coordDeg wp); 
 	bool		updateWaypoint(1: coordDeg wp, 2: i32 no);

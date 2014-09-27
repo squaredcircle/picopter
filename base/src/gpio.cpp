@@ -8,6 +8,10 @@
 //v1.2	1-8-2014	OMID
 //PWMs calibrated.
 
+#include <cstdio>	//sprintf
+#include <cstdlib>	//system
+
+#include <wiringPi.h>
 
 #include "gpio.h"
 

@@ -122,13 +122,13 @@ int main(int argc, char* argv[]) {
 	FB_Data forwards = {0, DIRECTION_TEST_SPEED, 0, 0};
 	double yaw;															//This is our heading, radians
 	
-	while(!gpio::isAutoMode()) delay(100);								//Wait until put into auto mode
+	while(!gpio::isAutoMode()) usleep(100);								//Wait until put into auto mode
 	
 	cout << "Started auto mode!" << endl;
 	
 	direction_test_start = getCoord(&gps);								//Record initial position.
 	fb.setFB_Data(&forwards);											//Tell flight board to go forwards.
-	delay(DIRECTION_TEST_DURATION);										//Wait a bit (travel).
+	usleep(DIRECTION_TEST_DURATION);										//Wait a bit (travel).
 	fb.setFB_Data(&stop);												//Stop.
 	direction_test_end = getCoord(&gps);								//Record end position.
 	
@@ -137,7 +137,7 @@ int main(int argc, char* argv[]) {
 	sprintf(str_buf, "Copter is facing %f degrees.", yaw *180/PI);
 	logs.writeLogLine(str_buf);
 	
-	delay(1000);
+	usleep(1000);
 	//----------------------------
 	//Time to start main loop!
 	//
@@ -193,7 +193,7 @@ int main(int argc, char* argv[]) {
 				sprintf(str_buf, "Currently at %f %f.", currentCoord.lat *180/PI, currentCoord.lon *180/PI);
 				logs.writeLogLine(str_buf);
 				
-				delay(100);												//VERY SMALL DELAY
+				usleep(100);												//VERY SMALL DELAY
 				break;
 				
 			
@@ -212,7 +212,7 @@ int main(int argc, char* argv[]) {
 				sprintf(str_buf, "Currently at %f %f, moving %f m at a bearing of %f degrees.", currentCoord.lat *180/PI, currentCoord.lon *180/PI, distaceToNextWaypoint, bearingToNextWaypoint *180/PI);
 				logs.writeLogLine(str_buf);
 
-				delay(200);
+				usleep(200);
 				break;
 				
 				
@@ -226,7 +226,7 @@ int main(int argc, char* argv[]) {
 				waypoints_list.push_back(waypoints_list.front());
 				waypoints_list.pop_front();
 				
-				delay(WAIT_AT_WAYPOINTS);
+				usleep(WAIT_AT_WAYPOINTS);
 				
 				cout << "Moving to next waypoint." << endl;
 				break;
@@ -239,7 +239,7 @@ int main(int argc, char* argv[]) {
 				printFB_Data(&stop);
 				
 				logs.writeLogLine("Error reading GPS, stopping");
-				delay(500);
+				usleep(500);
 			break;
             
             
@@ -249,7 +249,7 @@ int main(int argc, char* argv[]) {
 				printFB_Data(&stop);
 				
 				logs.writeLogLine("Error: waypoints list is empty");
-				delay(500);
+				usleep(500);
                 break;
 		}
 	}

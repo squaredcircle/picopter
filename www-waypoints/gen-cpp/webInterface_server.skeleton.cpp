@@ -22,14 +22,19 @@ class webInterfaceHandler : virtual public webInterfaceIf {
     // Your initialization goes here
   }
 
+  bool beginWaypointsThread() {
+    // Your implementation goes here
+    printf("beginWaypointsThread\n");
+  }
+
+  bool beginLawnmowerThread() {
+    // Your implementation goes here
+    printf("beginLawnmowerThread\n");
+  }
+
   bool allStop() {
     // Your implementation goes here
     printf("allStop\n");
-  }
-
-  bool beginWaypointTraversal() {
-    // Your implementation goes here
-    printf("beginWaypointTraversal\n");
   }
 
   void requestStatus(std::string& _return) {
@@ -40,6 +45,11 @@ class webInterfaceHandler : virtual public webInterfaceIf {
   void requestCoords(coordDeg& _return) {
     // Your implementation goes here
     printf("requestCoords\n");
+  }
+
+  bool beginWaypointTraversal() {
+    // Your implementation goes here
+    printf("beginWaypointTraversal\n");
   }
 
   void requestNextWaypoint(coordDeg& _return) {

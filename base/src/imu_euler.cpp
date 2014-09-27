@@ -1,3 +1,9 @@
+#include <string>
+#include <sstream>
+#include <iostream>
+
+#include <boost/lexical_cast.hpp>
+
 #include "imu_euler.h"
 
 IMU::IMU() {

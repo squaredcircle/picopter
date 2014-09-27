@@ -88,7 +88,7 @@ int main(int argc, char* argv[]) {
                             //State 1;	Object detected, face object + gimbal
                             //State 2;	No object detected -> wait there
 	
-	delay(700);	//wait for laggy camera stream			
+	usleep(700);	//wait for laggy camera stream			
 	
 	
 	
@@ -115,7 +115,7 @@ int main(int argc, char* argv[]) {
 	WINDOW *msg_window = newwin(LINES - TITLE_HEIGHT -1, COLUMNS -1, TITLE_HEIGHT, 0);
 	wattron(msg_window, COLOR_PAIR(2));
 	
-	delay(1000);				
+	usleep(1000);				
 	
 	while(!exitProgram) {
 	

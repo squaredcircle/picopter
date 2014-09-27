@@ -1,26 +1,104 @@
-var uwa = new google.maps.LatLng(-31.978239, 115.817546);
+var uwa = [-31.979839, 115.817546];
 var markers = [];
+var copterMarker;
 var map;
 
-function initialize() {
-	var mapOptions = {
-		zoom: 20,
-		center: uwa
-	};
+function initialise() {
+	map = L.map('map-canvas').setView(uwa, 18);
 
-	map = new google.maps.Map(document.getElementById('map-canvas'), mapOptions);
-	addMarker();
+	
+	// /tiles/{z}/{x}/{y}.jpg
+	L.tileLayer('/tiles/sat/gs_{x}_{y}_{z}.jpg', {
+		maxZoom: 21,
+		minZoom: 17
+	}).addTo(map);
+	
+	addCopter();
+}
+
+function addCopter() {
+	copterMarker =
+		new L.marker( uwa, {
+			draggable: false,
+			icon: '/css/heli.png'
+		}).addTo(map);
 }
 
 function addMarker() {
 	markers.push(
-		new google.maps.Marker( {
-			position: uwa,
-			map: map,
+		new L.marker( map.getCenter(), {
 			draggable: true,
-			animation: google.maps.Animation.DROP
-		} )
+			icon:	new L.NumberedDivIcon({number: (markers.length+1)})
+		} ).addTo(map)
 	);
+
+	var thisNo = markers.length-1;	
+	var thisMarker = markers[thisNo];
+/*
+	if (thisNo > 1) {
+		var waypointLine = new google.maps.Polyline({
+			path: [markers[thisNo-1],markers[thisNo]],
+			geodesic: true,
+			strokeColor: '#FF0000',
+			strokeOpacity: 1.0,
+			strokeWeight: 2
+		});
+
+		waypointLine.setMap(map);
+	}*/
+	
+	ajaxSend('addWaypoint',thisMarker.getLatLng().lat,thisMarker.getLatLng().lng);
+
+	thisMarker.on('dragend', function(event) {
+		ajaxSend('updateWaypoint',thisMarker.getLatLng().lat,thisMarker.getLatLng().lng,thisNo);
+	});
 }
 
-google.maps.event.addDomListener(window, 'load', initialize);
+
+// Removes the markers from the map, but keeps them in the array.
+function clearMarkers() {
+	for (var i = 0; i < markers.length; i++) {
+		map.removeLayer(markers[i]);
+	}
+	
+	while(markers.length > 0) {
+		markers.pop();
+	}
+	ajaxSend('resetWaypoints');
+}
+
+$(function() {
+    initialise();
+});
+
+
+
+		
+		
+	/*	
+		L.tileLayer('https://{s}.tiles.mapbox.com/v3/{id}/{z}/{x}/{y}.png', {
+			maxZoom: 18,
+			attribution: 'Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, ' +
+				'<a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, ' +
+				'Imagery © <a href="http://mapbox.com">Mapbox</a>',
+			id: 'examples.map-i875mjb7'
+		}).addTo(map);
+
+
+		L.marker([-31.979839, 115.817546]).addTo(map)
+			.bindPopup("<b>Hello world!</b><br />I am a popup.").openPopup();
+
+
+
+		var popup = L.popup();
+
+		function onMapClick(e) {
+			popup
+				.setLatLng(e.latlng)
+				.setContent("You clicked the map at " + e.latlng.toString())
+				.openOn(map);
+		}
+
+		map.on('click', onMapClick);
+
+*/

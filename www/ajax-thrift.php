@@ -3,14 +3,14 @@
 
 	error_reporting(E_ALL);
 
-	require_once '/home/pi/thrift-0.9.0/lib/php/lib/Thrift/ClassLoader/ThriftClassLoader.php';
+	require_once '/home/pi/lib/thrift-0.9.0/lib/php/lib/Thrift/ClassLoader/ThriftClassLoader.php';
 
 	use Thrift\ClassLoader\ThriftClassLoader;
 
-	$GEN_DIR = '/home/pi/git/picopter/picopter-programs/src/waypoints/gen-php';
+	$GEN_DIR = '/home/pi/picopter/www-waypoints/gen-php';
 	
 	$loader = new ThriftClassLoader();
-	$loader->registerNamespace('Thrift', '/home/pi/thrift-0.9.0/lib/php/lib');
+	$loader->registerNamespace('Thrift', '/home/pi/lib/thrift-0.9.0/lib/php/lib');
 	$loader->registerDefinition('picopter', $GEN_DIR);
 	$loader->register();
 
@@ -21,7 +21,7 @@
 	use Thrift\Exception\TException;
 
 	try {
-		$socket = new TSocket('localhost', 9090);	
+		$socket = new TSocket('localhost', 9090);
 		$transport = new TBufferedTransport($socket, 1024, 1024);
 		$protocol = new TBinaryProtocol($transport);
 		$client = new \picopter\webInterfaceClient($protocol);
@@ -32,12 +32,12 @@
 		
 		include('ajax-functions.php');
 		
-
 		/* ***************************************** */
 		
 		$transport->close();
 		
 	} catch (TException $tx) {
-		print 'TException: '.$tx->getMessage()."\n";
+		//print 'TException: '.$tx->getMessage()."\n";
+		print "Error connecting to flight program.";
 	}
 ?>

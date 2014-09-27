@@ -48,7 +48,7 @@ int main () {
 		
 		outfile << std::setprecision(12) << positionData.latitude << DELIM;
 		outfile << std::setprecision(12) << positionData.longitude << endl;
-		delay(500);
+		usleep(500);
 	}
 	outfile.close();
 	return 0;

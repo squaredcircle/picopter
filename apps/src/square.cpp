@@ -60,14 +60,14 @@ int main(int argc, char* argv[]) {										//Okay, so annotations over here.
 																		//which doesn't really matter since Omid is in control
 				j++;
 			}
-			delay(200);													//Wait 0.2s and then start from top.
+			usleep(200);													//Wait 0.2s and then start from top.
 			continue;
 		}
 		
 		cout << instructions[i].description << endl;					//If in auto mode (not stopped by above)
 		fb.setFB_Data(&(instructions[i].command));						//Print label and give flight board a command.
 		
-		delay(DURATION);												//Do that for a bit.
+		usleep(DURATION);												//Do that for a bit.
 		
 		i++;															//Cycle through the instructions list.
 		j=0;

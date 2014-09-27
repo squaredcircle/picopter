@@ -9,7 +9,6 @@
  * Modified 23/7/2014 by Baxter:	Just changed a few names.
  */
 
-
 #include "logger.h"
 
 
