@@ -32,6 +32,6 @@ typedef uchar uchar;
 typedef struct vec2{int a; int b;} vec2;
 
 void HSV2Bin(Mat,Mat&);
-int findRedObjects(Mat&, int&[2][10]);
+int findRedObjects(Mat&, int[2][10]);
 
 #endif// __DETECT_OBJECTS_INCLUDED__
