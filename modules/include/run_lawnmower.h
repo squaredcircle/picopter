@@ -11,8 +11,8 @@ typedef struct{		//These are in degrees now.
 	double lon;
 } Pos;
 
-void run_lawnmower(FlightBoard, GPS, IMU, Pos, Pos);
+void run_lawnmower(FlightBoard &, GPS &, IMU &, Pos, Pos);
 
 extern bool exitLawnmower;
 
-#endif// __RUN_LAWNMOWER_INCLUDED__
+#endif

@@ -10,6 +10,11 @@
 				print $ans->lat . "," . $ans->lon;
 				break;
 				
+			case "requestBearing":
+				$ans = $client->requestBearing();
+				print $ans;
+				break;
+				
 			case "requestStatus":
 				$ans = $client->requestStatus();
 				print $ans . "\n";
@@ -45,12 +50,12 @@
 			
 			case "beginManual":
 				$ans = $client->beginWaypointsThread();
-				print "beginWaypointTraversal " . $b[$ans] . "\n";
+				print "beginWaypointsThread " . $b[$ans] . "\n";
 				break;
 				
 			case "beginAuto":
-				$ans = $client->beginWaypointTraversal();
-				print "beginWaypointTraversal " . $b[$ans] . "\n";
+				$ans = $client->beginLawnmowerThread();
+				print "beginLawnmowerThread " . $b[$ans] . "\n";
 				break;
 				
 			case "requestNextWaypoint":

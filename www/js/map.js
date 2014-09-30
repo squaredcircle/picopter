@@ -5,6 +5,8 @@ var map = L.map('map-canvas').setView(uwa, 18);
 
 var popup = L.popup();
 
+/* ************************************* INITIALISATION */
+
 function initialise() {
 	L.tileLayer('/tiles/sat/gs_{x}_{y}_{z}.jpg', {
 		maxZoom: 21,
@@ -14,11 +16,11 @@ function initialise() {
 	addCopter();
 }
 
-function onMapClick(e) {
-	if (canEdit) addMarker(e.latlng, true);
-}
+$(function() {
+    initialise();
+});
 
-map.on('click', onMapClick);
+/* ************************************* NEW MARKERS */
 
 function addCopter() {
 	var copterIcon = L.icon({
@@ -35,7 +37,6 @@ function addCopter() {
 }
 
 function addMarker(loc,red) {
-	//map.getCenter()
 	if (red) {
 		markers.push(
 			new L.marker( loc, {
@@ -54,20 +55,6 @@ function addMarker(loc,red) {
 
 	var thisNo = markers.length-1;	
 	var thisMarker = markers[thisNo];
-/*
-	if (thisNo > 1) {
-		var waypointLine = new google.maps.Polyline({
-			path: [markers[thisNo-1],markers[thisNo]],
-			geodesic: true,
-			strokeColor: '#FF0000',
-			strokeOpacity: 1.0,
-			strokeWeight: 2
-		});
-
-		waypointLine.setMap(map);
-	}*/
-	
-	//ajaxSend('addWaypoint',thisMarker.getLatLng().lat,thisMarker.getLatLng().lng);
 
 	thisMarker.on('click', function(event) {
 		if (canEdit) {
@@ -75,11 +62,9 @@ function addMarker(loc,red) {
 			markers.splice( $.inArray(thisMarker,markers) ,1 );
 		}
 	});
-	
-	//thisMarker.on('dragend', function(event) {
-	//	ajaxSend('updateWaypoint',thisMarker.getLatLng().lat,thisMarker.getLatLng().lng,thisNo);
-	//});
 }
+
+/* ************************************* MODIFICATIONS */
 
 function toggleMarkerRed() {
 	tmpmarkers = markers.slice();
@@ -89,7 +74,6 @@ function toggleMarkerRed() {
 	});
 }
 
-// Removes the markers from the map, but keeps them in the array.
 function clearMarkers(ajax) {
 	for (var i = 0; i < markers.length; i++) {
 		map.removeLayer(markers[i]);
@@ -101,6 +85,25 @@ function clearMarkers(ajax) {
 	if (ajax) ajaxSend('resetWaypoints');
 }
 
-$(function() {
-    initialise();
-});
+/* ************************************* VISIBILITY */
+
+function hideMarkers() {
+	for (var i = 0; i < markers.length; i++) {
+		map.removeLayer(markers[i]);
+	}
+}
+
+function showMarkers() {
+	for (var i = 0; i < markers.length; i++) {
+		markers[i].addTo(map);
+	}
+}
+
+/* ************************************* CLICKETY-CLICK */
+
+function onMapClick(e) {
+	if (canEdit) addMarker(e.latlng, true);
+}
+
+map.on('click', onMapClick);
+

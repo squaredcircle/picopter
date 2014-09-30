@@ -1,6 +1,6 @@
 //Basic function that causes the Hexacpter to search a square, lawnmower fashion
 //Written by Omid Targhagh, based on work done by Michael Baxter
-//Includes image detection of Merrick Cloete
+//Includes image detection of Merrick Cloete. Further modularised by Alexander Mazur.
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -10,7 +10,7 @@
 
 #include <gpio.h>
 #include <flightBoard.h>
-#include <gps_qstarz.h>		//This will be changed later when Piksi has been integrated
+#include <gps_qstarz.h>
 #include <imu_euler.h>
 #include <cmt3.h>
 #include <sstream>
@@ -26,24 +26,6 @@
 #define OVAL_IMAGE_PATH "/home/pi/picopter/modules/config/James_Oval.png"
 
 using namespace std;
-
-#define LOCATION_WAIT 0		//Time in ms Copter waits at each point
-#define LOOP_WAIT 100 		//Time in ms Copter wait in each loop
-
-#define CONFIG_FILE "/home/pi/picopter/modules/config/config.txt"
-#define OVAL_IMAGE_PATH "/home/pi/picopter/modules/config/James_Oval.png"
-#define MAXLAT -31.979422	//Properties of image file of James Oval & represent min & max corners - are in degrees
-#define MINLON 115.817162
-#define MINLAT -31.980634
-#define MAXLON 115.818709
-#define PIXEL_RADIUS 1 		//Number of surrounding pixels to turn Black. Can probably be left as 0, unless get really fine image.
-
-#define PI 3.14159265359
-#define RADIUS_OF_EARTH 6364963	//m
-#define sin2(x) (sin(x)*sin(x))
-#define DIRECTION_TEST_SPEED 40
-#define DIRECTION_TEST_DURATION 6000
-#define PAST_POINTS 10 	//HUmber of past points to save for integral contol
 
 void run_lawnmower(FlightBoard &fb, GPS &gps, IMU &imu, Pos start, Pos end) {
 

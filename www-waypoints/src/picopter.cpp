@@ -41,7 +41,7 @@
 #include "control.h"
 #include "waypoints.h"
 
-//#include "run_lawnmower.h"
+#include "run_lawnmower.h"
 
 using namespace std;
 using namespace apache::thrift;
@@ -55,7 +55,7 @@ using namespace boost;
 
 Logger		logs = Logger("picopter.log");;
 
- //thread_1;
+boost::thread thread_1;
 
 class webInterfaceHandler : virtual public webInterfaceIf {
 	public:
@@ -66,13 +66,11 @@ class webInterfaceHandler : virtual public webInterfaceIf {
 		deque<coord>	waypoints_list;
 		
 		char		str[BUFSIZ];
-		bool		isFlying;
 		
        // sprintf(str, "blahblah"); logs.writeLogLine(str);
 		
 		webInterfaceHandler() {
 			cout << "\033[36m[THRIFT]\033[0m Initialising hexacopter systems." << endl;
-			isFlying = false;
 			if (!initialise(&fb, &gps, &imu)) terminate();
 		}
 		
@@ -83,10 +81,13 @@ class webInterfaceHandler : virtual public webInterfaceIf {
 		 *		Starts the waypoints code looping.
 		 */
 		bool beginWaypointsThread() {
-			if (!isFlying) {
+			if ( thread_1.timed_join(boost::posix_time::milliseconds(10)) ) {
+				
 				cout << "\033[36m[THRIFT]\033[0m Beginning waypoints thread." << endl;
-				boost::thread thread_1(waypointsFlightLoop, boost::ref(fb), boost::ref(gps), boost::ref(imu), boost::ref(logs), waypoints_list);
-				isFlying = true;
+				
+				userState = 1;
+				thread_1 = boost::thread(waypointsFlightLoop, boost::ref(fb), boost::ref(gps), boost::ref(imu), boost::ref(logs), waypoints_list);
+				
 				return true;
 			} else {
 				cout << "\033[31m[THRIFT]\033[0m  Cannot start waypoints, copter is flying." << endl;
@@ -99,10 +100,10 @@ class webInterfaceHandler : virtual public webInterfaceIf {
 		 *		Starts the lawnmower code.
 		 */
 		bool beginLawnmowerThread() {
-			if (!isFlying) {
-				cout << "[THRIFT] Beginning lawnmower thread." << endl;
+			if ( thread_1.timed_join(boost::posix_time::milliseconds(10)) ) {
+				cout << "\033[36m[THRIFT]\033[0m Beginning lawnmower thread." << endl;
 				
-			/*	Pos corner1;
+				Pos corner1;
 				Pos corner2;
 				
 				corner1.lat = waypoints_list.front().lat;
@@ -110,8 +111,8 @@ class webInterfaceHandler : virtual public webInterfaceIf {
 				corner2.lat = waypoints_list.back().lat;
 				corner2.lon = waypoints_list.back().lon;
 				
-				thread_1 = boost::thread(run_lawnmower, fb, gps, imu, corner1, corner2);
-				*/return true;
+				thread_1 = boost::thread(run_lawnmower, boost::ref(fb), boost::ref(gps), boost::ref(imu), corner1, corner2);
+				return true;
 			} else {
 				cout << "\033[31m[THRIFT]\033[0m Cannot start lawnmower, copter is flying." << endl;
 				return false;

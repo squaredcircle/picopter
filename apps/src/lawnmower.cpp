@@ -30,7 +30,7 @@ int main() {
 	GPS gps = GPS();		//Initialises GPS
 	if(gps.setup() != GPS_OK) {
 		cout << "Error setting up gps (check that it has been switched on). Terminating program." << endl;
-		return -1;
+	//	return -1;
 	}
 	gps.start();
 	IMU imu = IMU();		//Initialises compass

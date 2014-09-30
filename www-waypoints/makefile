@@ -15,9 +15,9 @@ BASE_INCLUDES     = -I../base/include
 BASE_OBJECTS      = $(addprefix ../base/obj/, $(addsuffix .o, $(BASE)))
 
 ##### picopter-modules
-#MODULES              = run_lawnmower lawnmower_control lawnmower_structures
-#MODULES_INCLUDES     = -I../modules/include
-#MODULES_OBJECTS      = $(addprefix ../modules/obj/, $(addsuffix .o, $(MODULES)))
+MODULES              = run_lawnmower lawnmower_control lawnmower_structures detectObjects
+MODULES_INCLUDES     = -I../modules/include
+MODULES_OBJECTS      = $(addprefix ../modules/obj/, $(addsuffix .o, $(MODULES)))
 
 ##### IMU
 XSENS_INCLUDES    = -I../../lib/Xsens
@@ -27,11 +27,6 @@ XSENS_OBJECTS     = $(addprefix ../../lib/Xsens/, cmt1.o cmt2.o cmt3.o cmtmessag
 RASPICAM_LINKS    = -L../../lib/robidouille/raspicam_cv -L../../lib/raspberrypi/userland/build/lib -lraspicamcv -lmmal_core -lmmal -lmmal_util -lvcos -lbcm_host
 RASPICAM_INCLUDES = -I../../lib/robidouille/raspicam_cv
 OPEN_CV           = `pkg-config --cflags --libs opencv`
-
-
-##### Combine variables
-#INCLUDES += $(BASE_INCLUDE)
-#INCLUDES += $(XSENS_INCLUDE)
 	
 default: gen-cpp/picopter_types.h bin/picopter
 	
@@ -43,16 +38,13 @@ bin/picopter: obj/webInterface.o obj/picopter_types.o obj/picopter.o obj/waypoin
 	$(CC) $(INCLUDES) $^ $(BASE_OBJECTS) $(MODULES_OBJECTS) -o $@ $(LIBS) $(RASPICAM_LINKS) $(OPEN_CV) $(LDFLAGS)
 	
 obj/webInterface.o: gen-cpp/webInterface.cpp
-	$(CC) $(CFLAGS) $(THRIFT_FLAGS) $(INCLUDES) $(THRIFT_INCLUDES) $^ -o $@ $(LIBS) 
-	#$(LDFLAGS)
+	$(CC) $(CFLAGS) $(THRIFT_FLAGS) $(INCLUDES) $(THRIFT_INCLUDES) $^ -o $@ $(LIBS)
 	
 obj/picopter_types.o: gen-cpp/picopter_types.cpp
-	$(CC) $(CFLAGS) $(THRIFT_FLAGS) $(INCLUDES) $(THRIFT_INCLUDES) $^ -o $@ $(LIBS) 
-	#$(LDFLAGS)
+	$(CC) $(CFLAGS) $(THRIFT_FLAGS) $(INCLUDES) $(THRIFT_INCLUDES) $^ -o $@ $(LIBS)
 	
 obj/picopter.o: src/picopter.cpp
-	$(CC) $(CFLAGS) $(THRIFT_FLAGS) $(INCLUDES) $(BASE_INCLUDES) $(MODULES_INCLUDES) $(XSENS_INCLUDES) $(THRIFT_INCLUDES) $^ -o $@ $(LIBS) 
-	#$(LDFLAGS)
+	$(CC) $(CFLAGS) $(THRIFT_FLAGS) $(INCLUDES) $(BASE_INCLUDES) $(MODULES_INCLUDES) $(XSENS_INCLUDES) $(THRIFT_INCLUDES) $^ -o $@ $(LIBS)
 	
 obj/waypoints.o: src/waypoints.cpp
 	$(CC) $(CFLAGS) $(INCLUDES) $(BASE_INCLUDES) $(XSENS_INCLUDES) $^ -o $@
@@ -65,4 +57,3 @@ obj/structures.o: src/structures.cpp
 	
 clean:
 	rm -f obj/*.o bin/*
-

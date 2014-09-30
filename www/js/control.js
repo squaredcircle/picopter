@@ -4,12 +4,14 @@ function manualMode() {
 	$("#manual-holder").show();
 	$("#auto-holder").hide();
 	$("#status-holder").hide();
+	showMarkers();
 }
 
 function autoMode() {
 	$("#manual-holder").hide();
 	$("#auto-holder").show();
 	$("#status-holder").hide();
+	hideMarkers();
 }
 
 function statusMode() {
