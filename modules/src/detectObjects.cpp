@@ -1,5 +1,8 @@
 #include "detectObjects.h"
 
+typedef uchar uchar;
+typedef struct vec2{int a; int b;} vec2;
+
 int HMIN = 320;
 int HMAX = 40;
 int SMIN=  95;
@@ -282,4 +285,48 @@ void runDetection(RaspiCamCvCapture *capture) {
 
 	cvDestroyWindow("RaspiCamTest");
 	//raspiCamCvReleaseCapture(&capture);
+}
+
+//Old image processing functions
+bool checkRed(Mat image, Logger *logPtr) {
+	int nRows = image.rows;
+	int nCols = image.cols;
+	uchar* p;
+	int nRed = 0;
+	for(int i = 0; i < nRows; i++) {
+		p = image.ptr<uchar>(i);
+		for (int j = 0; j < nCols; j=j+3) {
+			if (((p[j] > HMIN) || (p[j] < HMAX)) && (p[j] > SMIN) && (p[j] < SMAX) && (p[j] > VMINIMUM) && (p[j] < VMAX)) {
+				nRed++;
+			}
+		}
+	}
+	cout << "How much 'Red' can we see? " << nRed << endl;
+	char str[BUFSIZ];
+	sprintf(str, "We can see %d 'Red' pixels.", nRed);
+	logPtr->writeLogLine(str);
+	if (nRed >= REDTHRESH) return true;
+	else return false;
+}
+
+double redComDist(Mat image) {
+	int nRows = image.rows;
+	int nCols = image.cols;
+	uchar* p;
+	double xMean = 0;
+	double yMean = 0;
+	int nRed = 0;
+	for(int i = 0; i < nRows; i++) {
+		p = image.ptr<uchar>(i);
+		for (int j = 0; j < nCols; j=j+3) {
+			if (((p[j] > HMIN) || (p[j] < HMAX)) && (p[j] > SMIN) && (p[j] < SMAX) && (p[j] > VMINIMUM) && (p[j] < VMAX)) {
+				nRed++;
+				xMean = xMean + j/3;
+				yMean = yMean + i;
+			}
+		}
+	}
+	xMean = xMean/nRed;
+	yMean = yMean/nRed;
+	return sqrt(pow(xMean-(double)(nCols/2), 2) + pow(yMean-(double)(nRows/2), 2));	//Mean distance
 }

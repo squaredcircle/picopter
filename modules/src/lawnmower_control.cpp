@@ -1,36 +1,7 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <cmath>
-#include <ctime>
-
-#include <gpio.h>
-#include <flightBoard.h>
-#include <gps_qstarz.h>		//This will be changed later when Piksi has been integrated
-#include <imu_euler.h>
-#include <cmt3.h>
-#include <sstream>
-#include <ncurses.h>
-#include "opencv2/core/core.hpp"
-#include "opencv2/highgui/highgui.hpp"
-#include "camera.h"
-#include "config_parser.h"
-
 #include "lawnmower_control.h"
 
-//Merrick's Stuff---------------------------------------------------------------------
-#include <iostream>
-#include <RaspiCamCV.h>
-#include "opencv2/imgproc/imgproc.hpp"
-#include <queue>
-#include <math.h>
-#include <sys/time.h>
-
-#define REDTHRESH 50	//Number of red pixels need to see in an image
-#define FRAME_WAIT 11 	//Number of frames to wait
-
-#define LOCATION_WAIT 0		//Time in ms Copter waits at each point
-#define LOOP_WAIT 100 		//Time in ms Copter wait in each loop
+#define LOCATION_WAIT 0			//Time in us Copter waits at each point
+#define LOOP_WAIT 100000 		//Time in us Copter wait in each loop
 
 #define MAXLAT -31.979422	//Properties of image file of James Oval & represent min & max corners - are in degrees
 #define MINLON 115.817162
@@ -42,14 +13,11 @@
 #define RADIUS_OF_EARTH 6364963	//m
 #define sin2(x) (sin(x)*sin(x))
 #define DIRECTION_TEST_SPEED 40
-#define DIRECTION_TEST_DURATION 6000
+#define DIRECTION_TEST_DURATION 6000000 	//us
 #define PAST_POINTS 10 	//HUmber of past points to save for integral contol
 
 using namespace std;
 using namespace cv;
-
-typedef uchar uchar;
-typedef struct vec2{int a; int b;} vec2;
 
 void flyTo(FlightBoard *fbPtr, GPS *gpsPtr, GPS_Data *dataPtr, IMU *imuPtr, IMU_Data *compDataPtr, Pos end, double yaw, Logger *logPtr, Logger *rawLogPtr, RaspiCamCvCapture *camPtr, int index, Mat oval) {
 	FB_Data stop = {0, 0, 0, 0};
@@ -170,49 +138,6 @@ void flyTo(FlightBoard *fbPtr, GPS *gpsPtr, GPS_Data *dataPtr, IMU *imuPtr, IMU_
 	logPtr->writeLogLine(str);
 	fbPtr->setFB_Data(&stop);
 	usleep(LOCATION_WAIT);
-}
-
-bool checkRed(Mat image, Logger *logPtr) {
-	int nRows = image.rows;
-	int nCols = image.cols;
-	uchar* p;
-	int nRed = 0;
-	for(int i = 0; i < nRows; i++) {
-		p = image.ptr<uchar>(i);
-		for (int j = 0; j < nCols; j=j+3) {
-			if (((p[j] > HMIN) || (p[j] < HMAX)) && (p[j] > SMIN) && (p[j] < SMAX) && (p[j] > VMINIMUM) && (p[j] < VMAX)) {
-				nRed++;
-			}
-		}
-	}
-	cout << "How much 'Red' can we see? " << nRed << endl;
-	char str[BUFSIZ];
-	sprintf(str, "We can see %d 'Red' pixels.", nRed);
-	logPtr->writeLogLine(str);
-	if (nRed >= REDTHRESH) return true;
-	else return false;
-}
-
-double redComDist(Mat image) {
-	int nRows = image.rows;
-	int nCols = image.cols;
-	uchar* p;
-	double xMean = 0;
-	double yMean = 0;
-	int nRed = 0;
-	for(int i = 0; i < nRows; i++) {
-		p = image.ptr<uchar>(i);
-		for (int j = 0; j < nCols; j=j+3) {
-			if (((p[j] > HMIN) || (p[j] < HMAX)) && (p[j] > SMIN) && (p[j] < SMAX) && (p[j] > VMINIMUM) && (p[j] < VMAX)) {
-				nRed++;
-				xMean = xMean + j/3;
-				yMean = yMean + i;
-			}
-		}
-	}
-	xMean = xMean/nRed;
-	yMean = yMean/nRed;
-	return sqrt(pow(xMean-(double)(nCols/2), 2) + pow(yMean-(double)(nRows/2), 2));	//Mean distance
 }
 
 void updatePicture(Mat oval, double latitude, double longitude, int type) {

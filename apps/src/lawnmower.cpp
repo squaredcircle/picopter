@@ -4,7 +4,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <iostream>
 
 #include <gpio.h>
 #include <flightBoard.h>
@@ -13,9 +12,9 @@
 
 #include "run_lawnmower.h"
 
-#define GPS_DATA_FILE "/home/pi/picopter/apps/config/waypoints_list.txt"
-
 using namespace std;
+
+#define GPS_DATA_FILE "/home/pi/picopter/apps/config/waypoints_list.txt"
 
 void readPosition(Pos*, int);
 

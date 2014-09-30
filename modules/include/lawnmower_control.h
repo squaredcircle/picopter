@@ -8,6 +8,26 @@
 #ifndef __LAWNMOWER_CONTROL_INCLUDED__
 #define __LAWNMOWER_CONTROL_INCLUDED__
 
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <cmath>
+#include <ctime>
+
+#include <gpio.h>
+#include <flightBoard.h>
+#include <gps_qstarz.h>		//This will be changed later when Piksi has been integrated
+#include <imu_euler.h>
+#include <cmt3.h>
+#include <sstream>
+#include <ncurses.h>
+#include "opencv2/core/core.hpp"
+#include "opencv2/highgui/highgui.hpp"
+#include "camera.h"
+#include "logger.h"
+#include "config_parser.h"
+#include "detectObjects.h"
+
 #include "lawnmower_structures.h"
 
 #define OBJECT_LIMIT 5
@@ -22,14 +42,7 @@ void flyTo(FlightBoard*, GPS*, GPS_Data*, IMU*, IMU_Data*, Pos, double, Logger*,
 double determineBearing(FlightBoard*, GPS*, GPS_Data*);
 
 void captureImage(int, GPS_Data*);
-bool checkRed(Mat, Logger*);
-double redComDist(Mat);
-void updatePicture(Mat, double, double, int);
+void updatePicture(cv::Mat, double, double, int);
 void terminateLawn(int);
-
-int camShift(int (&) [2], int, Mat);
-int findRedObjects(Mat&, int (&) [OBJECT_LIMIT][2]);
-void HSV2Bin(Mat&, Mat&);
-void runDetection(RaspiCamCvCapture*);
 
 #endif// __RUN_LAWNMOWER_INCLUDED__

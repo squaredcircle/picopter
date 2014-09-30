@@ -19,15 +19,17 @@
 using namespace std;
 using namespace cv;
 
-typedef uchar uchar;
-typedef struct vec2{int a; int b;} vec2;
-
+void runTrackObject(FlightBoard*);
 void loadCameraConfig(void);
 int camShift(int (&) [2], int, Mat);
 int findRedObjects(Mat&, int (&) [OBJECT_LIMIT][2]);
 void HSV2Bin(Mat&, Mat&);
 void runDetection(RaspiCamCvCapture*);
-void runTrackObject(FlightBoard*);
+bool checkRed(cv::Mat, Logger*);
+double redComDist(cv::Mat);
+
+#define REDTHRESH 50	//Number of red pixels need to see in an image
+#define FRAME_WAIT 11 	//Number of frames to wait
 
 extern int HMIN;
 extern int HMAX;

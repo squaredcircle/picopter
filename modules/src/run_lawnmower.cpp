@@ -28,7 +28,7 @@
 
 using namespace std;
 
-void run_lawnmower(FlightBoard &fbPtr, GPS &gpsPtr, IMU &imuPtr, Pos start, Pos end) {
+void run_lawnmower(FlightBoard fb, GPS gps, IMU imu, Pos start, Pos end) {
 
 	cout << "Starting to run lawnmower..." << endl;
 	
@@ -58,7 +58,7 @@ void run_lawnmower(FlightBoard &fbPtr, GPS &gpsPtr, IMU &imuPtr, Pos start, Pos 
     camParameters.insert("ERODE_ELEMENT", &ERODE_ELEMENT);
     ConfigParser::loadParameters("CAMERA", &camParameters, CONFIG_FILE);
 	
-	if(imuPtr.setup() != IMU_OK) {		//Check if IMU
+	if(imu.setup() != IMU_OK) {		//Check if IMU
         cout << "Error opening imu: Will navigate using GPS only." << endl;
         usingIMU = false;
     }
@@ -74,6 +74,7 @@ void run_lawnmower(FlightBoard &fbPtr, GPS &gpsPtr, IMU &imuPtr, Pos start, Pos 
 
 	Logger lawnlog = Logger("Lawn.log");	//Initalise logs
 	Logger rawgpslog = Logger("Lawn_Raw_GPS.txt");	//Easier to read into M/Matica
+	Logger pointsLog = Logger("Lawn_Points.txt");
 	char str[BUFSIZ];
 	sprintf(str, "Config parameters set to:");	//Record parameters
 	lawnlog.writeLogLine(str);
@@ -102,6 +103,8 @@ void run_lawnmower(FlightBoard &fbPtr, GPS &gpsPtr, IMU &imuPtr, Pos start, Pos 
 		cout << setprecision(15) << "Point " << i+1 << " is " << (gpsPoints[i].lat) << " " << (gpsPoints[i].lon) << endl;
 		sprintf(str, "Point %d is %f %f", i+1, (gpsPoints[i].lat), (gpsPoints[i].lon));
 		lawnlog.writeLogLine(str);
+		sprintf(str, "%f %f", (gpsPoints[i].lon), (gpsPoints[i].lat));	//Save waypoints in their own file
+		pointsLog.writeLogLine(str, false);
 	}
 	lawnlog.writeLogLine("\n");
 	cout << endl;
@@ -112,21 +115,21 @@ void run_lawnmower(FlightBoard &fbPtr, GPS &gpsPtr, IMU &imuPtr, Pos start, Pos 
 
 	double yaw;
 	if (usingIMU) {
-		imuPtr.getIMU_Data(&compassdata);
+		imu.getIMU_Data(&compassdata);
 		yaw = compassdata.yaw;
 		cout << "Using compass: Copter is facing " << yaw << " degrees." << endl;
 		sprintf(str, "Using compass: Copter is facing %f degrees.", yaw);
 	}
 	else {
-		yaw = determineBearing(&fbPtr, &gpsPtr, &data);	//Hexacopter determines which way it is facing
+		yaw = determineBearing(&fb, &gps, &data);	//Hexacopter determines which way it is facing
 		sprintf(str, "Bearing found with GPS: Copter is facing %f degrees.", yaw);
 	}
 	lawnlog.writeLogLine(str);
-	gpsPtr.getGPS_Data(&data);		//Hexacopter works out where it is
+	gps.getGPS_Data(&data);		//Hexacopter works out where it is
 	cout << "Location and Orienation determined" << endl;
 	
 	for (int i = 0; i < (int)gpsPoints.size(); i++) {
-		flyTo(&fbPtr, &gpsPtr, &data, &imuPtr, &compassdata, gpsPoints[i], yaw, &lawnlog, &rawgpslog, capture, i, oval);
+		flyTo(&fb, &gps, &data, &imu, &compassdata, gpsPoints[i], yaw, &lawnlog, &rawgpslog, capture, i, oval);
 		if (i == 0) {	//Are we at the first point?
 			rawgpslog.clearLog();			//Flush data in there - also removers header
 			oval = imread(OVAL_IMAGE_PATH);	//Wipe any extra lines caused by flying to first point
