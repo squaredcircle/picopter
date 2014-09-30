@@ -1,11 +1,6 @@
 #ifndef __LAWNMOWER_STRUCTURES_INCLUDED__
 #define __LAWNMOWER_STRUCTURES_INCLUDED__
 
-typedef struct{		//These are in degrees now.
-	double lat;
-	double lon;
-} Pos;
-
 extern bool exitLawnmower;
 extern bool usingIMU;
 

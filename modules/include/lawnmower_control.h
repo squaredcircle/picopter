@@ -32,6 +32,11 @@
 
 #define OBJECT_LIMIT 5
 
+typedef struct{		//These are in degrees now.
+	double lat;
+	double lon;
+} Pos;
+
 double calculate_distance(Pos, Pos);
 double calculate_bearing(Pos, Pos);
 void setLawnCourse(FB_Data*, double, double[], double, double);
@@ -45,4 +50,4 @@ void captureImage(int, GPS_Data*);
 void updatePicture(cv::Mat, double, double, int);
 void terminateLawn(int);
 
-#endif// __RUN_LAWNMOWER_INCLUDED__
+#endif// __LAWNMOWER_CONTROL_INCLUDED__
