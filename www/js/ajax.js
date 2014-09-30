@@ -27,11 +27,11 @@ function allStop() {
 }
 
 function beginAuto() {
-	if (!canEdit) ajaxSend('beginAuto');
+	if (!canEdit && bounds.length == 2) ajaxSend('beginAuto');
 }
 
 function beginManual() {
-	if (!canEdit) ajaxSend('beginManual');
+	if (!canEdit && markers.length > 0) ajaxSend('beginManual');
 }
 
 (function worker() {

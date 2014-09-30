@@ -45,7 +45,7 @@
 						<span class="h3">Manual Mode</span>
 					</div>
 					
-					<button id="manual-edit" class="cbtn roundbtn" onclick="toggleEdit();">Edit Waypoints</button>
+					<button id="manual-edit" class="cbtn roundbtn" onclick="toggleMarkersEdit();">Edit Waypoints</button>
 					<button id="manual-reset" class="cbtn roundbtn" onclick="clearMarkers(true)">Reset Waypoints</button>
 					<button id="manual-begin" class="cbtn squarebtn" onclick="beginManual()">Begin Flight</button>
 				</div>
@@ -55,7 +55,7 @@
 						<span class="h3">Automatic Mode</span>
 					</div>
 
-					<button id="auto-edit" class="cbtn roundbtn" onclick="toggleEdit()">Edit Boundaries</button>
+					<button id="auto-edit" class="cbtn roundbtn" onclick="toggleBoundsEdit()">Edit Boundaries</button>
 					<button id="auto-reset" class="cbtn roundbtn" onclick="clearMarkers(true)">Reset Boundaries</button>
 					<button id="auto-begin" class="cbtn squarebtn" onclick="beginAuto()">Begin Flight</button>
 				</div>
@@ -70,10 +70,11 @@
 		<script src="/js/jquery-blink.js"></script>
 		<script src="/js/bootstrap.min.js"></script>
 		<script src="/js/leaflet.js"></script>
-		<script src="/js/leaflet-numered-markers.js"></script>
+		<script src="/js/leaflet-numbered-markers.js"></script>
 		<script src="/js/map.js"></script>
 		<script src="/js/ajax.js"></script>
 		<script src="/js/control.js"></script>
+		
 		
 	</body>
 </html>

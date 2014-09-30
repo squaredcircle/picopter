@@ -1,26 +1,42 @@
 var canEdit = false;
+var canEditMarkers = false;
+var canEditBounds = false;
 
 function manualMode() {
-	$("#manual-holder").show();
-	$("#auto-holder").hide();
-	$("#status-holder").hide();
-	showMarkers();
+	if (!canEdit) {
+		$("#manual-holder").show();
+		$("#auto-holder").hide();
+		$("#status-holder").hide();
+		showMarkers(markers);
+		hideMarkers(bounds);
+		hideRectangle();
+		
+		ajaxSend('updateWaypoints', markers);
+	}
 }
 
 function autoMode() {
-	$("#manual-holder").hide();
-	$("#auto-holder").show();
-	$("#status-holder").hide();
-	hideMarkers();
+	if (!canEdit) {
+		$("#manual-holder").hide();
+		$("#auto-holder").show();
+		$("#status-holder").hide();
+		hideMarkers(markers);
+		showMarkers(bounds);
+		showRectangle();
+		
+		ajaxSend('updateWaypoints', bounds);
+	}
 }
 
 function statusMode() {
-	$("#manual-holder").hide();
-	$("#auto-holder").hide();
-	$("#status-holder").show();
+	if (!canEdit) {
+		$("#manual-holder").hide();
+		$("#auto-holder").hide();
+		$("#status-holder").show();
+	}
 }
 
-function toggleEdit() {
+function toggleEdit(data) {
 	$("#manual-edit").toggleClass('btn-pressed');
 	$("#auto-edit").toggleClass('btn-pressed');
 	
@@ -32,23 +48,35 @@ function toggleEdit() {
 	
 	canEdit = !canEdit;
 	
-	toggleMarkerRed();
-	
 	if (canEdit) {
 		$("#information").html('<span id="blinkbox" style="background-color: #FB8500;">&nbsp;&nbsp;&nbsp;&nbsp;</span> Edit mode engaged. Use the map.');
 		$("#blinkbox").blink({delay:1000});
 		
-		$.each( markers, function( index, value ){
+		$.each( data, function( index, value ){
 			value.dragging.enable();
 		});
 	} else {
 		$("#blinkbox").unblink();
 		$("#information").html('');
 		
-		$.each( markers, function( index, value ){
+		$.each( data, function( index, value ){
 			value.dragging.disable();
 		});
 		
-		ajaxSend('updateWaypoints', markers);
+		ajaxSend('updateWaypoints', data);
 	}
+}
+
+function toggleMarkersEdit() {
+	toggleEdit(markers);
+	canEditMarkers = !canEditMarkers;
+	
+	toggleMarkerRed(markers);
+}
+
+function toggleBoundsEdit() {
+	toggleEdit(bounds);
+	canEditBounds = !canEditBounds;
+
+	toggleMarkerRed(bounds);
 }

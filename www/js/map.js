@@ -1,7 +1,10 @@
 var uwa = [-31.979839, 115.817546];
 var markers = [];
+var bounds = [];
 var copterMarker;
 var map = L.map('map-canvas').setView(uwa, 18);
+
+var boundRect;
 
 var popup = L.popup();
 
@@ -36,73 +39,106 @@ function addCopter() {
 		}).addTo(map);
 }
 
-function addMarker(loc,red) {
+function addMarker(data,loc,red) {
 	if (red) {
-		markers.push(
+		data.push(
 			new L.marker( loc, {
 				draggable: true,
-				icon:	new L.NumberedDivIconRed({number: (markers.length+1)})
+				icon:	new L.NumberedDivIconRed({number: (data.length+1)})
 			} ).addTo(map)
 		);
 	} else {
-		markers.push(
+		data.push(
 			new L.marker( loc, {
-				draggable: true,
-				icon:	new L.NumberedDivIcon({number: (markers.length+1)})
+				draggable: false,
+				icon:	new L.NumberedDivIcon({number: (data.length+1)})
 			} ).addTo(map)
 		);
 	}
 
-	var thisNo = markers.length-1;	
-	var thisMarker = markers[thisNo];
+	var thisNo = data.length-1;	
+	var thisMarker = data[thisNo];
 
 	thisMarker.on('click', function(event) {
 		if (canEdit) {
 			map.removeLayer(thisMarker);
-			markers.splice( $.inArray(thisMarker,markers) ,1 );
+			data.splice( $.inArray(thisMarker,data) ,1 );
+			hideRectangle();
 		}
+	});
+	
+	thisMarker.on('drag', function(e) {
+		if (canEditBounds) updateRectangle();
 	});
 }
 
 /* ************************************* MODIFICATIONS */
 
-function toggleMarkerRed() {
-	tmpmarkers = markers.slice();
-	clearMarkers(false);
+function toggleMarkerRed(data) {
+	tmpmarkers = data.slice();
+	clearMarkers(data,false);
 	$.each( tmpmarkers, function( index, value ){
-		addMarker(value.getLatLng(), canEdit);
+		addMarker(data,value.getLatLng(), canEdit);
 	});
 }
 
-function clearMarkers(ajax) {
-	for (var i = 0; i < markers.length; i++) {
-		map.removeLayer(markers[i]);
+function clearMarkers(data, ajax) {
+	for (var i = 0; i < data.length; i++) {
+		map.removeLayer(data[i]);
 	}
 	
-	while(markers.length > 0) {
-		markers.pop();
+	while(data.length > 0) {
+		data.pop();
 	}
 	if (ajax) ajaxSend('resetWaypoints');
 }
 
 /* ************************************* VISIBILITY */
 
-function hideMarkers() {
-	for (var i = 0; i < markers.length; i++) {
-		map.removeLayer(markers[i]);
+function hideMarkers(data) {
+	for (var i = 0; i < data.length; i++) {
+		map.removeLayer(data[i]);
 	}
 }
 
-function showMarkers() {
-	for (var i = 0; i < markers.length; i++) {
-		markers[i].addTo(map);
+function showMarkers(data) {
+	for (var i = 0; i < data.length; i++) {
+		data[i].addTo(map);
 	}
+}
+
+function updateRectangle() {
+	if (bounds.length == 2) {
+		map.removeLayer(boundRect);
+		boundRect = L.rectangle(L.latLngBounds(bounds[0].getLatLng(), bounds[1].getLatLng()), {color: "#0066FF", weight: 1}).addTo(map);
+	}
+}
+
+function hideRectangle() {
+	map.removeLayer(boundRect);
+}
+
+function showRectangle() {
+	if (bounds.length == 2) boundRect = L.rectangle(L.latLngBounds(bounds[0].getLatLng(), bounds[1].getLatLng()), {color: "#0066FF", weight: 1}).addTo(map);
 }
 
 /* ************************************* CLICKETY-CLICK */
 
 function onMapClick(e) {
-	if (canEdit) addMarker(e.latlng, true);
+	if (canEditMarkers) {
+		addMarker(markers, e.latlng, true);
+	} else if (canEditBounds) {
+		if (bounds.length == 0) {
+			addMarker(bounds, e.latlng, true);
+		
+		} else if (bounds.length == 1) {
+			addMarker(bounds, e.latlng, true);
+			showRectangle();
+		
+		} else {
+			updateRectangle();
+		}
+	}
 }
 
 map.on('click', onMapClick);
