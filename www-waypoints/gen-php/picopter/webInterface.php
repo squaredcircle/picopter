@@ -21,11 +21,9 @@ interface webInterfaceIf {
   public function allStop();
   public function requestStatus();
   public function requestCoords();
-  public function beginWaypointTraversal();
+  public function requestBearing();
   public function requestNextWaypoint();
-  public function addWaypoint(\picopter\CoordDeg $wp);
-  public function updateWaypoint(\picopter\CoordDeg $wp, $no);
-  public function removeWaypoints($no);
+  public function updateWaypoints($wpts);
   public function resetWaypoints();
 }
 
@@ -290,33 +288,33 @@ class webInterfaceClient implements \picopter\webInterfaceIf {
     throw new \Exception("requestCoords failed: unknown result");
   }
 
-  public function beginWaypointTraversal()
+  public function requestBearing()
   {
-    $this->send_beginWaypointTraversal();
-    return $this->recv_beginWaypointTraversal();
+    $this->send_requestBearing();
+    return $this->recv_requestBearing();
   }
 
-  public function send_beginWaypointTraversal()
+  public function send_requestBearing()
   {
-    $args = new \picopter\webInterface_beginWaypointTraversal_args();
+    $args = new \picopter\webInterface_requestBearing_args();
     $bin_accel = ($this->output_ instanceof TProtocol::$TBINARYPROTOCOLACCELERATED) && function_exists('thrift_protocol_write_binary');
     if ($bin_accel)
     {
-      thrift_protocol_write_binary($this->output_, 'beginWaypointTraversal', TMessageType::CALL, $args, $this->seqid_, $this->output_->isStrictWrite());
+      thrift_protocol_write_binary($this->output_, 'requestBearing', TMessageType::CALL, $args, $this->seqid_, $this->output_->isStrictWrite());
     }
     else
     {
-      $this->output_->writeMessageBegin('beginWaypointTraversal', TMessageType::CALL, $this->seqid_);
+      $this->output_->writeMessageBegin('requestBearing', TMessageType::CALL, $this->seqid_);
       $args->write($this->output_);
       $this->output_->writeMessageEnd();
       $this->output_->getTransport()->flush();
     }
   }
 
-  public function recv_beginWaypointTraversal()
+  public function recv_requestBearing()
   {
     $bin_accel = ($this->input_ instanceof TProtocol::$TBINARYPROTOCOLACCELERATED) && function_exists('thrift_protocol_read_binary');
-    if ($bin_accel) $result = thrift_protocol_read_binary($this->input_, '\picopter\webInterface_beginWaypointTraversal_result', $this->input_->isStrictRead());
+    if ($bin_accel) $result = thrift_protocol_read_binary($this->input_, '\picopter\webInterface_requestBearing_result', $this->input_->isStrictRead());
     else
     {
       $rseqid = 0;
@@ -330,14 +328,14 @@ class webInterfaceClient implements \picopter\webInterfaceIf {
         $this->input_->readMessageEnd();
         throw $x;
       }
-      $result = new \picopter\webInterface_beginWaypointTraversal_result();
+      $result = new \picopter\webInterface_requestBearing_result();
       $result->read($this->input_);
       $this->input_->readMessageEnd();
     }
     if ($result->success !== null) {
       return $result->success;
     }
-    throw new \Exception("beginWaypointTraversal failed: unknown result");
+    throw new \Exception("requestBearing failed: unknown result");
   }
 
   public function requestNextWaypoint()
@@ -390,34 +388,34 @@ class webInterfaceClient implements \picopter\webInterfaceIf {
     throw new \Exception("requestNextWaypoint failed: unknown result");
   }
 
-  public function addWaypoint(\picopter\CoordDeg $wp)
+  public function updateWaypoints($wpts)
   {
-    $this->send_addWaypoint($wp);
-    return $this->recv_addWaypoint();
+    $this->send_updateWaypoints($wpts);
+    return $this->recv_updateWaypoints();
   }
 
-  public function send_addWaypoint(\picopter\CoordDeg $wp)
+  public function send_updateWaypoints($wpts)
   {
-    $args = new \picopter\webInterface_addWaypoint_args();
-    $args->wp = $wp;
+    $args = new \picopter\webInterface_updateWaypoints_args();
+    $args->wpts = $wpts;
     $bin_accel = ($this->output_ instanceof TProtocol::$TBINARYPROTOCOLACCELERATED) && function_exists('thrift_protocol_write_binary');
     if ($bin_accel)
     {
-      thrift_protocol_write_binary($this->output_, 'addWaypoint', TMessageType::CALL, $args, $this->seqid_, $this->output_->isStrictWrite());
+      thrift_protocol_write_binary($this->output_, 'updateWaypoints', TMessageType::CALL, $args, $this->seqid_, $this->output_->isStrictWrite());
     }
     else
     {
-      $this->output_->writeMessageBegin('addWaypoint', TMessageType::CALL, $this->seqid_);
+      $this->output_->writeMessageBegin('updateWaypoints', TMessageType::CALL, $this->seqid_);
       $args->write($this->output_);
       $this->output_->writeMessageEnd();
       $this->output_->getTransport()->flush();
     }
   }
 
-  public function recv_addWaypoint()
+  public function recv_updateWaypoints()
   {
     $bin_accel = ($this->input_ instanceof TProtocol::$TBINARYPROTOCOLACCELERATED) && function_exists('thrift_protocol_read_binary');
-    if ($bin_accel) $result = thrift_protocol_read_binary($this->input_, '\picopter\webInterface_addWaypoint_result', $this->input_->isStrictRead());
+    if ($bin_accel) $result = thrift_protocol_read_binary($this->input_, '\picopter\webInterface_updateWaypoints_result', $this->input_->isStrictRead());
     else
     {
       $rseqid = 0;
@@ -431,117 +429,14 @@ class webInterfaceClient implements \picopter\webInterfaceIf {
         $this->input_->readMessageEnd();
         throw $x;
       }
-      $result = new \picopter\webInterface_addWaypoint_result();
+      $result = new \picopter\webInterface_updateWaypoints_result();
       $result->read($this->input_);
       $this->input_->readMessageEnd();
     }
     if ($result->success !== null) {
       return $result->success;
     }
-    throw new \Exception("addWaypoint failed: unknown result");
-  }
-
-  public function updateWaypoint(\picopter\CoordDeg $wp, $no)
-  {
-    $this->send_updateWaypoint($wp, $no);
-    return $this->recv_updateWaypoint();
-  }
-
-  public function send_updateWaypoint(\picopter\CoordDeg $wp, $no)
-  {
-    $args = new \picopter\webInterface_updateWaypoint_args();
-    $args->wp = $wp;
-    $args->no = $no;
-    $bin_accel = ($this->output_ instanceof TProtocol::$TBINARYPROTOCOLACCELERATED) && function_exists('thrift_protocol_write_binary');
-    if ($bin_accel)
-    {
-      thrift_protocol_write_binary($this->output_, 'updateWaypoint', TMessageType::CALL, $args, $this->seqid_, $this->output_->isStrictWrite());
-    }
-    else
-    {
-      $this->output_->writeMessageBegin('updateWaypoint', TMessageType::CALL, $this->seqid_);
-      $args->write($this->output_);
-      $this->output_->writeMessageEnd();
-      $this->output_->getTransport()->flush();
-    }
-  }
-
-  public function recv_updateWaypoint()
-  {
-    $bin_accel = ($this->input_ instanceof TProtocol::$TBINARYPROTOCOLACCELERATED) && function_exists('thrift_protocol_read_binary');
-    if ($bin_accel) $result = thrift_protocol_read_binary($this->input_, '\picopter\webInterface_updateWaypoint_result', $this->input_->isStrictRead());
-    else
-    {
-      $rseqid = 0;
-      $fname = null;
-      $mtype = 0;
-
-      $this->input_->readMessageBegin($fname, $mtype, $rseqid);
-      if ($mtype == TMessageType::EXCEPTION) {
-        $x = new TApplicationException();
-        $x->read($this->input_);
-        $this->input_->readMessageEnd();
-        throw $x;
-      }
-      $result = new \picopter\webInterface_updateWaypoint_result();
-      $result->read($this->input_);
-      $this->input_->readMessageEnd();
-    }
-    if ($result->success !== null) {
-      return $result->success;
-    }
-    throw new \Exception("updateWaypoint failed: unknown result");
-  }
-
-  public function removeWaypoints($no)
-  {
-    $this->send_removeWaypoints($no);
-    return $this->recv_removeWaypoints();
-  }
-
-  public function send_removeWaypoints($no)
-  {
-    $args = new \picopter\webInterface_removeWaypoints_args();
-    $args->no = $no;
-    $bin_accel = ($this->output_ instanceof TProtocol::$TBINARYPROTOCOLACCELERATED) && function_exists('thrift_protocol_write_binary');
-    if ($bin_accel)
-    {
-      thrift_protocol_write_binary($this->output_, 'removeWaypoints', TMessageType::CALL, $args, $this->seqid_, $this->output_->isStrictWrite());
-    }
-    else
-    {
-      $this->output_->writeMessageBegin('removeWaypoints', TMessageType::CALL, $this->seqid_);
-      $args->write($this->output_);
-      $this->output_->writeMessageEnd();
-      $this->output_->getTransport()->flush();
-    }
-  }
-
-  public function recv_removeWaypoints()
-  {
-    $bin_accel = ($this->input_ instanceof TProtocol::$TBINARYPROTOCOLACCELERATED) && function_exists('thrift_protocol_read_binary');
-    if ($bin_accel) $result = thrift_protocol_read_binary($this->input_, '\picopter\webInterface_removeWaypoints_result', $this->input_->isStrictRead());
-    else
-    {
-      $rseqid = 0;
-      $fname = null;
-      $mtype = 0;
-
-      $this->input_->readMessageBegin($fname, $mtype, $rseqid);
-      if ($mtype == TMessageType::EXCEPTION) {
-        $x = new TApplicationException();
-        $x->read($this->input_);
-        $this->input_->readMessageEnd();
-        throw $x;
-      }
-      $result = new \picopter\webInterface_removeWaypoints_result();
-      $result->read($this->input_);
-      $this->input_->readMessageEnd();
-    }
-    if ($result->success !== null) {
-      return $result->success;
-    }
-    throw new \Exception("removeWaypoints failed: unknown result");
+    throw new \Exception("updateWaypoints failed: unknown result");
   }
 
   public function resetWaypoints()
@@ -1213,7 +1108,7 @@ class webInterface_requestCoords_result {
 
 }
 
-class webInterface_beginWaypointTraversal_args {
+class webInterface_requestBearing_args {
   static $_TSPEC;
 
 
@@ -1225,7 +1120,7 @@ class webInterface_beginWaypointTraversal_args {
   }
 
   public function getName() {
-    return 'webInterface_beginWaypointTraversal_args';
+    return 'webInterface_requestBearing_args';
   }
 
   public function read($input)
@@ -1255,7 +1150,7 @@ class webInterface_beginWaypointTraversal_args {
 
   public function write($output) {
     $xfer = 0;
-    $xfer += $output->writeStructBegin('webInterface_beginWaypointTraversal_args');
+    $xfer += $output->writeStructBegin('webInterface_requestBearing_args');
     $xfer += $output->writeFieldStop();
     $xfer += $output->writeStructEnd();
     return $xfer;
@@ -1263,7 +1158,7 @@ class webInterface_beginWaypointTraversal_args {
 
 }
 
-class webInterface_beginWaypointTraversal_result {
+class webInterface_requestBearing_result {
   static $_TSPEC;
 
   public $success = null;
@@ -1273,7 +1168,7 @@ class webInterface_beginWaypointTraversal_result {
       self::$_TSPEC = array(
         0 => array(
           'var' => 'success',
-          'type' => TType::BOOL,
+          'type' => TType::DOUBLE,
           ),
         );
     }
@@ -1285,7 +1180,7 @@ class webInterface_beginWaypointTraversal_result {
   }
 
   public function getName() {
-    return 'webInterface_beginWaypointTraversal_result';
+    return 'webInterface_requestBearing_result';
   }
 
   public function read($input)
@@ -1304,8 +1199,8 @@ class webInterface_beginWaypointTraversal_result {
       switch ($fid)
       {
         case 0:
-          if ($ftype == TType::BOOL) {
-            $xfer += $input->readBool($this->success);
+          if ($ftype == TType::DOUBLE) {
+            $xfer += $input->readDouble($this->success);
           } else {
             $xfer += $input->skip($ftype);
           }
@@ -1322,10 +1217,10 @@ class webInterface_beginWaypointTraversal_result {
 
   public function write($output) {
     $xfer = 0;
-    $xfer += $output->writeStructBegin('webInterface_beginWaypointTraversal_result');
+    $xfer += $output->writeStructBegin('webInterface_requestBearing_result');
     if ($this->success !== null) {
-      $xfer += $output->writeFieldBegin('success', TType::BOOL, 0);
-      $xfer += $output->writeBool($this->success);
+      $xfer += $output->writeFieldBegin('success', TType::DOUBLE, 0);
+      $xfer += $output->writeDouble($this->success);
       $xfer += $output->writeFieldEnd();
     }
     $xfer += $output->writeFieldStop();
@@ -1462,30 +1357,34 @@ class webInterface_requestNextWaypoint_result {
 
 }
 
-class webInterface_addWaypoint_args {
+class webInterface_updateWaypoints_args {
   static $_TSPEC;
 
-  public $wp = null;
+  public $wpts = null;
 
   public function __construct($vals=null) {
     if (!isset(self::$_TSPEC)) {
       self::$_TSPEC = array(
         1 => array(
-          'var' => 'wp',
-          'type' => TType::STRUCT,
-          'class' => '\picopter\coordDeg',
+          'var' => 'wpts',
+          'type' => TType::LST,
+          'etype' => TType::STRUCT,
+          'elem' => array(
+            'type' => TType::STRUCT,
+            'class' => '\picopter\coordDeg',
+            ),
           ),
         );
     }
     if (is_array($vals)) {
-      if (isset($vals['wp'])) {
-        $this->wp = $vals['wp'];
+      if (isset($vals['wpts'])) {
+        $this->wpts = $vals['wpts'];
       }
     }
   }
 
   public function getName() {
-    return 'webInterface_addWaypoint_args';
+    return 'webInterface_updateWaypoints_args';
   }
 
   public function read($input)
@@ -1504,9 +1403,19 @@ class webInterface_addWaypoint_args {
       switch ($fid)
       {
         case 1:
-          if ($ftype == TType::STRUCT) {
-            $this->wp = new \picopter\coordDeg();
-            $xfer += $this->wp->read($input);
+          if ($ftype == TType::LST) {
+            $this->wpts = array();
+            $_size0 = 0;
+            $_etype3 = 0;
+            $xfer += $input->readListBegin($_etype3, $_size0);
+            for ($_i4 = 0; $_i4 < $_size0; ++$_i4)
+            {
+              $elem5 = null;
+              $elem5 = new \picopter\coordDeg();
+              $xfer += $elem5->read($input);
+              $this->wpts []= $elem5;
+            }
+            $xfer += $input->readListEnd();
           } else {
             $xfer += $input->skip($ftype);
           }
@@ -1523,13 +1432,22 @@ class webInterface_addWaypoint_args {
 
   public function write($output) {
     $xfer = 0;
-    $xfer += $output->writeStructBegin('webInterface_addWaypoint_args');
-    if ($this->wp !== null) {
-      if (!is_object($this->wp)) {
+    $xfer += $output->writeStructBegin('webInterface_updateWaypoints_args');
+    if ($this->wpts !== null) {
+      if (!is_array($this->wpts)) {
         throw new TProtocolException('Bad type in structure.', TProtocolException::INVALID_DATA);
       }
-      $xfer += $output->writeFieldBegin('wp', TType::STRUCT, 1);
-      $xfer += $this->wp->write($output);
+      $xfer += $output->writeFieldBegin('wpts', TType::LST, 1);
+      {
+        $output->writeListBegin(TType::STRUCT, count($this->wpts));
+        {
+          foreach ($this->wpts as $iter6)
+          {
+            $xfer += $iter6->write($output);
+          }
+        }
+        $output->writeListEnd();
+      }
       $xfer += $output->writeFieldEnd();
     }
     $xfer += $output->writeFieldStop();
@@ -1539,7 +1457,7 @@ class webInterface_addWaypoint_args {
 
 }
 
-class webInterface_addWaypoint_result {
+class webInterface_updateWaypoints_result {
   static $_TSPEC;
 
   public $success = null;
@@ -1561,7 +1479,7 @@ class webInterface_addWaypoint_result {
   }
 
   public function getName() {
-    return 'webInterface_addWaypoint_result';
+    return 'webInterface_updateWaypoints_result';
   }
 
   public function read($input)
@@ -1598,320 +1516,7 @@ class webInterface_addWaypoint_result {
 
   public function write($output) {
     $xfer = 0;
-    $xfer += $output->writeStructBegin('webInterface_addWaypoint_result');
-    if ($this->success !== null) {
-      $xfer += $output->writeFieldBegin('success', TType::BOOL, 0);
-      $xfer += $output->writeBool($this->success);
-      $xfer += $output->writeFieldEnd();
-    }
-    $xfer += $output->writeFieldStop();
-    $xfer += $output->writeStructEnd();
-    return $xfer;
-  }
-
-}
-
-class webInterface_updateWaypoint_args {
-  static $_TSPEC;
-
-  public $wp = null;
-  public $no = null;
-
-  public function __construct($vals=null) {
-    if (!isset(self::$_TSPEC)) {
-      self::$_TSPEC = array(
-        1 => array(
-          'var' => 'wp',
-          'type' => TType::STRUCT,
-          'class' => '\picopter\coordDeg',
-          ),
-        2 => array(
-          'var' => 'no',
-          'type' => TType::I32,
-          ),
-        );
-    }
-    if (is_array($vals)) {
-      if (isset($vals['wp'])) {
-        $this->wp = $vals['wp'];
-      }
-      if (isset($vals['no'])) {
-        $this->no = $vals['no'];
-      }
-    }
-  }
-
-  public function getName() {
-    return 'webInterface_updateWaypoint_args';
-  }
-
-  public function read($input)
-  {
-    $xfer = 0;
-    $fname = null;
-    $ftype = 0;
-    $fid = 0;
-    $xfer += $input->readStructBegin($fname);
-    while (true)
-    {
-      $xfer += $input->readFieldBegin($fname, $ftype, $fid);
-      if ($ftype == TType::STOP) {
-        break;
-      }
-      switch ($fid)
-      {
-        case 1:
-          if ($ftype == TType::STRUCT) {
-            $this->wp = new \picopter\coordDeg();
-            $xfer += $this->wp->read($input);
-          } else {
-            $xfer += $input->skip($ftype);
-          }
-          break;
-        case 2:
-          if ($ftype == TType::I32) {
-            $xfer += $input->readI32($this->no);
-          } else {
-            $xfer += $input->skip($ftype);
-          }
-          break;
-        default:
-          $xfer += $input->skip($ftype);
-          break;
-      }
-      $xfer += $input->readFieldEnd();
-    }
-    $xfer += $input->readStructEnd();
-    return $xfer;
-  }
-
-  public function write($output) {
-    $xfer = 0;
-    $xfer += $output->writeStructBegin('webInterface_updateWaypoint_args');
-    if ($this->wp !== null) {
-      if (!is_object($this->wp)) {
-        throw new TProtocolException('Bad type in structure.', TProtocolException::INVALID_DATA);
-      }
-      $xfer += $output->writeFieldBegin('wp', TType::STRUCT, 1);
-      $xfer += $this->wp->write($output);
-      $xfer += $output->writeFieldEnd();
-    }
-    if ($this->no !== null) {
-      $xfer += $output->writeFieldBegin('no', TType::I32, 2);
-      $xfer += $output->writeI32($this->no);
-      $xfer += $output->writeFieldEnd();
-    }
-    $xfer += $output->writeFieldStop();
-    $xfer += $output->writeStructEnd();
-    return $xfer;
-  }
-
-}
-
-class webInterface_updateWaypoint_result {
-  static $_TSPEC;
-
-  public $success = null;
-
-  public function __construct($vals=null) {
-    if (!isset(self::$_TSPEC)) {
-      self::$_TSPEC = array(
-        0 => array(
-          'var' => 'success',
-          'type' => TType::BOOL,
-          ),
-        );
-    }
-    if (is_array($vals)) {
-      if (isset($vals['success'])) {
-        $this->success = $vals['success'];
-      }
-    }
-  }
-
-  public function getName() {
-    return 'webInterface_updateWaypoint_result';
-  }
-
-  public function read($input)
-  {
-    $xfer = 0;
-    $fname = null;
-    $ftype = 0;
-    $fid = 0;
-    $xfer += $input->readStructBegin($fname);
-    while (true)
-    {
-      $xfer += $input->readFieldBegin($fname, $ftype, $fid);
-      if ($ftype == TType::STOP) {
-        break;
-      }
-      switch ($fid)
-      {
-        case 0:
-          if ($ftype == TType::BOOL) {
-            $xfer += $input->readBool($this->success);
-          } else {
-            $xfer += $input->skip($ftype);
-          }
-          break;
-        default:
-          $xfer += $input->skip($ftype);
-          break;
-      }
-      $xfer += $input->readFieldEnd();
-    }
-    $xfer += $input->readStructEnd();
-    return $xfer;
-  }
-
-  public function write($output) {
-    $xfer = 0;
-    $xfer += $output->writeStructBegin('webInterface_updateWaypoint_result');
-    if ($this->success !== null) {
-      $xfer += $output->writeFieldBegin('success', TType::BOOL, 0);
-      $xfer += $output->writeBool($this->success);
-      $xfer += $output->writeFieldEnd();
-    }
-    $xfer += $output->writeFieldStop();
-    $xfer += $output->writeStructEnd();
-    return $xfer;
-  }
-
-}
-
-class webInterface_removeWaypoints_args {
-  static $_TSPEC;
-
-  public $no = null;
-
-  public function __construct($vals=null) {
-    if (!isset(self::$_TSPEC)) {
-      self::$_TSPEC = array(
-        1 => array(
-          'var' => 'no',
-          'type' => TType::I32,
-          ),
-        );
-    }
-    if (is_array($vals)) {
-      if (isset($vals['no'])) {
-        $this->no = $vals['no'];
-      }
-    }
-  }
-
-  public function getName() {
-    return 'webInterface_removeWaypoints_args';
-  }
-
-  public function read($input)
-  {
-    $xfer = 0;
-    $fname = null;
-    $ftype = 0;
-    $fid = 0;
-    $xfer += $input->readStructBegin($fname);
-    while (true)
-    {
-      $xfer += $input->readFieldBegin($fname, $ftype, $fid);
-      if ($ftype == TType::STOP) {
-        break;
-      }
-      switch ($fid)
-      {
-        case 1:
-          if ($ftype == TType::I32) {
-            $xfer += $input->readI32($this->no);
-          } else {
-            $xfer += $input->skip($ftype);
-          }
-          break;
-        default:
-          $xfer += $input->skip($ftype);
-          break;
-      }
-      $xfer += $input->readFieldEnd();
-    }
-    $xfer += $input->readStructEnd();
-    return $xfer;
-  }
-
-  public function write($output) {
-    $xfer = 0;
-    $xfer += $output->writeStructBegin('webInterface_removeWaypoints_args');
-    if ($this->no !== null) {
-      $xfer += $output->writeFieldBegin('no', TType::I32, 1);
-      $xfer += $output->writeI32($this->no);
-      $xfer += $output->writeFieldEnd();
-    }
-    $xfer += $output->writeFieldStop();
-    $xfer += $output->writeStructEnd();
-    return $xfer;
-  }
-
-}
-
-class webInterface_removeWaypoints_result {
-  static $_TSPEC;
-
-  public $success = null;
-
-  public function __construct($vals=null) {
-    if (!isset(self::$_TSPEC)) {
-      self::$_TSPEC = array(
-        0 => array(
-          'var' => 'success',
-          'type' => TType::BOOL,
-          ),
-        );
-    }
-    if (is_array($vals)) {
-      if (isset($vals['success'])) {
-        $this->success = $vals['success'];
-      }
-    }
-  }
-
-  public function getName() {
-    return 'webInterface_removeWaypoints_result';
-  }
-
-  public function read($input)
-  {
-    $xfer = 0;
-    $fname = null;
-    $ftype = 0;
-    $fid = 0;
-    $xfer += $input->readStructBegin($fname);
-    while (true)
-    {
-      $xfer += $input->readFieldBegin($fname, $ftype, $fid);
-      if ($ftype == TType::STOP) {
-        break;
-      }
-      switch ($fid)
-      {
-        case 0:
-          if ($ftype == TType::BOOL) {
-            $xfer += $input->readBool($this->success);
-          } else {
-            $xfer += $input->skip($ftype);
-          }
-          break;
-        default:
-          $xfer += $input->skip($ftype);
-          break;
-      }
-      $xfer += $input->readFieldEnd();
-    }
-    $xfer += $input->readStructEnd();
-    return $xfer;
-  }
-
-  public function write($output) {
-    $xfer = 0;
-    $xfer += $output->writeStructBegin('webInterface_removeWaypoints_result');
+    $xfer += $output->writeStructBegin('webInterface_updateWaypoints_result');
     if ($this->success !== null) {
       $xfer += $output->writeFieldBegin('success', TType::BOOL, 0);
       $xfer += $output->writeBool($this->success);

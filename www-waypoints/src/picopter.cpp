@@ -27,6 +27,9 @@
 #include <csignal>
 #include <stdio.h>
 #include <string>
+#include <vector>
+#include <deque>
+#include <ctime>
 
 #include "webInterface.h"
 
@@ -35,11 +38,10 @@
 #include "imu_euler.h"
 #include "logger.h"
 
-#include "structures.h"
 #include "control.h"
 #include "waypoints.h"
 
-#include "run_lawnmower.h"
+//#include "run_lawnmower.h"
 
 using namespace std;
 using namespace apache::thrift;
@@ -53,7 +55,7 @@ using namespace boost;
 
 Logger		logs = Logger("picopter.log");;
 
-boost::thread thread_1;
+ //thread_1;
 
 class webInterfaceHandler : virtual public webInterfaceIf {
 	public:
@@ -61,13 +63,15 @@ class webInterfaceHandler : virtual public webInterfaceIf {
 		GPS			gps;
 		IMU			imu;
 		
+		deque<coord>	waypoints_list;
+		
 		char		str[BUFSIZ];
 		bool		isFlying;
 		
        // sprintf(str, "blahblah"); logs.writeLogLine(str);
 		
 		webInterfaceHandler() {
-			cout << "[THRIFT] Initialising hexacopter systems." << endl;
+			cout << "\033[36m[THRIFT]\033[0m Initialising hexacopter systems." << endl;
 			isFlying = false;
 			if (!initialise(&fb, &gps, &imu)) terminate();
 		}
@@ -80,12 +84,12 @@ class webInterfaceHandler : virtual public webInterfaceIf {
 		 */
 		bool beginWaypointsThread() {
 			if (!isFlying) {
-				cout << "[THRIFT] Beginning waypoints thread." << endl;
-				thread_1 = boost::thread(waypointsFlightLoop, fb, gps, imu, logs);
+				cout << "\033[36m[THRIFT]\033[0m Beginning waypoints thread." << endl;
+				boost::thread thread_1(waypointsFlightLoop, boost::ref(fb), boost::ref(gps), boost::ref(imu), boost::ref(logs), waypoints_list);
 				isFlying = true;
 				return true;
 			} else {
-				cout << "[ERROR]  Cannot start waypoints, copter is flying." << endl;
+				cout << "\033[31m[THRIFT]\033[0m  Cannot start waypoints, copter is flying." << endl;
 				return false;
 			}
 		}
@@ -98,7 +102,7 @@ class webInterfaceHandler : virtual public webInterfaceIf {
 			if (!isFlying) {
 				cout << "[THRIFT] Beginning lawnmower thread." << endl;
 				
-				Pos corner1;
+			/*	Pos corner1;
 				Pos corner2;
 				
 				corner1.lat = waypoints_list.front().lat;
@@ -107,9 +111,9 @@ class webInterfaceHandler : virtual public webInterfaceIf {
 				corner2.lon = waypoints_list.back().lon;
 				
 				thread_1 = boost::thread(run_lawnmower, fb, gps, imu, corner1, corner2);
-				return true;
+				*/return true;
 			} else {
-				cout << "[ERROR]  Cannot start lawnmower, copter is flying." << endl;
+				cout << "\033[31m[THRIFT]\033[0m Cannot start lawnmower, copter is flying." << endl;
 				return false;
 			}
 		}
@@ -119,18 +123,8 @@ class webInterfaceHandler : virtual public webInterfaceIf {
 		 *		Instruct hexacopter to cease movement.
 		 */
 		bool allStop() {
-			cout << "[THRIFT] All Stop!" << endl;
+			cout << "\033[36m[THRIFT]\033[0m All Stop!" << endl;
 			userState = 0;
-			return true;
-		}
-
-		/*
-		 *	beginWaypointTraversal
-		 *		Instruct hexacopter to start moving to each waypoint sequentially.
-		 */ 
-		bool beginWaypointTraversal() {
-			cout << "[THRIFT] Beginning waypoint traversal." << endl;
-			userState = 1;
 			return true;
 		}
 
@@ -143,16 +137,19 @@ class webInterfaceHandler : virtual public webInterfaceIf {
 
 			switch(state) {
 				case 0:
-					ss << "All stop. Manual mode engaged.";
+					ss << "All stop.";
 					break;
 				case 1:
-					ss << "Travelling to waypoint " << wp_it << ".";
+					ss << "Travelling to waypoint " << wp_it + 1 << ".";
 					break;
 				case 2:
-					ss << "Waiting at waypoint " << wp_it << ".";
+					ss << "Waiting at waypoint " << wp_it + 1 << ".";
 					break;
 				case 3:
 					ss << "GPS Error.";
+					break;
+				case 4:
+					ss << "Manual mode engaged.";
 					break;
 			}
 
@@ -164,12 +161,24 @@ class webInterfaceHandler : virtual public webInterfaceIf {
 		 *		Returns the current latitude and longitude of the hexacopter.
 		 */
 		void requestCoords(coordDeg& wp) {
-			Coord_rad gp = getCoordDeg(&gps);
-			wp.lat = gp.lat * 180 / PI;
-			wp.lon = gp.lon * 180 / PI;
-		//	cout << "[THRIFT] Coords requested: (" << wp.lat << ", " << wp.lon << ")" << endl;
-			//wp.lat = 40.34242;
-			//wp.lon = 1023.54354353453;
+			coord gp = getCoord(&gps);
+			wp.lat = gp.lat;
+			wp.lon = gp.lon;
+			
+			time_t t = time(0);   // get time now
+			struct tm * now = localtime( & t );
+			
+			sprintf(str, "[%d/%d,%d:%d:%d] (%f, %f)", now->tm_mon+1, now->tm_mday, now->tm_hour, now->tm_min, now->tm_sec, gp.lat, gp.lon);
+			logs.writeLogLine(str);
+		}
+		
+		/*
+		 *	requestBearing
+		 *		Returns the current latitude and longitude of the hexacopter.
+		 */
+		double requestBearing() {
+			double bearing = getYaw(&imu);
+			return bearing;
 		}
 
 		/*
@@ -177,7 +186,7 @@ class webInterfaceHandler : virtual public webInterfaceIf {
 		 *		Returns the next waypoint the hexacopter will travel to.
 		 */ 
 		void requestNextWaypoint(coordDeg& wp) {
-			cout << "[THRIFT] Current waypoints:" << endl;
+			cout << "\033[36m[THRIFT]\033[0m Current waypoints:" << endl;
 		
 			if (waypoints_list.size() != 0) {
 				cout << "(" << waypoints_list[wp_it].lat << ", " << waypoints_list[wp_it].lon << ")" << endl;	
@@ -185,44 +194,28 @@ class webInterfaceHandler : virtual public webInterfaceIf {
 				cout << "Empty" << endl;			
 			}
 
-			wp.lat = waypoints_list[wp_it].lat * 180 / PI;
-			wp.lon = waypoints_list[wp_it].lon * 180 / PI;
+			wp.lat = waypoints_list[wp_it].lat;
+			wp.lon = waypoints_list[wp_it].lon;
 		}
 	
 		/*
 		 *	addWaypoint
 		 *		Adds a new waypoint to the end of the queue.
 		 */
-		bool addWaypoint(const coordDeg& wp) {
-			cout << "[THRIFT] Adding waypoint (" << wp.lat << ", " << wp.lon << ")" << endl;
+		bool updateWaypoints(const vector<coordDeg> & wpts) {
+			cout << "\033[36m[THRIFT]\033[0m Updating waypoints list." << endl;
 			
-			Coord_rad waypoint;
-			waypoint.lat = wp.lat * PI/180;
-			waypoint.lon = wp.lon * PI/180;
-			waypoints_list.push_back(waypoint);
-		
-			cout << "[THRIFT] Waypoint (" << waypoints_list.back().lat << ", " <<  waypoints_list.back().lon << ") added." << endl;
+			waypoints_list.clear();
+			
+			for(vector<coordDeg>::size_type i = 0; i != wpts.size(); i++) {
+				cout << "         " << i+1 << ": (" << wpts[i].lat << ", " << wpts[i].lon << ")" << endl;
+				
+				coord waypoint;
+				waypoint.lat = wpts[i].lat;
+				waypoint.lon = wpts[i].lon;
+				waypoints_list.push_back(waypoint);
+			}
 	
-			return true;
-		}
-
-		bool updateWaypoint(const coordDeg& wp, const int32_t no) {
-			cout << "[THRIFT] Updating waypoint " << no << " to (" << wp.lat << ", " << wp.lon << ")" << endl;
-			
-			waypoints_list[no].lat = wp.lat * PI/180;
-			waypoints_list[no].lon = wp.lon * PI/180;
-			return true;
-		}
-
-		/*
-		 *	removeWaypoint
-		 *		Removes a specific waypoint. If no waypoint specified, remove the last waypoint.
-		 */
-		bool removeWaypoints(int32_t no) {
-			cout << "[THRIFT] Removing waypoint." << endl;
-			
-			waypoints_list.erase(waypoints_list.begin()+no);
-			
 			return true;
 		}
 
@@ -231,14 +224,9 @@ class webInterfaceHandler : virtual public webInterfaceIf {
 		 *		Remove all waypoints.
 		 */
 		bool resetWaypoints() {
-			cout << "[THRIFT] Resetting waypoints. Current waypoints:" << endl;
+			cout << "\033[36m[THRIFT]\033[0m Resetting waypoints." << endl;
 			
-			cout << "(" << waypoints_list.front().lat << ", " << waypoints_list.front().lon << ")" << endl;	
-			cout << "(" << waypoints_list.back().lat << ", " << waypoints_list.back().lon << ")" << endl;	
-
 			waypoints_list.clear();
-			
-			cout << "[THRIFT] Waypoints reset. Current waypoints:" << endl;	
 
 			return (waypoints_list.size() == 0);
 		}
@@ -256,7 +244,7 @@ webInterfaceHandler*	handlerInternal = NULL;
  *		gracefully.
  */
 void terminate(int signum) {
-	cout << "[THRIFT] Signal " << signum << " received. Stopping copter. Exiting." << endl;
+	cout << "\033[33m[THRIFT]\033[0m Signal " << signum << " received. Stopping copter. Exiting." << endl;
 	handlerInternal->allStop();
 	exitProgram = true;
 	thriftServer->stop();
@@ -295,8 +283,8 @@ int main(int argc, char **argv) {
 	
 	// TSimpleServer server(processor,serverTransport,transportFactory,protocolFactory);
 	
-	printf("[THRIFT] Server starting...\n");
+	printf("\033[36m[THRIFT]\033[0m Server starting...\n");
 	thriftServer->serve();
-	printf("[THRIFT] Server stopped.\n");
+	printf("\033[36m[THRIFT]\033[0m Server stopped.\n");
 	return 0;
 }

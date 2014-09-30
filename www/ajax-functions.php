@@ -9,53 +9,55 @@
 				$ans = $client->requestCoords();
 				print $ans->lat . "," . $ans->lon;
 				break;
-			case "allStop":
-				$ans = $client->allStop();
-				print "allStop " . $b[$ans];
-				break;
+				
 			case "requestStatus":
 				$ans = $client->requestStatus();
 				print $ans . "\n";
 				break;
-			case "beginWaypointTraversal":
-				$ans = $client->beginWaypointTraversal();
-				print "beginWaypointTraversal " . $b[$ans] . "\n";
+				
+			case "allStop":
+				$ans = $client->allStop();
+				print "allStop " . $b[$ans];
 				break;
-			case "requestNextWaypoint":
-				$ans = $client->requestNextWaypoint();
-				print $ans-lat . ", " . $ans->lon;
-				break;
-			case "addWaypoint":
-				if (isset($_POST["lat"])) {
-					$wp = new \picopter\coordDeg();
-					$wp->lat = $_POST["lat"];
-					$wp->lon = $_POST["lng"];
-					$ans = $client->addWaypoint($wp);
-					print "addWaypoint (" . $wp->lat . ", " . $wp->lon .") " . $b[$ans] . "\n";
+				
+			case "updateWaypoints":
+				if (isset($_POST["data"])) {
+					$waypoints = array();
+					
+					foreach ( $_POST["data"] as $i) {
+						$wp = new \picopter\coordDeg();
+						$wp->lat = $i[0];
+						$wp->lon = $i[1];
+						array_push($waypoints, $wp);
+					}
+					
+					$ans = $client->updateWaypoints($waypoints);
+					print count($waypoints) . " waypoints added.\n";
 				} else {
-					print "addWaypoint failed.";
+					print "updateWaypoint failed.\n";
 				}
 				break;
-			case "updateWaypoint":
-				if (isset($_POST["lat"]) && isset($_POST["no"])) {
-					$wp = new \picopter\coordDeg();
-					$wp->lat = $_POST["lat"];
-					$wp->lon = $_POST["lng"];
-					$ans = $client->updateWaypoint($wp,$_POST["no"]);
-					print "updateWaypoint " . $_POST["no"] . " (" . $wp->lat . ", " . $wp->lon .") " . $b[$ans] . "\n";
-				} else {
-					print "updateWaypoint failed.";
-				}
-				break;
-		
-			case "removeWaypoints":
-				$ans = $client->removeWaypoints();
-				print "removeWaypoints " . $b[$ans] . "\n";
-				break;
+				
 			case "resetWaypoints":
 				$ans = $client->resetWaypoints();
 				print "resetWaypoints " . $b[$ans] . "\n";
 				break;
+			
+			case "beginManual":
+				$ans = $client->beginWaypointsThread();
+				print "beginWaypointTraversal " . $b[$ans] . "\n";
+				break;
+				
+			case "beginAuto":
+				$ans = $client->beginWaypointTraversal();
+				print "beginWaypointTraversal " . $b[$ans] . "\n";
+				break;
+				
+			case "requestNextWaypoint":
+				$ans = $client->requestNextWaypoint();
+				print $ans-lat . ", " . $ans->lon;
+				break;
+
 			default:
 				echo "Invalid request: '" . $_POST['action'] . "'";
 		}

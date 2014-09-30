@@ -16,6 +16,7 @@
 #include <string>
 #include <sstream>
 #include <boost/thread.hpp>
+#include <deque>
 
 #include "gpio.h"
 #include "flightBoard.h"
@@ -23,13 +24,9 @@
 #include "imu_euler.h"
 #include "logger.h"
 
-#include "structures.h"
 #include "control.h"
 
 using namespace std;
- 
-/* Declare global structures */
-deque<Coord_rad>	waypoints_list;
 
 /* Declare global variables */
 bool exitProgram	= false;
@@ -50,25 +47,20 @@ size_t wp_it		= 0;
  *		resuming flight, the copter will read in the new list of waypoints and start at the
  *		beginning.
  */
-void waypointsFlightLoop(FlightBoard &fb, GPS &gps, IMU &imu, Logger &logs) {	
+void waypointsFlightLoop(FlightBoard &fb, GPS &gps, IMU &imu, Logger &logs, deque<coord> &waypoints_list) {	
+	cout << "\033[1;32m[WAYPTS]\033[0m Waypoints thread initiated, travelling to the following waypoints:" << endl;
+	
 	char str_buf[BUFSIZ];
 	bool useimu = true;	// Manual setting for debug
-	double yaw = 0;
-
-	if (!exitProgram) {	
-
-		cout << "[WAYPTS] Switch to auto mode to begin." << endl;
-		while (!gpio::isAutoMode() && !exitProgram) usleep(100);	// Wait until put into auto mode
-		
-		cout << "[WAYPTS] Auto mode enabled." << endl;	
-
-		if (!useimu) yaw = inferBearing(&fb, &gps, &logs);
-		
-		cout << "[WAYPTS] Bearing found: starting waypoint navigation" << endl;
-		logs.writeLogLine("[WAYPTS] Bearing found: starting waypoint navigation");
-	}	
+	double yaw = 0;	
 	
-	Coord_rad	currentCoord = {-1, -1};
+	for(int i = 0; i != waypoints_list.size(); i++) {
+		cout << '         ' << i+1 << ": (" << waypoints_list[i].lat << ", " << waypoints_list[i].lon << ")" << endl;
+	}
+	
+	//	if (!useimu) yaw = inferBearing(&fb, &gps, &logs);
+	
+	coord		currentCoord = {-1, -1};
 	double		distanceToNextWaypoint;
 	double		bearingToNextWaypoint;
 	FB_Data		course = {0, 0, 0, 0};
@@ -76,7 +68,7 @@ void waypointsFlightLoop(FlightBoard &fb, GPS &gps, IMU &imu, Logger &logs) {
 
 	try {	// Check for any errors, and stop the copter.
 		while(!exitProgram) {
-			currentCoord = getCoordDeg(&gps);
+			currentCoord = getCoord(&gps);
 			
 			if (wp_it > waypoints_list.size()) {
 				wp_it = 0;
@@ -87,15 +79,22 @@ void waypointsFlightLoop(FlightBoard &fb, GPS &gps, IMU &imu, Logger &logs) {
 			bearingToNextWaypoint = calculate_bearing(currentCoord, waypoints_list[wp_it]);
 			if (useimu) yaw = getYaw(&imu);			
 
-			/* State 0: All stop. */
-			if(!gpio::isAutoMode() || waypoints_list.empty() || userState == 0 ) {
+			/* State 4: Manual mode. */
+			if (!gpio::isAutoMode()) {
+				state = 4;
+				wp_it = 0;
+				exitProgram = true;
+			/* State 0: All stop */
+			} else if (waypoints_list.empty() || userState == 0 ) {
 				state = 0;
 				wp_it = 0;
+				exitProgram = true;
 			/* State 3: Error. */
-			} else if(state == 3 || !checkInPerth(&currentCoord)) {
+			} else if (state == 3 || !checkInPerth(&currentCoord)) {
 				state = 3;
+				exitProgram = true;
 			/* State 2: At waypoint. */
-			} else if(distanceToNextWaypoint < WAYPOINT_RADIUS) {
+			} else if (distanceToNextWaypoint < WAYPOINT_RADIUS) {
 				state = 2;
 			/* State 1: Travelling to waypoint. */
 			} else {
@@ -106,26 +105,26 @@ void waypointsFlightLoop(FlightBoard &fb, GPS &gps, IMU &imu, Logger &logs) {
 			if (pastState != state) {
 				switch (state) {
 					case 0:
-						cout << "[WAYPTS] In manual mode, all stop." << endl;
+						cout << "\033[1;32m[WAYPTS]\033[0m All stop." << endl;
 						break;
 					case 1:
-						cout << "[WAYPTS] Travelling to waypoint (" << waypoints_list[wp_it].lat*180/PI << "," << waypoints_list[wp_it].lon*180/PI << ")" << endl;
+						cout << "\033[1;32m[WAYPTS]\033[0m Travelling to waypoint " << wp_it << ", at (" << waypoints_list[wp_it].lat << "," << waypoints_list[wp_it].lon << ")" << endl;
 						break;
 					case 2:
-						cout << "[WAYPTS] At waypoint" << endl;
+						cout << "\033[1;32m[WAYPTS]\033[0m At waypoint" << wp_it << "." << endl;
 						break;
 					case 3:
-						cout << "[WAYPTS] Error reading GPS" << endl;
+						cout << "\033[31m[WAYPTS]\033[0m Error reading GPS." << endl;
+					case 4:
+						cout << "\033[31m[WAYPTS]\033[0m Manual mode engaged." << endl;
 					break;
 				}
-				cout << "[WAYPTS] State: "			<< state 			<< endl;
-				cout << "[WAYPTS] Facing: "			<< yaw 	<< endl;
-				cout << "[WAYPTS] Current lat: "		<< std::setprecision(6) << currentCoord.lat * 180 / PI				<< "\t";
-				cout << "[WAYPTS] Current lon: "		<< std::setprecision(7) << currentCoord.lon * 180 / PI				<< endl;
-				cout << "[WAYPTS] Waypoint lat: "	<< std::setprecision(6) << waypoints_list[wp_it].lat * 180 / PI	<< "\t";
-				cout << "[WAYPTS] Waypoint lon: "	<< std::setprecision(7) << waypoints_list[wp_it].lon * 180 / PI	<< endl;
-				cout << "[WAYPTS] Distance = "		<< std::setprecision(7) << distanceToNextWaypoint					<< "\t";
-				cout << "[WAYPTS] Bearing = "		<< std::setprecision(5) << bearingToNextWaypoint * 180 / PI			<< endl << endl;
+				cout << "\033[1;33m[WAYPTS]\033[0m In state "		<< state << "."	<< endl;
+				cout << "\033[1;33m[WAYPTS]\033[0m Facing " << setprecision(6) << yaw << ", at coordinates (" << currentCoord.lat << ", " <<	currentCoord.lon << ")" << endl;
+
+				cout << "\033[1;33m[WAYPTS]\033[0m The next waypoint is at (" << setprecision(6) << waypoints_list[wp_it].lat << ", " << waypoints_list[wp_it].lon << ")"	<< endl;
+				
+				cout << "\033[1;33m[WAYPTS]\033[0m It is " << setprecision(7) << distanceToNextWaypoint	<< "m away, at a bearing of " << bearingToNextWaypoint << "." << endl;
 			
 				printFB_Data(&stop);
 				
@@ -136,8 +135,8 @@ void waypointsFlightLoop(FlightBoard &fb, GPS &gps, IMU &imu, Logger &logs) {
 				case 0:													//Case 0:	Not in auto mode, standby
 					fb.setFB_Data(&stop);									//Stop moving
 					
-					logs.writeLogLine("[WAYPTS] Manual mode");
-					sprintf(str_buf, "[WAYPTS] Currently at %f %f.", currentCoord.lat *180/PI, currentCoord.lon *180/PI);
+					logs.writeLogLine("\033[1;32m[WAYPTS]\033[0m Manual mode");
+					sprintf(str_buf, "[WAYPTS] Currently at %f %f.", currentCoord.lat, currentCoord.lon);
 					logs.writeLogLine(str_buf);
 					
 					break;
@@ -149,9 +148,9 @@ void waypointsFlightLoop(FlightBoard &fb, GPS &gps, IMU &imu, Logger &logs) {
 					
 					sprintf(str_buf, "[WAYPTS] Aileron is %d, Elevator is %d", course.aileron, course.elevator);
 					logs.writeLogLine(str_buf);
-					sprintf(str_buf, "[WAYPTS] Moving to next waypoint. It has latitude %f and longitude %f.", waypoints_list[wp_it].lat *180/PI, waypoints_list[wp_it].lon *180/PI);
+					sprintf(str_buf, "[WAYPTS] Moving to next waypoint. It has latitude %f and longitude %f.", waypoints_list[wp_it].lat, waypoints_list[wp_it].lon);
 					logs.writeLogLine(str_buf);
-					sprintf(str_buf, "[WAYPTS] Currently at %f %f, moving %f m at a bearing of %f degrees.", currentCoord.lat *180/PI, currentCoord.lon *180/PI, distanceToNextWaypoint, bearingToNextWaypoint *180/PI);
+					sprintf(str_buf, "[WAYPTS] Currently at %f %f, moving %f m at a bearing of %f degrees.", currentCoord.lat, currentCoord.lon, distanceToNextWaypoint, bearingToNextWaypoint);
 					logs.writeLogLine(str_buf);
 
 					break;
@@ -159,7 +158,7 @@ void waypointsFlightLoop(FlightBoard &fb, GPS &gps, IMU &imu, Logger &logs) {
 				case 2:
 					fb.setFB_Data(&stop);
 					
-					logs.writeLogLine("[WAYPTS] Reached waypoint, stopping");
+					logs.writeLogLine("\033[1;32m[WAYPTS]\033[0m Reached waypoint, stopping");
 					
 					//waypoints_list.push_back(waypoints_list.front());
 					wp_it++;
@@ -167,28 +166,23 @@ void waypointsFlightLoop(FlightBoard &fb, GPS &gps, IMU &imu, Logger &logs) {
 
 					boost::this_thread::sleep(boost::posix_time::milliseconds(WAIT_AT_WAYPOINTS));
 					
-					cout << "[WAYPTS] Moving to next waypoint." << endl;
+					cout << "\033[1;32m[WAYPTS]\033[0m Moving to next waypoint." << endl;
 					break;
 				
 				case 3:
 				default:
 					fb.setFB_Data(&stop);
 					
-					logs.writeLogLine("[WAYPTS] Error reading GPS, stopping");
+					logs.writeLogLine("\033[31m[WAYPTS]\033[0m Error reading GPS, stopping");
 				break;
 			}
 			boost::this_thread::sleep(boost::posix_time::milliseconds(100));
 
 		}
 	} catch (...) {
-		cout << "[WAYPTS] Error encountered. Stopping copter." << endl;
+		cout << "\033[31m[WAYPTS]\033[0m Error encountered. Stopping copter." << endl;
 		fb.setFB_Data(&stop);
 		printFB_Data(&stop);
 	}
-	cout << "[WAYPTS] Waypoints flight loop terminating. Stopping copter." << endl;
-	fb.setFB_Data(&stop);
-	printFB_Data(&stop);
+	cout << "\033[1;32m[WAYPTS]\033[0m Waypoints flight loop terminating." << endl;
 }
-
-
-

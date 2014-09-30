@@ -713,7 +713,7 @@ uint32_t webInterface_requestCoords_presult::read(::apache::thrift::protocol::TP
   return xfer;
 }
 
-uint32_t webInterface_beginWaypointTraversal_args::read(::apache::thrift::protocol::TProtocol* iprot) {
+uint32_t webInterface_requestBearing_args::read(::apache::thrift::protocol::TProtocol* iprot) {
 
   uint32_t xfer = 0;
   std::string fname;
@@ -740,25 +740,25 @@ uint32_t webInterface_beginWaypointTraversal_args::read(::apache::thrift::protoc
   return xfer;
 }
 
-uint32_t webInterface_beginWaypointTraversal_args::write(::apache::thrift::protocol::TProtocol* oprot) const {
+uint32_t webInterface_requestBearing_args::write(::apache::thrift::protocol::TProtocol* oprot) const {
   uint32_t xfer = 0;
-  xfer += oprot->writeStructBegin("webInterface_beginWaypointTraversal_args");
+  xfer += oprot->writeStructBegin("webInterface_requestBearing_args");
 
   xfer += oprot->writeFieldStop();
   xfer += oprot->writeStructEnd();
   return xfer;
 }
 
-uint32_t webInterface_beginWaypointTraversal_pargs::write(::apache::thrift::protocol::TProtocol* oprot) const {
+uint32_t webInterface_requestBearing_pargs::write(::apache::thrift::protocol::TProtocol* oprot) const {
   uint32_t xfer = 0;
-  xfer += oprot->writeStructBegin("webInterface_beginWaypointTraversal_pargs");
+  xfer += oprot->writeStructBegin("webInterface_requestBearing_pargs");
 
   xfer += oprot->writeFieldStop();
   xfer += oprot->writeStructEnd();
   return xfer;
 }
 
-uint32_t webInterface_beginWaypointTraversal_result::read(::apache::thrift::protocol::TProtocol* iprot) {
+uint32_t webInterface_requestBearing_result::read(::apache::thrift::protocol::TProtocol* iprot) {
 
   uint32_t xfer = 0;
   std::string fname;
@@ -779,8 +779,8 @@ uint32_t webInterface_beginWaypointTraversal_result::read(::apache::thrift::prot
     switch (fid)
     {
       case 0:
-        if (ftype == ::apache::thrift::protocol::T_BOOL) {
-          xfer += iprot->readBool(this->success);
+        if (ftype == ::apache::thrift::protocol::T_DOUBLE) {
+          xfer += iprot->readDouble(this->success);
           this->__isset.success = true;
         } else {
           xfer += iprot->skip(ftype);
@@ -798,15 +798,15 @@ uint32_t webInterface_beginWaypointTraversal_result::read(::apache::thrift::prot
   return xfer;
 }
 
-uint32_t webInterface_beginWaypointTraversal_result::write(::apache::thrift::protocol::TProtocol* oprot) const {
+uint32_t webInterface_requestBearing_result::write(::apache::thrift::protocol::TProtocol* oprot) const {
 
   uint32_t xfer = 0;
 
-  xfer += oprot->writeStructBegin("webInterface_beginWaypointTraversal_result");
+  xfer += oprot->writeStructBegin("webInterface_requestBearing_result");
 
   if (this->__isset.success) {
-    xfer += oprot->writeFieldBegin("success", ::apache::thrift::protocol::T_BOOL, 0);
-    xfer += oprot->writeBool(this->success);
+    xfer += oprot->writeFieldBegin("success", ::apache::thrift::protocol::T_DOUBLE, 0);
+    xfer += oprot->writeDouble(this->success);
     xfer += oprot->writeFieldEnd();
   }
   xfer += oprot->writeFieldStop();
@@ -814,7 +814,7 @@ uint32_t webInterface_beginWaypointTraversal_result::write(::apache::thrift::pro
   return xfer;
 }
 
-uint32_t webInterface_beginWaypointTraversal_presult::read(::apache::thrift::protocol::TProtocol* iprot) {
+uint32_t webInterface_requestBearing_presult::read(::apache::thrift::protocol::TProtocol* iprot) {
 
   uint32_t xfer = 0;
   std::string fname;
@@ -835,8 +835,8 @@ uint32_t webInterface_beginWaypointTraversal_presult::read(::apache::thrift::pro
     switch (fid)
     {
       case 0:
-        if (ftype == ::apache::thrift::protocol::T_BOOL) {
-          xfer += iprot->readBool((*(this->success)));
+        if (ftype == ::apache::thrift::protocol::T_DOUBLE) {
+          xfer += iprot->readDouble((*(this->success)));
           this->__isset.success = true;
         } else {
           xfer += iprot->skip(ftype);
@@ -995,7 +995,7 @@ uint32_t webInterface_requestNextWaypoint_presult::read(::apache::thrift::protoc
   return xfer;
 }
 
-uint32_t webInterface_addWaypoint_args::read(::apache::thrift::protocol::TProtocol* iprot) {
+uint32_t webInterface_updateWaypoints_args::read(::apache::thrift::protocol::TProtocol* iprot) {
 
   uint32_t xfer = 0;
   std::string fname;
@@ -1016,9 +1016,21 @@ uint32_t webInterface_addWaypoint_args::read(::apache::thrift::protocol::TProtoc
     switch (fid)
     {
       case 1:
-        if (ftype == ::apache::thrift::protocol::T_STRUCT) {
-          xfer += this->wp.read(iprot);
-          this->__isset.wp = true;
+        if (ftype == ::apache::thrift::protocol::T_LIST) {
+          {
+            this->wpts.clear();
+            uint32_t _size0;
+            ::apache::thrift::protocol::TType _etype3;
+            xfer += iprot->readListBegin(_etype3, _size0);
+            this->wpts.resize(_size0);
+            uint32_t _i4;
+            for (_i4 = 0; _i4 < _size0; ++_i4)
+            {
+              xfer += this->wpts[_i4].read(iprot);
+            }
+            xfer += iprot->readListEnd();
+          }
+          this->__isset.wpts = true;
         } else {
           xfer += iprot->skip(ftype);
         }
@@ -1035,12 +1047,20 @@ uint32_t webInterface_addWaypoint_args::read(::apache::thrift::protocol::TProtoc
   return xfer;
 }
 
-uint32_t webInterface_addWaypoint_args::write(::apache::thrift::protocol::TProtocol* oprot) const {
+uint32_t webInterface_updateWaypoints_args::write(::apache::thrift::protocol::TProtocol* oprot) const {
   uint32_t xfer = 0;
-  xfer += oprot->writeStructBegin("webInterface_addWaypoint_args");
+  xfer += oprot->writeStructBegin("webInterface_updateWaypoints_args");
 
-  xfer += oprot->writeFieldBegin("wp", ::apache::thrift::protocol::T_STRUCT, 1);
-  xfer += this->wp.write(oprot);
+  xfer += oprot->writeFieldBegin("wpts", ::apache::thrift::protocol::T_LIST, 1);
+  {
+    xfer += oprot->writeListBegin(::apache::thrift::protocol::T_STRUCT, static_cast<uint32_t>(this->wpts.size()));
+    std::vector<coordDeg> ::const_iterator _iter5;
+    for (_iter5 = this->wpts.begin(); _iter5 != this->wpts.end(); ++_iter5)
+    {
+      xfer += (*_iter5).write(oprot);
+    }
+    xfer += oprot->writeListEnd();
+  }
   xfer += oprot->writeFieldEnd();
 
   xfer += oprot->writeFieldStop();
@@ -1048,12 +1068,20 @@ uint32_t webInterface_addWaypoint_args::write(::apache::thrift::protocol::TProto
   return xfer;
 }
 
-uint32_t webInterface_addWaypoint_pargs::write(::apache::thrift::protocol::TProtocol* oprot) const {
+uint32_t webInterface_updateWaypoints_pargs::write(::apache::thrift::protocol::TProtocol* oprot) const {
   uint32_t xfer = 0;
-  xfer += oprot->writeStructBegin("webInterface_addWaypoint_pargs");
+  xfer += oprot->writeStructBegin("webInterface_updateWaypoints_pargs");
 
-  xfer += oprot->writeFieldBegin("wp", ::apache::thrift::protocol::T_STRUCT, 1);
-  xfer += (*(this->wp)).write(oprot);
+  xfer += oprot->writeFieldBegin("wpts", ::apache::thrift::protocol::T_LIST, 1);
+  {
+    xfer += oprot->writeListBegin(::apache::thrift::protocol::T_STRUCT, static_cast<uint32_t>((*(this->wpts)).size()));
+    std::vector<coordDeg> ::const_iterator _iter6;
+    for (_iter6 = (*(this->wpts)).begin(); _iter6 != (*(this->wpts)).end(); ++_iter6)
+    {
+      xfer += (*_iter6).write(oprot);
+    }
+    xfer += oprot->writeListEnd();
+  }
   xfer += oprot->writeFieldEnd();
 
   xfer += oprot->writeFieldStop();
@@ -1061,7 +1089,7 @@ uint32_t webInterface_addWaypoint_pargs::write(::apache::thrift::protocol::TProt
   return xfer;
 }
 
-uint32_t webInterface_addWaypoint_result::read(::apache::thrift::protocol::TProtocol* iprot) {
+uint32_t webInterface_updateWaypoints_result::read(::apache::thrift::protocol::TProtocol* iprot) {
 
   uint32_t xfer = 0;
   std::string fname;
@@ -1101,11 +1129,11 @@ uint32_t webInterface_addWaypoint_result::read(::apache::thrift::protocol::TProt
   return xfer;
 }
 
-uint32_t webInterface_addWaypoint_result::write(::apache::thrift::protocol::TProtocol* oprot) const {
+uint32_t webInterface_updateWaypoints_result::write(::apache::thrift::protocol::TProtocol* oprot) const {
 
   uint32_t xfer = 0;
 
-  xfer += oprot->writeStructBegin("webInterface_addWaypoint_result");
+  xfer += oprot->writeStructBegin("webInterface_updateWaypoints_result");
 
   if (this->__isset.success) {
     xfer += oprot->writeFieldBegin("success", ::apache::thrift::protocol::T_BOOL, 0);
@@ -1117,347 +1145,7 @@ uint32_t webInterface_addWaypoint_result::write(::apache::thrift::protocol::TPro
   return xfer;
 }
 
-uint32_t webInterface_addWaypoint_presult::read(::apache::thrift::protocol::TProtocol* iprot) {
-
-  uint32_t xfer = 0;
-  std::string fname;
-  ::apache::thrift::protocol::TType ftype;
-  int16_t fid;
-
-  xfer += iprot->readStructBegin(fname);
-
-  using ::apache::thrift::protocol::TProtocolException;
-
-
-  while (true)
-  {
-    xfer += iprot->readFieldBegin(fname, ftype, fid);
-    if (ftype == ::apache::thrift::protocol::T_STOP) {
-      break;
-    }
-    switch (fid)
-    {
-      case 0:
-        if (ftype == ::apache::thrift::protocol::T_BOOL) {
-          xfer += iprot->readBool((*(this->success)));
-          this->__isset.success = true;
-        } else {
-          xfer += iprot->skip(ftype);
-        }
-        break;
-      default:
-        xfer += iprot->skip(ftype);
-        break;
-    }
-    xfer += iprot->readFieldEnd();
-  }
-
-  xfer += iprot->readStructEnd();
-
-  return xfer;
-}
-
-uint32_t webInterface_updateWaypoint_args::read(::apache::thrift::protocol::TProtocol* iprot) {
-
-  uint32_t xfer = 0;
-  std::string fname;
-  ::apache::thrift::protocol::TType ftype;
-  int16_t fid;
-
-  xfer += iprot->readStructBegin(fname);
-
-  using ::apache::thrift::protocol::TProtocolException;
-
-
-  while (true)
-  {
-    xfer += iprot->readFieldBegin(fname, ftype, fid);
-    if (ftype == ::apache::thrift::protocol::T_STOP) {
-      break;
-    }
-    switch (fid)
-    {
-      case 1:
-        if (ftype == ::apache::thrift::protocol::T_STRUCT) {
-          xfer += this->wp.read(iprot);
-          this->__isset.wp = true;
-        } else {
-          xfer += iprot->skip(ftype);
-        }
-        break;
-      case 2:
-        if (ftype == ::apache::thrift::protocol::T_I32) {
-          xfer += iprot->readI32(this->no);
-          this->__isset.no = true;
-        } else {
-          xfer += iprot->skip(ftype);
-        }
-        break;
-      default:
-        xfer += iprot->skip(ftype);
-        break;
-    }
-    xfer += iprot->readFieldEnd();
-  }
-
-  xfer += iprot->readStructEnd();
-
-  return xfer;
-}
-
-uint32_t webInterface_updateWaypoint_args::write(::apache::thrift::protocol::TProtocol* oprot) const {
-  uint32_t xfer = 0;
-  xfer += oprot->writeStructBegin("webInterface_updateWaypoint_args");
-
-  xfer += oprot->writeFieldBegin("wp", ::apache::thrift::protocol::T_STRUCT, 1);
-  xfer += this->wp.write(oprot);
-  xfer += oprot->writeFieldEnd();
-
-  xfer += oprot->writeFieldBegin("no", ::apache::thrift::protocol::T_I32, 2);
-  xfer += oprot->writeI32(this->no);
-  xfer += oprot->writeFieldEnd();
-
-  xfer += oprot->writeFieldStop();
-  xfer += oprot->writeStructEnd();
-  return xfer;
-}
-
-uint32_t webInterface_updateWaypoint_pargs::write(::apache::thrift::protocol::TProtocol* oprot) const {
-  uint32_t xfer = 0;
-  xfer += oprot->writeStructBegin("webInterface_updateWaypoint_pargs");
-
-  xfer += oprot->writeFieldBegin("wp", ::apache::thrift::protocol::T_STRUCT, 1);
-  xfer += (*(this->wp)).write(oprot);
-  xfer += oprot->writeFieldEnd();
-
-  xfer += oprot->writeFieldBegin("no", ::apache::thrift::protocol::T_I32, 2);
-  xfer += oprot->writeI32((*(this->no)));
-  xfer += oprot->writeFieldEnd();
-
-  xfer += oprot->writeFieldStop();
-  xfer += oprot->writeStructEnd();
-  return xfer;
-}
-
-uint32_t webInterface_updateWaypoint_result::read(::apache::thrift::protocol::TProtocol* iprot) {
-
-  uint32_t xfer = 0;
-  std::string fname;
-  ::apache::thrift::protocol::TType ftype;
-  int16_t fid;
-
-  xfer += iprot->readStructBegin(fname);
-
-  using ::apache::thrift::protocol::TProtocolException;
-
-
-  while (true)
-  {
-    xfer += iprot->readFieldBegin(fname, ftype, fid);
-    if (ftype == ::apache::thrift::protocol::T_STOP) {
-      break;
-    }
-    switch (fid)
-    {
-      case 0:
-        if (ftype == ::apache::thrift::protocol::T_BOOL) {
-          xfer += iprot->readBool(this->success);
-          this->__isset.success = true;
-        } else {
-          xfer += iprot->skip(ftype);
-        }
-        break;
-      default:
-        xfer += iprot->skip(ftype);
-        break;
-    }
-    xfer += iprot->readFieldEnd();
-  }
-
-  xfer += iprot->readStructEnd();
-
-  return xfer;
-}
-
-uint32_t webInterface_updateWaypoint_result::write(::apache::thrift::protocol::TProtocol* oprot) const {
-
-  uint32_t xfer = 0;
-
-  xfer += oprot->writeStructBegin("webInterface_updateWaypoint_result");
-
-  if (this->__isset.success) {
-    xfer += oprot->writeFieldBegin("success", ::apache::thrift::protocol::T_BOOL, 0);
-    xfer += oprot->writeBool(this->success);
-    xfer += oprot->writeFieldEnd();
-  }
-  xfer += oprot->writeFieldStop();
-  xfer += oprot->writeStructEnd();
-  return xfer;
-}
-
-uint32_t webInterface_updateWaypoint_presult::read(::apache::thrift::protocol::TProtocol* iprot) {
-
-  uint32_t xfer = 0;
-  std::string fname;
-  ::apache::thrift::protocol::TType ftype;
-  int16_t fid;
-
-  xfer += iprot->readStructBegin(fname);
-
-  using ::apache::thrift::protocol::TProtocolException;
-
-
-  while (true)
-  {
-    xfer += iprot->readFieldBegin(fname, ftype, fid);
-    if (ftype == ::apache::thrift::protocol::T_STOP) {
-      break;
-    }
-    switch (fid)
-    {
-      case 0:
-        if (ftype == ::apache::thrift::protocol::T_BOOL) {
-          xfer += iprot->readBool((*(this->success)));
-          this->__isset.success = true;
-        } else {
-          xfer += iprot->skip(ftype);
-        }
-        break;
-      default:
-        xfer += iprot->skip(ftype);
-        break;
-    }
-    xfer += iprot->readFieldEnd();
-  }
-
-  xfer += iprot->readStructEnd();
-
-  return xfer;
-}
-
-uint32_t webInterface_removeWaypoints_args::read(::apache::thrift::protocol::TProtocol* iprot) {
-
-  uint32_t xfer = 0;
-  std::string fname;
-  ::apache::thrift::protocol::TType ftype;
-  int16_t fid;
-
-  xfer += iprot->readStructBegin(fname);
-
-  using ::apache::thrift::protocol::TProtocolException;
-
-
-  while (true)
-  {
-    xfer += iprot->readFieldBegin(fname, ftype, fid);
-    if (ftype == ::apache::thrift::protocol::T_STOP) {
-      break;
-    }
-    switch (fid)
-    {
-      case 1:
-        if (ftype == ::apache::thrift::protocol::T_I32) {
-          xfer += iprot->readI32(this->no);
-          this->__isset.no = true;
-        } else {
-          xfer += iprot->skip(ftype);
-        }
-        break;
-      default:
-        xfer += iprot->skip(ftype);
-        break;
-    }
-    xfer += iprot->readFieldEnd();
-  }
-
-  xfer += iprot->readStructEnd();
-
-  return xfer;
-}
-
-uint32_t webInterface_removeWaypoints_args::write(::apache::thrift::protocol::TProtocol* oprot) const {
-  uint32_t xfer = 0;
-  xfer += oprot->writeStructBegin("webInterface_removeWaypoints_args");
-
-  xfer += oprot->writeFieldBegin("no", ::apache::thrift::protocol::T_I32, 1);
-  xfer += oprot->writeI32(this->no);
-  xfer += oprot->writeFieldEnd();
-
-  xfer += oprot->writeFieldStop();
-  xfer += oprot->writeStructEnd();
-  return xfer;
-}
-
-uint32_t webInterface_removeWaypoints_pargs::write(::apache::thrift::protocol::TProtocol* oprot) const {
-  uint32_t xfer = 0;
-  xfer += oprot->writeStructBegin("webInterface_removeWaypoints_pargs");
-
-  xfer += oprot->writeFieldBegin("no", ::apache::thrift::protocol::T_I32, 1);
-  xfer += oprot->writeI32((*(this->no)));
-  xfer += oprot->writeFieldEnd();
-
-  xfer += oprot->writeFieldStop();
-  xfer += oprot->writeStructEnd();
-  return xfer;
-}
-
-uint32_t webInterface_removeWaypoints_result::read(::apache::thrift::protocol::TProtocol* iprot) {
-
-  uint32_t xfer = 0;
-  std::string fname;
-  ::apache::thrift::protocol::TType ftype;
-  int16_t fid;
-
-  xfer += iprot->readStructBegin(fname);
-
-  using ::apache::thrift::protocol::TProtocolException;
-
-
-  while (true)
-  {
-    xfer += iprot->readFieldBegin(fname, ftype, fid);
-    if (ftype == ::apache::thrift::protocol::T_STOP) {
-      break;
-    }
-    switch (fid)
-    {
-      case 0:
-        if (ftype == ::apache::thrift::protocol::T_BOOL) {
-          xfer += iprot->readBool(this->success);
-          this->__isset.success = true;
-        } else {
-          xfer += iprot->skip(ftype);
-        }
-        break;
-      default:
-        xfer += iprot->skip(ftype);
-        break;
-    }
-    xfer += iprot->readFieldEnd();
-  }
-
-  xfer += iprot->readStructEnd();
-
-  return xfer;
-}
-
-uint32_t webInterface_removeWaypoints_result::write(::apache::thrift::protocol::TProtocol* oprot) const {
-
-  uint32_t xfer = 0;
-
-  xfer += oprot->writeStructBegin("webInterface_removeWaypoints_result");
-
-  if (this->__isset.success) {
-    xfer += oprot->writeFieldBegin("success", ::apache::thrift::protocol::T_BOOL, 0);
-    xfer += oprot->writeBool(this->success);
-    xfer += oprot->writeFieldEnd();
-  }
-  xfer += oprot->writeFieldStop();
-  xfer += oprot->writeStructEnd();
-  return xfer;
-}
-
-uint32_t webInterface_removeWaypoints_presult::read(::apache::thrift::protocol::TProtocol* iprot) {
+uint32_t webInterface_updateWaypoints_presult::read(::apache::thrift::protocol::TProtocol* iprot) {
 
   uint32_t xfer = 0;
   std::string fname;
@@ -1923,18 +1611,18 @@ void webInterfaceClient::recv_requestCoords(coordDeg& _return)
   throw ::apache::thrift::TApplicationException(::apache::thrift::TApplicationException::MISSING_RESULT, "requestCoords failed: unknown result");
 }
 
-bool webInterfaceClient::beginWaypointTraversal()
+double webInterfaceClient::requestBearing()
 {
-  send_beginWaypointTraversal();
-  return recv_beginWaypointTraversal();
+  send_requestBearing();
+  return recv_requestBearing();
 }
 
-void webInterfaceClient::send_beginWaypointTraversal()
+void webInterfaceClient::send_requestBearing()
 {
   int32_t cseqid = 0;
-  oprot_->writeMessageBegin("beginWaypointTraversal", ::apache::thrift::protocol::T_CALL, cseqid);
+  oprot_->writeMessageBegin("requestBearing", ::apache::thrift::protocol::T_CALL, cseqid);
 
-  webInterface_beginWaypointTraversal_pargs args;
+  webInterface_requestBearing_pargs args;
   args.write(oprot_);
 
   oprot_->writeMessageEnd();
@@ -1942,7 +1630,7 @@ void webInterfaceClient::send_beginWaypointTraversal()
   oprot_->getTransport()->flush();
 }
 
-bool webInterfaceClient::recv_beginWaypointTraversal()
+double webInterfaceClient::recv_requestBearing()
 {
 
   int32_t rseqid = 0;
@@ -1962,13 +1650,13 @@ bool webInterfaceClient::recv_beginWaypointTraversal()
     iprot_->readMessageEnd();
     iprot_->getTransport()->readEnd();
   }
-  if (fname.compare("beginWaypointTraversal") != 0) {
+  if (fname.compare("requestBearing") != 0) {
     iprot_->skip(::apache::thrift::protocol::T_STRUCT);
     iprot_->readMessageEnd();
     iprot_->getTransport()->readEnd();
   }
-  bool _return;
-  webInterface_beginWaypointTraversal_presult result;
+  double _return;
+  webInterface_requestBearing_presult result;
   result.success = &_return;
   result.read(iprot_);
   iprot_->readMessageEnd();
@@ -1977,7 +1665,7 @@ bool webInterfaceClient::recv_beginWaypointTraversal()
   if (result.__isset.success) {
     return _return;
   }
-  throw ::apache::thrift::TApplicationException(::apache::thrift::TApplicationException::MISSING_RESULT, "beginWaypointTraversal failed: unknown result");
+  throw ::apache::thrift::TApplicationException(::apache::thrift::TApplicationException::MISSING_RESULT, "requestBearing failed: unknown result");
 }
 
 void webInterfaceClient::requestNextWaypoint(coordDeg& _return)
@@ -2037,19 +1725,19 @@ void webInterfaceClient::recv_requestNextWaypoint(coordDeg& _return)
   throw ::apache::thrift::TApplicationException(::apache::thrift::TApplicationException::MISSING_RESULT, "requestNextWaypoint failed: unknown result");
 }
 
-bool webInterfaceClient::addWaypoint(const coordDeg& wp)
+bool webInterfaceClient::updateWaypoints(const std::vector<coordDeg> & wpts)
 {
-  send_addWaypoint(wp);
-  return recv_addWaypoint();
+  send_updateWaypoints(wpts);
+  return recv_updateWaypoints();
 }
 
-void webInterfaceClient::send_addWaypoint(const coordDeg& wp)
+void webInterfaceClient::send_updateWaypoints(const std::vector<coordDeg> & wpts)
 {
   int32_t cseqid = 0;
-  oprot_->writeMessageBegin("addWaypoint", ::apache::thrift::protocol::T_CALL, cseqid);
+  oprot_->writeMessageBegin("updateWaypoints", ::apache::thrift::protocol::T_CALL, cseqid);
 
-  webInterface_addWaypoint_pargs args;
-  args.wp = &wp;
+  webInterface_updateWaypoints_pargs args;
+  args.wpts = &wpts;
   args.write(oprot_);
 
   oprot_->writeMessageEnd();
@@ -2057,7 +1745,7 @@ void webInterfaceClient::send_addWaypoint(const coordDeg& wp)
   oprot_->getTransport()->flush();
 }
 
-bool webInterfaceClient::recv_addWaypoint()
+bool webInterfaceClient::recv_updateWaypoints()
 {
 
   int32_t rseqid = 0;
@@ -2077,13 +1765,13 @@ bool webInterfaceClient::recv_addWaypoint()
     iprot_->readMessageEnd();
     iprot_->getTransport()->readEnd();
   }
-  if (fname.compare("addWaypoint") != 0) {
+  if (fname.compare("updateWaypoints") != 0) {
     iprot_->skip(::apache::thrift::protocol::T_STRUCT);
     iprot_->readMessageEnd();
     iprot_->getTransport()->readEnd();
   }
   bool _return;
-  webInterface_addWaypoint_presult result;
+  webInterface_updateWaypoints_presult result;
   result.success = &_return;
   result.read(iprot_);
   iprot_->readMessageEnd();
@@ -2092,124 +1780,7 @@ bool webInterfaceClient::recv_addWaypoint()
   if (result.__isset.success) {
     return _return;
   }
-  throw ::apache::thrift::TApplicationException(::apache::thrift::TApplicationException::MISSING_RESULT, "addWaypoint failed: unknown result");
-}
-
-bool webInterfaceClient::updateWaypoint(const coordDeg& wp, const int32_t no)
-{
-  send_updateWaypoint(wp, no);
-  return recv_updateWaypoint();
-}
-
-void webInterfaceClient::send_updateWaypoint(const coordDeg& wp, const int32_t no)
-{
-  int32_t cseqid = 0;
-  oprot_->writeMessageBegin("updateWaypoint", ::apache::thrift::protocol::T_CALL, cseqid);
-
-  webInterface_updateWaypoint_pargs args;
-  args.wp = &wp;
-  args.no = &no;
-  args.write(oprot_);
-
-  oprot_->writeMessageEnd();
-  oprot_->getTransport()->writeEnd();
-  oprot_->getTransport()->flush();
-}
-
-bool webInterfaceClient::recv_updateWaypoint()
-{
-
-  int32_t rseqid = 0;
-  std::string fname;
-  ::apache::thrift::protocol::TMessageType mtype;
-
-  iprot_->readMessageBegin(fname, mtype, rseqid);
-  if (mtype == ::apache::thrift::protocol::T_EXCEPTION) {
-    ::apache::thrift::TApplicationException x;
-    x.read(iprot_);
-    iprot_->readMessageEnd();
-    iprot_->getTransport()->readEnd();
-    throw x;
-  }
-  if (mtype != ::apache::thrift::protocol::T_REPLY) {
-    iprot_->skip(::apache::thrift::protocol::T_STRUCT);
-    iprot_->readMessageEnd();
-    iprot_->getTransport()->readEnd();
-  }
-  if (fname.compare("updateWaypoint") != 0) {
-    iprot_->skip(::apache::thrift::protocol::T_STRUCT);
-    iprot_->readMessageEnd();
-    iprot_->getTransport()->readEnd();
-  }
-  bool _return;
-  webInterface_updateWaypoint_presult result;
-  result.success = &_return;
-  result.read(iprot_);
-  iprot_->readMessageEnd();
-  iprot_->getTransport()->readEnd();
-
-  if (result.__isset.success) {
-    return _return;
-  }
-  throw ::apache::thrift::TApplicationException(::apache::thrift::TApplicationException::MISSING_RESULT, "updateWaypoint failed: unknown result");
-}
-
-bool webInterfaceClient::removeWaypoints(const int32_t no)
-{
-  send_removeWaypoints(no);
-  return recv_removeWaypoints();
-}
-
-void webInterfaceClient::send_removeWaypoints(const int32_t no)
-{
-  int32_t cseqid = 0;
-  oprot_->writeMessageBegin("removeWaypoints", ::apache::thrift::protocol::T_CALL, cseqid);
-
-  webInterface_removeWaypoints_pargs args;
-  args.no = &no;
-  args.write(oprot_);
-
-  oprot_->writeMessageEnd();
-  oprot_->getTransport()->writeEnd();
-  oprot_->getTransport()->flush();
-}
-
-bool webInterfaceClient::recv_removeWaypoints()
-{
-
-  int32_t rseqid = 0;
-  std::string fname;
-  ::apache::thrift::protocol::TMessageType mtype;
-
-  iprot_->readMessageBegin(fname, mtype, rseqid);
-  if (mtype == ::apache::thrift::protocol::T_EXCEPTION) {
-    ::apache::thrift::TApplicationException x;
-    x.read(iprot_);
-    iprot_->readMessageEnd();
-    iprot_->getTransport()->readEnd();
-    throw x;
-  }
-  if (mtype != ::apache::thrift::protocol::T_REPLY) {
-    iprot_->skip(::apache::thrift::protocol::T_STRUCT);
-    iprot_->readMessageEnd();
-    iprot_->getTransport()->readEnd();
-  }
-  if (fname.compare("removeWaypoints") != 0) {
-    iprot_->skip(::apache::thrift::protocol::T_STRUCT);
-    iprot_->readMessageEnd();
-    iprot_->getTransport()->readEnd();
-  }
-  bool _return;
-  webInterface_removeWaypoints_presult result;
-  result.success = &_return;
-  result.read(iprot_);
-  iprot_->readMessageEnd();
-  iprot_->getTransport()->readEnd();
-
-  if (result.__isset.success) {
-    return _return;
-  }
-  throw ::apache::thrift::TApplicationException(::apache::thrift::TApplicationException::MISSING_RESULT, "removeWaypoints failed: unknown result");
+  throw ::apache::thrift::TApplicationException(::apache::thrift::TApplicationException::MISSING_RESULT, "updateWaypoints failed: unknown result");
 }
 
 bool webInterfaceClient::resetWaypoints()
@@ -2558,38 +2129,38 @@ void webInterfaceProcessor::process_requestCoords(int32_t seqid, ::apache::thrif
   }
 }
 
-void webInterfaceProcessor::process_beginWaypointTraversal(int32_t seqid, ::apache::thrift::protocol::TProtocol* iprot, ::apache::thrift::protocol::TProtocol* oprot, void* callContext)
+void webInterfaceProcessor::process_requestBearing(int32_t seqid, ::apache::thrift::protocol::TProtocol* iprot, ::apache::thrift::protocol::TProtocol* oprot, void* callContext)
 {
   void* ctx = NULL;
   if (this->eventHandler_.get() != NULL) {
-    ctx = this->eventHandler_->getContext("webInterface.beginWaypointTraversal", callContext);
+    ctx = this->eventHandler_->getContext("webInterface.requestBearing", callContext);
   }
-  ::apache::thrift::TProcessorContextFreer freer(this->eventHandler_.get(), ctx, "webInterface.beginWaypointTraversal");
+  ::apache::thrift::TProcessorContextFreer freer(this->eventHandler_.get(), ctx, "webInterface.requestBearing");
 
   if (this->eventHandler_.get() != NULL) {
-    this->eventHandler_->preRead(ctx, "webInterface.beginWaypointTraversal");
+    this->eventHandler_->preRead(ctx, "webInterface.requestBearing");
   }
 
-  webInterface_beginWaypointTraversal_args args;
+  webInterface_requestBearing_args args;
   args.read(iprot);
   iprot->readMessageEnd();
   uint32_t bytes = iprot->getTransport()->readEnd();
 
   if (this->eventHandler_.get() != NULL) {
-    this->eventHandler_->postRead(ctx, "webInterface.beginWaypointTraversal", bytes);
+    this->eventHandler_->postRead(ctx, "webInterface.requestBearing", bytes);
   }
 
-  webInterface_beginWaypointTraversal_result result;
+  webInterface_requestBearing_result result;
   try {
-    result.success = iface_->beginWaypointTraversal();
+    result.success = iface_->requestBearing();
     result.__isset.success = true;
   } catch (const std::exception& e) {
     if (this->eventHandler_.get() != NULL) {
-      this->eventHandler_->handlerError(ctx, "webInterface.beginWaypointTraversal");
+      this->eventHandler_->handlerError(ctx, "webInterface.requestBearing");
     }
 
     ::apache::thrift::TApplicationException x(e.what());
-    oprot->writeMessageBegin("beginWaypointTraversal", ::apache::thrift::protocol::T_EXCEPTION, seqid);
+    oprot->writeMessageBegin("requestBearing", ::apache::thrift::protocol::T_EXCEPTION, seqid);
     x.write(oprot);
     oprot->writeMessageEnd();
     oprot->getTransport()->writeEnd();
@@ -2598,17 +2169,17 @@ void webInterfaceProcessor::process_beginWaypointTraversal(int32_t seqid, ::apac
   }
 
   if (this->eventHandler_.get() != NULL) {
-    this->eventHandler_->preWrite(ctx, "webInterface.beginWaypointTraversal");
+    this->eventHandler_->preWrite(ctx, "webInterface.requestBearing");
   }
 
-  oprot->writeMessageBegin("beginWaypointTraversal", ::apache::thrift::protocol::T_REPLY, seqid);
+  oprot->writeMessageBegin("requestBearing", ::apache::thrift::protocol::T_REPLY, seqid);
   result.write(oprot);
   oprot->writeMessageEnd();
   bytes = oprot->getTransport()->writeEnd();
   oprot->getTransport()->flush();
 
   if (this->eventHandler_.get() != NULL) {
-    this->eventHandler_->postWrite(ctx, "webInterface.beginWaypointTraversal", bytes);
+    this->eventHandler_->postWrite(ctx, "webInterface.requestBearing", bytes);
   }
 }
 
@@ -2666,38 +2237,38 @@ void webInterfaceProcessor::process_requestNextWaypoint(int32_t seqid, ::apache:
   }
 }
 
-void webInterfaceProcessor::process_addWaypoint(int32_t seqid, ::apache::thrift::protocol::TProtocol* iprot, ::apache::thrift::protocol::TProtocol* oprot, void* callContext)
+void webInterfaceProcessor::process_updateWaypoints(int32_t seqid, ::apache::thrift::protocol::TProtocol* iprot, ::apache::thrift::protocol::TProtocol* oprot, void* callContext)
 {
   void* ctx = NULL;
   if (this->eventHandler_.get() != NULL) {
-    ctx = this->eventHandler_->getContext("webInterface.addWaypoint", callContext);
+    ctx = this->eventHandler_->getContext("webInterface.updateWaypoints", callContext);
   }
-  ::apache::thrift::TProcessorContextFreer freer(this->eventHandler_.get(), ctx, "webInterface.addWaypoint");
+  ::apache::thrift::TProcessorContextFreer freer(this->eventHandler_.get(), ctx, "webInterface.updateWaypoints");
 
   if (this->eventHandler_.get() != NULL) {
-    this->eventHandler_->preRead(ctx, "webInterface.addWaypoint");
+    this->eventHandler_->preRead(ctx, "webInterface.updateWaypoints");
   }
 
-  webInterface_addWaypoint_args args;
+  webInterface_updateWaypoints_args args;
   args.read(iprot);
   iprot->readMessageEnd();
   uint32_t bytes = iprot->getTransport()->readEnd();
 
   if (this->eventHandler_.get() != NULL) {
-    this->eventHandler_->postRead(ctx, "webInterface.addWaypoint", bytes);
+    this->eventHandler_->postRead(ctx, "webInterface.updateWaypoints", bytes);
   }
 
-  webInterface_addWaypoint_result result;
+  webInterface_updateWaypoints_result result;
   try {
-    result.success = iface_->addWaypoint(args.wp);
+    result.success = iface_->updateWaypoints(args.wpts);
     result.__isset.success = true;
   } catch (const std::exception& e) {
     if (this->eventHandler_.get() != NULL) {
-      this->eventHandler_->handlerError(ctx, "webInterface.addWaypoint");
+      this->eventHandler_->handlerError(ctx, "webInterface.updateWaypoints");
     }
 
     ::apache::thrift::TApplicationException x(e.what());
-    oprot->writeMessageBegin("addWaypoint", ::apache::thrift::protocol::T_EXCEPTION, seqid);
+    oprot->writeMessageBegin("updateWaypoints", ::apache::thrift::protocol::T_EXCEPTION, seqid);
     x.write(oprot);
     oprot->writeMessageEnd();
     oprot->getTransport()->writeEnd();
@@ -2706,125 +2277,17 @@ void webInterfaceProcessor::process_addWaypoint(int32_t seqid, ::apache::thrift:
   }
 
   if (this->eventHandler_.get() != NULL) {
-    this->eventHandler_->preWrite(ctx, "webInterface.addWaypoint");
+    this->eventHandler_->preWrite(ctx, "webInterface.updateWaypoints");
   }
 
-  oprot->writeMessageBegin("addWaypoint", ::apache::thrift::protocol::T_REPLY, seqid);
+  oprot->writeMessageBegin("updateWaypoints", ::apache::thrift::protocol::T_REPLY, seqid);
   result.write(oprot);
   oprot->writeMessageEnd();
   bytes = oprot->getTransport()->writeEnd();
   oprot->getTransport()->flush();
 
   if (this->eventHandler_.get() != NULL) {
-    this->eventHandler_->postWrite(ctx, "webInterface.addWaypoint", bytes);
-  }
-}
-
-void webInterfaceProcessor::process_updateWaypoint(int32_t seqid, ::apache::thrift::protocol::TProtocol* iprot, ::apache::thrift::protocol::TProtocol* oprot, void* callContext)
-{
-  void* ctx = NULL;
-  if (this->eventHandler_.get() != NULL) {
-    ctx = this->eventHandler_->getContext("webInterface.updateWaypoint", callContext);
-  }
-  ::apache::thrift::TProcessorContextFreer freer(this->eventHandler_.get(), ctx, "webInterface.updateWaypoint");
-
-  if (this->eventHandler_.get() != NULL) {
-    this->eventHandler_->preRead(ctx, "webInterface.updateWaypoint");
-  }
-
-  webInterface_updateWaypoint_args args;
-  args.read(iprot);
-  iprot->readMessageEnd();
-  uint32_t bytes = iprot->getTransport()->readEnd();
-
-  if (this->eventHandler_.get() != NULL) {
-    this->eventHandler_->postRead(ctx, "webInterface.updateWaypoint", bytes);
-  }
-
-  webInterface_updateWaypoint_result result;
-  try {
-    result.success = iface_->updateWaypoint(args.wp, args.no);
-    result.__isset.success = true;
-  } catch (const std::exception& e) {
-    if (this->eventHandler_.get() != NULL) {
-      this->eventHandler_->handlerError(ctx, "webInterface.updateWaypoint");
-    }
-
-    ::apache::thrift::TApplicationException x(e.what());
-    oprot->writeMessageBegin("updateWaypoint", ::apache::thrift::protocol::T_EXCEPTION, seqid);
-    x.write(oprot);
-    oprot->writeMessageEnd();
-    oprot->getTransport()->writeEnd();
-    oprot->getTransport()->flush();
-    return;
-  }
-
-  if (this->eventHandler_.get() != NULL) {
-    this->eventHandler_->preWrite(ctx, "webInterface.updateWaypoint");
-  }
-
-  oprot->writeMessageBegin("updateWaypoint", ::apache::thrift::protocol::T_REPLY, seqid);
-  result.write(oprot);
-  oprot->writeMessageEnd();
-  bytes = oprot->getTransport()->writeEnd();
-  oprot->getTransport()->flush();
-
-  if (this->eventHandler_.get() != NULL) {
-    this->eventHandler_->postWrite(ctx, "webInterface.updateWaypoint", bytes);
-  }
-}
-
-void webInterfaceProcessor::process_removeWaypoints(int32_t seqid, ::apache::thrift::protocol::TProtocol* iprot, ::apache::thrift::protocol::TProtocol* oprot, void* callContext)
-{
-  void* ctx = NULL;
-  if (this->eventHandler_.get() != NULL) {
-    ctx = this->eventHandler_->getContext("webInterface.removeWaypoints", callContext);
-  }
-  ::apache::thrift::TProcessorContextFreer freer(this->eventHandler_.get(), ctx, "webInterface.removeWaypoints");
-
-  if (this->eventHandler_.get() != NULL) {
-    this->eventHandler_->preRead(ctx, "webInterface.removeWaypoints");
-  }
-
-  webInterface_removeWaypoints_args args;
-  args.read(iprot);
-  iprot->readMessageEnd();
-  uint32_t bytes = iprot->getTransport()->readEnd();
-
-  if (this->eventHandler_.get() != NULL) {
-    this->eventHandler_->postRead(ctx, "webInterface.removeWaypoints", bytes);
-  }
-
-  webInterface_removeWaypoints_result result;
-  try {
-    result.success = iface_->removeWaypoints(args.no);
-    result.__isset.success = true;
-  } catch (const std::exception& e) {
-    if (this->eventHandler_.get() != NULL) {
-      this->eventHandler_->handlerError(ctx, "webInterface.removeWaypoints");
-    }
-
-    ::apache::thrift::TApplicationException x(e.what());
-    oprot->writeMessageBegin("removeWaypoints", ::apache::thrift::protocol::T_EXCEPTION, seqid);
-    x.write(oprot);
-    oprot->writeMessageEnd();
-    oprot->getTransport()->writeEnd();
-    oprot->getTransport()->flush();
-    return;
-  }
-
-  if (this->eventHandler_.get() != NULL) {
-    this->eventHandler_->preWrite(ctx, "webInterface.removeWaypoints");
-  }
-
-  oprot->writeMessageBegin("removeWaypoints", ::apache::thrift::protocol::T_REPLY, seqid);
-  result.write(oprot);
-  oprot->writeMessageEnd();
-  bytes = oprot->getTransport()->writeEnd();
-  oprot->getTransport()->flush();
-
-  if (this->eventHandler_.get() != NULL) {
-    this->eventHandler_->postWrite(ctx, "webInterface.removeWaypoints", bytes);
+    this->eventHandler_->postWrite(ctx, "webInterface.updateWaypoints", bytes);
   }
 }
 

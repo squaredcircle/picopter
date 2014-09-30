@@ -3,11 +3,11 @@
 
 #include <deque>
 
-void	waypointsFlightLoop(FlightBoard &, GPS &, IMU &, Logger &);
+#include "structures.h"
+
+void	waypointsFlightLoop(FlightBoard &, GPS &, IMU &, Logger &, std::deque<coord> &);
 
 /* External variables */
-extern std::deque<Coord_rad>	waypoints_list;
-
 extern bool		exitProgram;
 extern int		state;
 extern int		userState;

@@ -15,9 +15,9 @@ BASE_INCLUDES     = -I../base/include
 BASE_OBJECTS      = $(addprefix ../base/obj/, $(addsuffix .o, $(BASE)))
 
 ##### picopter-modules
-MODULES              = run_lawnmower lawnmower_control lawnmower_structures
-MODULES_INCLUDES     = -I../modules/include
-MODULES_OBJECTS      = $(addprefix ../modules/obj/, $(addsuffix .o, $(MODULES)))
+#MODULES              = run_lawnmower lawnmower_control lawnmower_structures
+#MODULES_INCLUDES     = -I../modules/include
+#MODULES_OBJECTS      = $(addprefix ../modules/obj/, $(addsuffix .o, $(MODULES)))
 
 ##### IMU
 XSENS_INCLUDES    = -I../../lib/Xsens
@@ -32,15 +32,15 @@ OPEN_CV           = `pkg-config --cflags --libs opencv`
 ##### Combine variables
 #INCLUDES += $(BASE_INCLUDE)
 #INCLUDES += $(XSENS_INCLUDE)
-
-default: bin/picopter
+	
+default: gen-cpp/picopter_types.h bin/picopter
+	
+gen-cpp/picopter_types.h: picopter.thrift
+	thrift --gen cpp picopter.thrift
+	thrift --gen php picopter.thrift
 	
 bin/picopter: obj/webInterface.o obj/picopter_types.o obj/picopter.o obj/waypoints.o obj/control.o obj/structures.o
 	$(CC) $(INCLUDES) $^ $(BASE_OBJECTS) $(MODULES_OBJECTS) -o $@ $(LIBS) $(RASPICAM_LINKS) $(OPEN_CV) $(LDFLAGS)
-
-thrift: picopter.thrift
-	thrift --gen cpp picopter.thrift
-	thrift --gen php picopter.thrift
 	
 obj/webInterface.o: gen-cpp/webInterface.cpp
 	$(CC) $(CFLAGS) $(THRIFT_FLAGS) $(INCLUDES) $(THRIFT_INCLUDES) $^ -o $@ $(LIBS) 

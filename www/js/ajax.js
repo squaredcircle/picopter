@@ -1,12 +1,20 @@
-function ajaxSend(action,lat,lng,no) {
+function ajaxSend(action,data) {
+	var newdata = [];
+	
+	if (typeof data != 'undefined') {
+		$.each(data, function(index, val) {
+			lat = val.getLatLng().lat;
+			lng = val.getLatLng().lng;
+			newdata.push([lat,lng]);
+		});
+	}
+	
 	$.ajax({
 		type: "POST",
 		url: "ajax-thrift.php",
 		data: {
 			'action': action,
-			'lat'   : lat,
-			'lng'   : lng,
-			'no'    : no
+			'data'   : newdata
 		},
 		success: function(response) {
 			$('#response').html(response);
@@ -14,16 +22,17 @@ function ajaxSend(action,lat,lng,no) {
 	});	
 }
 
-$('.hexacontrol').click(function(){
-	var clickBtnValue = $(this).attr("value");
-	if ($.isEmptyObject(markers)) {
-		var markerCoords = "null";
-	} else {
-		var markerCoords = markers[markers.length-1].position;
-	}
+function allStop() {
+	ajaxSend('allStop');
+}
 
-	ajaxSend(clickBtnValue,markerCoords);
-});
+function beginAuto() {
+	if (!canEdit) ajaxSend('beginAuto');
+}
+
+function beginManual() {
+	if (!canEdit) ajaxSend('beginManual');
+}
 
 (function worker() {
 	$.ajax({
@@ -34,8 +43,10 @@ $('.hexacontrol').click(function(){
 		},
 		success: function(data) {
 			var arr = data.split(',');
+			
 			var latlng = L.latLng(parseFloat(arr[0]),parseFloat(arr[1]));
-			copterMarker.setLatLng(latlng).update();
+
+			//copterMarker.setLatLng(latlng).update();
 		}
 	});
 	$.ajax({

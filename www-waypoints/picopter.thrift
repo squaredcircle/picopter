@@ -31,11 +31,9 @@ service webInterface {
 	
 	string		requestStatus();
 	coordDeg	requestCoords();
+	double		requestBearing();
 	
-	bool		beginWaypointTraversal();
 	coordDeg	requestNextWaypoint();
-	bool		addWaypoint(1: coordDeg wp); 
-	bool		updateWaypoint(1: coordDeg wp, 2: i32 no);
-	bool		removeWaypoints(1: i32 no);
+	bool		updateWaypoints(1: list<coordDeg> wpts);
 	bool		resetWaypoints();
 }

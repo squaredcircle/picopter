@@ -16,23 +16,76 @@
 	<body>
 		<!-- Body -->
 		<div id="mainwindow">
+			<div id="main-side"></div>
 			<div id="map-canvas"></div>
+			<div id="main-bottom"></div>
 		</div>
 		<div id="sidepanel">
-			<!--<div id="sidepanel_top">-->	
-				<div id="status"></div>
-				<div id="primary-button-holder">
-					<button type="button" class="hexacontrol btn btn-danger btn-lg" value="allStop"><b>All Stop</b></button>
-					<button type="button" class="hexacontrol btn btn-success btn-lg" value="beginWaypointTraversal"><b>Start Flight</b></button>
+			<div id="menu-button-holder">
+				<button type="button" class="cbtn nav-a" onclick="allStop()">All Stop</button>
+				<button type="button" class="cbtn nav-b" onclick="statusMode()">Status</button>
+				<button type="button" class="cbtn nav-c" onclick="manualMode()">Manual</button>
+				<button type="button" class="cbtn nav-d" onclick="autoMode()">Automatic</button>
+			</div>
+			<div id="secondary-button-holder">
+				<div id="menu-top-a">
+					<div id="menu-top-b"></div>
 				</div>
-				<div id="secondary-button-holder">
-					<button id="drop" class="btn btn-default btn-lg" onclick="addMarker()">Add Waypoint</button>
-					<button type="button" class="btn btn-default btn-lg" onclick="clearMarkers()">Reset Waypoints</button>
+				
+				<div id="status-holder" style="display: none">
+					<div class="headline">
+						<span class="h3">Status Report</span>
+					</div>
+					
+					<div id="response" class="text"></div>
 				</div>
-				<br/>
-				<div id="response"></div>
-<!--			</div>
-			<div id="sidepanel_bottom">
+				
+				<div id="manual-holder" >
+					<div class="headline">
+						<span class="h3">Manual Mode</span>
+					</div>
+					
+					<button id="manual-edit" class="cbtn roundbtn" onclick="toggleEdit();">Edit Waypoints</button>
+					<button id="manual-reset" class="cbtn roundbtn" onclick="clearMarkers(true)">Reset Waypoints</button>
+					<button id="manual-begin" class="cbtn squarebtn" onclick="beginManual()">Begin Flight</button>
+				</div>
+				
+				<div id="auto-holder"  style="display: none">
+					<div class="headline">
+						<span class="h3">Automatic Mode</span>
+					</div>
+
+					<button id="auto-edit" class="cbtn roundbtn" onclick="toggleEdit()">Edit Boundaries</button>
+					<button id="auto-reset" class="cbtn roundbtn" onclick="clearMarkers(true)">Reset Boundaries</button>
+					<button id="auto-begin" class="cbtn squarebtn" onclick="beginAuto()">Begin Flight</button>
+				</div>
+				
+				<div id="information" class="text"></div>
+				<div id="status" class="text"></div>
+			</div>
+		</div>
+		<div id="main-vertical"></div>
+		
+		<script src="/js/jquery-2.1.1.min.js"></script>
+		<script src="/js/jquery-blink.js"></script>
+		<script src="/js/bootstrap.min.js"></script>
+		<script src="/js/leaflet.js"></script>
+		<script src="/js/leaflet-numered-markers.js"></script>
+		<script src="/js/map.js"></script>
+		<script src="/js/ajax.js"></script>
+		<script src="/js/control.js"></script>
+		
+	</body>
+</html>
+
+
+
+
+<!-- Footer. Javascript includes. 
+		<script src="/jwplayer/jwplayer.js"></script>
+		<script src="/js/piCameraStream.js"></script>
+		
+		<div id="sidepanel_bottom">
 				<object type="application/x-shockwave-flash" data="jwplayer/jwplayer.flash.swf" width="100%" height="100%" bgcolor="#000000" id="video-jwplayer" name="video-jwplayer" tabindex="0">
 					<param name="allowfullscreen" value="true">
 					<param name="allowscriptaccess" value="always">
@@ -41,20 +94,4 @@
 				</object>
 				<div id="video-jwplayer_aspect" style="display: none;"></div>
 				<div id="video-jwplayer_jwpsrv" style="position: absolute; top: 0px; z-index: 10;"></div>
-			</div>
--->		</div>
-		
-		
-		<!-- Footer. Javascript includes. 
-		<script src="/jwplayer/jwplayer.js"></script>
-		<script src="/js/piCameraStream.js"></script>-->
-		<script src="/js/jquery-2.1.1.min.js"></script>
-		<script src="/js/bootstrap.min.js"></script>
-		<script src="/js/leaflet.js"></script>
-		<script src="/js/leaflet-numered-markers.js"></script>
-		<script src="/js/map.js"></script>
-		<script src="/js/ajax.js"></script>
-		
-
-	</body>
-</html>
+			</div>-->		

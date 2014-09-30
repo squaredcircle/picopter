@@ -4,6 +4,8 @@
 /* Constants */
 #define PI					3.14159265359
 #define RADIUS_OF_EARTH		6364.963	//km
+#define RADTODEG(x) 		((x) * (180.0 / PI))
+#define DEGTORAD(x)			((x) * (PI / 180.0))
 
 /* Definitions */
 #define sin2(x)				(sin(x)*sin(x))
@@ -29,10 +31,10 @@
 #define MAIN_LOOP_DELAY			20
 
 
-typedef struct {		// Holds a (latitude,longtitude) pair, in radians.
+typedef struct {		// Holds a (latitude,longtitude) pair, in degrees.
 	double lat;
 	double lon;
-} Coord_rad;
+} coord;
 
 extern FB_Data stop;
 extern FB_Data forwards;

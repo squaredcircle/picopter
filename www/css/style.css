@@ -1,153 +1,268 @@
 html, body {
-	margin: 			0px;
-	padding: 			0px;
-	height: 			100%;
+	font-family: 			"Helvetica Neue",Helvetica,Arial,sans-serif;
+	background-color: 		#000;
+	margin: 				0px;
+	padding: 				0px;
+	height: 				100%;
+	
+	font-weight:			bold;
+	text-transform:			uppercase;
+}
+
+/***************************** PRIMARIES */
+
+
+/***************************** INFORMATIONAL */
+
+.text {
+	font-size:				20px;
+	color:					#9999cd;
 }
 
 #status {
-	font-size:				20px;
-	font-family:			Courier;
-	background-color:		#D8D8D8;
 	width:					100%;
 	padding-left:			20px;
 }
 
 #response {
-	font-size:				20px;
-	font-family:			Courier;
-	background-color:		#D8D8D8;
+	color:					#FF965B;
 	width:					100%;
 	padding-left:			20px;
-	padding-right:			20px;
-	clear:					both;
 }
 
-.btn {
-	height:					80px;
+#information {
+	color:					#FF965B;
 	width:					100%;
-	font-size:				20px;
+	padding-left:			20px;
+	float:					clear;
 }
 
-#primary-button-holder {
-	width:					40%;
-	float:					left;
-	margin-top:				20px;
+#videoElement {
+	width:					100%;
+	height:					100%;
+	background-color:		#666;
+}
+
+.headline {
+	background-color:		#FB8500;
+	margin-bottom:			14px;
 	margin-left:			20px;
-}
-
-#secondary-button-holder {
-	width:					40%;
-	float:					right;
-	margin-top:				20px;
 	margin-right:			20px;
 }
 
- @media screen and (orientation:portrait) {
+.h3 {
+	font-size:				20px;
+	font-weight:			bold;
+	color:					#FF965B;
+	text-transform:			uppercase;
+	
+	background-color:		#000;
+	
+	padding:				1px 6px;
+	margin-left:			20px;
+	vertical-align:			middle;
+}
+
+/***************************** LCARS STRUCTURE */
+
+#menu-button-holder {
+	width:					140px;
+	height:					100%;
+	float:					left;
+	background-color:		#000;
+	margin:					0 auto;
+}
+
+#secondary-button-holder {
+	padding-left:			140px;
+	margin:					0;
+}
+
+#menu-top-a {
+	background-color:		#C0484C;
+	width:					100%;
+	height:					44px;
+	margin:					none;
+	position:				relative;
+}
+
+#menu-top-b {
+	background-color:		#000;
+	width:					100%;
+	height:					22px;
+	position:				absolute;
+	bottom:					0px;
+	border:					none;
+	border-top-left-radius: 30px;
+}
+
+.orange-toggle {
+	background-color:		#FB8500 !important;
+}
+
+/***************************** SIDE PANEL */
+
+.nav-a {
+	width:					100%;
+	background-color:		#C0484C;
+	height:					44px;
+	border-top-left-radius: 30px;
+}
+
+.nav-b {
+	width:					100%;
+	background-color:		#C0484C;
+	height:					44px;
+}
+
+.nav-c {
+	width:					100%;
+	background-color:		#FB8500;
+	height:					44px;
+}
+
+.nav-d {
+	width:					100%;
+	background-color:		#FF965B;
+	height:					44px;
+}
+
+/***************************** BUTTONS */
+
+.cbtn {
+	font-size:				16px;
+	text-align:				right;
+	text-transform:			uppercase;
+	font-weight:			bold;
+	border:					none;
+	margin-bottom:			4px;
+}
+
+.sidebtn {
+	background-color:		#AC6A80;
+
+	padding:				16px 16px 6px 0px;
+	margin-bottom:			14px;
+	margin-left:			14px;
+	
+
+	border-top-right-radius: 30px;
+	border-bottom-right-radius: 30px;
+}
+
+.roundbtn {
+	background-color:		#B781B8;
+
+	width:					200px;
+	
+	padding:				16px 16px 6px 0px;
+	margin-bottom:			14px;
+	margin-left:			14px;
+	
+	border-radius: 30px;
+}
+
+.squarebtn {
+	background-color:		#AC6A80;
+
+	width:					200px;
+	
+	padding:				16px 16px 6px 0px;
+	margin-bottom:			14px;
+	margin-left:			14px;
+}
+
+.halfroundbtn {
+	background-color:		#AC6A80;
+
+	width:					200px;
+	
+	padding:				16px 16px 6px 0px;
+	margin-bottom:			14px;
+	margin-left:			14px;
+	
+	border-top-right-radius: 30px;
+	border-bottom-right-radius: 30px;
+}
+
+.btn-pressed {
+	background-color:		#FB8500;
+}
+
+.btn-disabled {
+	background-color:		#654765;
+}
+
+/***************************** ORIENTATIONAL */
+
+@media screen and (orientation:portrait) {
  	/* Primary and secondary containers */
 	#mainwindow {
 		height:				65%;
 		width:				100%;
+		margin-bottom:		4px;
 	}
 
 	#sidepanel {
-		height: 			35%;
 		width:				100%;
-		border-top:			5px #333 solid;
-		background-color:	#E8E8E8;
+		margin-top:			26px;
+		/*border-top:			5px #333 solid;*/
 	}
-
-	/* Primary container (map) elements */
-
-	#map-canvas {
-		height: 			100%;
-		width:				100%;
-	}
-
-	#panel {
-		position: 			absolute;
-		top: 				5px;
-		left: 				40%;
-	/*	margin-left: 		-360px; */
-		z-index: 			5;
-		background-color: 	#fff;
-		padding: 			5px;
-		border: 			1px solid #999;
-	}
-
-	/* Secondary container (inf) elements */
-
-	#sidepanel_top {
-		width:				80%;
-		background-color:	#fff;
-		margin: 			0px auto;
+	
+	#main-side {
+		position:			relative;
 		float:				left;
-	}
-
-	#sidepanel_bottom {
-		width:				20%;
-		border-left:		5px #333 solid;
-		border-top:			5px #333 solid;
-		margin: 			0px auto;
-		float:				right;
-	}
-
-	#videoElement {
-		width:				100%;
+		width:				10px;
 		height:				100%;
-		background-color:	#666;
+		background-color:	#7F74EF;
 	}
- }
- @media screen and (orientation:landscape) {
+	
+	#map-canvas {
+		height:				100%;
+	}
+	
+	#main-bottom {
+		clear:				both;
+		width:				100%;
+		height:				22px;
+		background-color:	#7F74EF;
+		border-bottom-left-radius: 30px;
+	}
+}
+
+@media screen and (orientation:landscape) {
 	/* Primary and secondary containers */
 	#mainwindow {
 		height:				100%;
-		width:				60%;
+		width:				58%;
 		float:				left;
 	}
 
 	#sidepanel {
 		height: 			100%;
-		width:				40%;
+		width:				40.5%;
 		float:				right;
-		border-left:		10px #333 solid;
+		padding-left:		4px;
+		/*border-left:		10px #333 solid;*/
 	}
-
-	/* Primary container (map) elements */
-
+	
+	#main-side {
+		width:				100%;
+		height:				22px;
+		background-color:	#7F74EF;
+	}
+	
 	#map-canvas {
-		height: 			100%;
-		width:				100%;
-	}
-
-	#panel {
-		position: 			absolute;
-		top: 				5px;
-		left: 				26%;
-	/*	margin-left: 		-360px; */
-		z-index: 			5;
-		background-color: 	#fff;
-		padding: 			5px;
-		border: 			1px solid #999;
-	}
-
-	/* Secondary container (inf) elements */
-
-	#sidepanel_top {
-		height:				60%;
-		background-color:	#fff;
-		margin: 			0px auto;
-	}
-
-	#sidepanel_bottom {
-		height:				40%;
-		border-left:		10px #333 solid;
-		border-top:			5px #333 solid;
-		margin: 			0px auto;
-	}
-
-	#videoElement {
-		width:				100%;
 		height:				100%;
-		background-color:	#666;
+		width:				100%;
+	}
+	
+	#main-vertical {
+		overflow:			hidden;
+		width:				1.5%;
+		height:				100%;
+		margin-top:			4px;
+		background-color:	#7F74EF;
+		border-top-right-radius: 30px;
 	}
 }

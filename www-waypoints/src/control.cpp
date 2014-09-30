@@ -27,42 +27,60 @@
 using namespace std;
 
 /*
+ *	coordToRad
+ *		Returns a coord structure, with lat and lon converted to radians.
+ */
+coord coordToRad(coord pos) {
+	pos.lat = DEGTORAD(pos.lat);
+	pos.lon = DEGTORAD(pos.lon);
+	return pos;
+}
+
+/*
  *	calculate_distance
  *		Calculates the distance between two (latitude,longtitude) pairs.
  */
-double calculate_distance(Coord_rad pos1, Coord_rad pos2) {
+double calculate_distance(coord pos1, coord pos2) {
+	pos1 = coordToRad(pos1);
+	pos2 = coordToRad(pos2);
+	
 	double h = sin2((pos1.lat-pos2.lat)/2) + cos(pos1.lat)*cos(pos2.lat) * sin2((pos2.lon-pos1.lon)/2);
 	if(h > 1) cout << "Distance calculation error" << endl;
+	
 	double distance = 2 * RADIUS_OF_EARTH * asin(sqrt(h));
 	return distance * 1000;	//meters
 }
 
 /*
  *	calculate_bearing
- *		Calculates the bearing from one (latitude,longtitude) pair to another.
+ *		Calculates the bearing from one (latitude,longtitude) pair to another. Returns a bearing in
+ *		degrees.
  */
-double calculate_bearing(Coord_rad pos1, Coord_rad pos2) {
+double calculate_bearing(coord pos1, coord pos2) {
+	pos1 = coordToRad(pos1);
+	pos2 = coordToRad(pos2);
+	
 	double num = sin(pos2.lon - pos1.lon) * cos(pos2.lat);
 	double den = cos(pos1.lat)*sin(pos2.lat) - sin(pos1.lat)*cos(pos2.lat)*cos(pos2.lon-pos1.lon);
 
 	double bearing = atan2(num, den);
-	return bearing;
+	return RADTODEG(bearing);
 }
 
 /*
- *	getCoordDeg
+ *	getCoord
  *		Reads in a GPS data structure, and returns the coordinate in degrees. 
  */
-Coord_rad getCoordDeg(GPS *gps) {		//Not the best in terms 
+coord getCoord(GPS *gps) {
 	GPS_Data gps_data;
 	gps->getGPS_Data(&gps_data);
-	Coord_rad here = {gps_data.latitude * PI / 180, gps_data.longitude * PI / 180};
+	coord here = {gps_data.latitude, gps_data.longitude};
 	return here;
 }
 
 /*
  *	getYaw
- *		Reads in a IMU data structure, and returns the current yaw.
+ *		Reads in a IMU data structure, and returns the current yaw in degrees.
  */
 double getYaw(IMU *i) {
 	IMU_Data data;
@@ -74,8 +92,8 @@ double getYaw(IMU *i) {
  *	checkInPerth
  *		Sanity check. Check if the GPS is working.
  */
-bool checkInPerth(Coord_rad *here) {
-	return(here->lat > -33*PI/180 && here->lat < -31*PI/180 && here->lon > 115*PI/180 && here->lon < 117*PI/180);
+bool checkInPerth(coord *here) {
+	return(here->lat > -33 && here->lat < -31 && here->lon > 115 && here->lon < 117);
 }
 
 /*
@@ -83,7 +101,7 @@ bool checkInPerth(Coord_rad *here) {
  *		Print the current flight board settings.
  */
 void printFB_Data(FB_Data* data) {
-	cout << "A: " << data->aileron << "\t";
+	cout << "\033[1;32m[FLTBRD]\033[0m A: " << data->aileron << "\t";
 	cout << "E: " << data->elevator << "\t";
 	cout << "R: " << data->rudder << "\t";
 	cout << "G: " << data->gimbal << endl;
@@ -98,40 +116,40 @@ void setCourse(FB_Data *instruction, double distance, double bearing, double yaw
 	if(speed > SPEED_LIMIT) {	//P controller with limits.
 		speed = SPEED_LIMIT;
 	}
-	instruction->aileron = (int) (speed * sin(bearing - yaw));	//26/8/14
-	instruction->elevator = (int) (speed * cos(bearing - yaw));
-	instruction->rudder = 0;
-	instruction->gimbal = 0;
+	instruction->aileron  = (int) (speed * sin( DEGTORAD(bearing - yaw) ));
+	instruction->elevator = (int) (speed * cos( DEGTORAD(bearing - yaw) ));
+	instruction->rudder   = 0;
+	instruction->gimbal   = 0;
 }	
 
 bool initialise(FlightBoard *fb, GPS *gps, IMU *imu) {
-	cout << "[COPTER] Initialising." << endl;
+	cout << "\033[36m[COPTER]\033[0m Initialising." << endl;
 	
 	/* Initialise WiringPi */
 	gpio::startWiringPi();
 	
 	/* Initialise Flight Board */
 	if(fb->setup() != FB_OK) {
-		cout << "[COPTER] Error setting up flight board.  Terminating program" << endl;
+		cout << "\033[1;31m[COPTER]\033[0m Error setting up flight board.  Terminating program" << endl;
 		return false;
 	}
 	fb->start();
 	
 	/* Initialise GPS */
 	if(gps->setup() != GPS_OK) {
-		cout << "[COPTER] Error setting up GPS. Will retry continuously." << endl;
-		while (gps->setup() != GPS_OK) usleep(1000);
+		cout << "\033[1;31m[COPTER]\033[0m Error setting up GPS. Will retry continuously." << endl;
+		//while (gps->setup() != GPS_OK) usleep(1000);
 	}
 	gps->start();
-	cout << "[COPTER] GPS detected." << endl;
+	cout << "\033[36m[COPTER]\033[0m GPS detected." << endl;
 	
 	/* Initialise IMU */
 	if(imu->setup() != IMU_OK) {
-		cout << "[COPTER] Error setting up IMU. Will retry continuously." << endl;
-		while (imu->setup() != IMU_OK) usleep(1000);
+		cout << "\033[1;31m[COPTER]\033[0m Error setting up IMU. Will retry continuously." << endl;
+		//while (imu->setup() != IMU_OK) usleep(1000);
 	}
 	imu->start();
-	cout << "[COPTER] IMU detected." << endl;
+	cout << "\033[36m[COPTER]\033[0m IMU detected." << endl;
 	
 	return true;
 }
@@ -139,22 +157,25 @@ bool initialise(FlightBoard *fb, GPS *gps, IMU *imu) {
 double inferBearing(FlightBoard *fb, GPS *gps, Logger *logs) {
 	char str_buf[BUFSIZ];
 	
-	cout << "Finding bearing: copter will move forwards when placed in auto mode" << endl;
+	cout << "\033[46m[COPTER]\033[0m Finding bearing; copter will move forwards." << endl;
 	
-	Coord_rad direction_test_start;								// To work out initial heading, we calculate the bearing
-	Coord_rad direction_test_end;								// form the start coord to the end coord.
-	double yaw;													// This is our heading, radians
+	coord direction_test_start;
+	coord direction_test_end;
+	double yaw;
 	
-	direction_test_start = getCoordDeg(gps);					// Record initial position.
-	fb->setFB_Data(&forwards);									// Tell flight board to go forwards.
-	usleep(DIRECTION_TEST_DURATION);								// Wait a bit (travel).
-	fb->setFB_Data(&stop);										// Stop.
-	direction_test_end = getCoordDeg(gps);						// Record end position.
+	direction_test_start = getCoord(gps);
 	
-	yaw = calculate_bearing(direction_test_start, direction_test_end);	// Work out which direction we went.
-	cout << "Copter is facing a bearing of: " << yaw *180/PI<< endl;
-	sprintf(str_buf, "Copter is facing %f degrees.", yaw *180/PI);
-	logs->writeLogLine(str_buf);
+	// Instruct to go forwards, allow some travel time, then stop.
+	fb->setFB_Data(&forwards);	
+	usleep(DIRECTION_TEST_DURATION);
+	fb->setFB_Data(&stop);
+	
+	direction_test_end = getCoord(gps);
+	
+	yaw = calculate_bearing(direction_test_start, direction_test_end);
+	
+	cout << "\033[188m[COPTER]\033[0m Copter is facing a bearing of: " << yaw << endl;
+	sprintf(str_buf, "Copter is facing %f degrees.", yaw); logs->writeLogLine(str_buf);
 	
 	return yaw;
 }

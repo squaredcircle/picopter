@@ -20,11 +20,9 @@ class webInterfaceIf {
   virtual bool allStop() = 0;
   virtual void requestStatus(std::string& _return) = 0;
   virtual void requestCoords(coordDeg& _return) = 0;
-  virtual bool beginWaypointTraversal() = 0;
+  virtual double requestBearing() = 0;
   virtual void requestNextWaypoint(coordDeg& _return) = 0;
-  virtual bool addWaypoint(const coordDeg& wp) = 0;
-  virtual bool updateWaypoint(const coordDeg& wp, const int32_t no) = 0;
-  virtual bool removeWaypoints(const int32_t no) = 0;
+  virtual bool updateWaypoints(const std::vector<coordDeg> & wpts) = 0;
   virtual bool resetWaypoints() = 0;
 };
 
@@ -73,22 +71,14 @@ class webInterfaceNull : virtual public webInterfaceIf {
   void requestCoords(coordDeg& /* _return */) {
     return;
   }
-  bool beginWaypointTraversal() {
-    bool _return = false;
+  double requestBearing() {
+    double _return = (double)0;
     return _return;
   }
   void requestNextWaypoint(coordDeg& /* _return */) {
     return;
   }
-  bool addWaypoint(const coordDeg& /* wp */) {
-    bool _return = false;
-    return _return;
-  }
-  bool updateWaypoint(const coordDeg& /* wp */, const int32_t /* no */) {
-    bool _return = false;
-    return _return;
-  }
-  bool removeWaypoints(const int32_t /* no */) {
+  bool updateWaypoints(const std::vector<coordDeg> & /* wpts */) {
     bool _return = false;
     return _return;
   }
@@ -569,24 +559,24 @@ class webInterface_requestCoords_presult {
 };
 
 
-class webInterface_beginWaypointTraversal_args {
+class webInterface_requestBearing_args {
  public:
 
-  webInterface_beginWaypointTraversal_args() {
+  webInterface_requestBearing_args() {
   }
 
-  virtual ~webInterface_beginWaypointTraversal_args() throw() {}
+  virtual ~webInterface_requestBearing_args() throw() {}
 
 
-  bool operator == (const webInterface_beginWaypointTraversal_args & /* rhs */) const
+  bool operator == (const webInterface_requestBearing_args & /* rhs */) const
   {
     return true;
   }
-  bool operator != (const webInterface_beginWaypointTraversal_args &rhs) const {
+  bool operator != (const webInterface_requestBearing_args &rhs) const {
     return !(*this == rhs);
   }
 
-  bool operator < (const webInterface_beginWaypointTraversal_args & ) const;
+  bool operator < (const webInterface_requestBearing_args & ) const;
 
   uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
   uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
@@ -594,69 +584,69 @@ class webInterface_beginWaypointTraversal_args {
 };
 
 
-class webInterface_beginWaypointTraversal_pargs {
+class webInterface_requestBearing_pargs {
  public:
 
 
-  virtual ~webInterface_beginWaypointTraversal_pargs() throw() {}
+  virtual ~webInterface_requestBearing_pargs() throw() {}
 
 
   uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
 
 };
 
-typedef struct _webInterface_beginWaypointTraversal_result__isset {
-  _webInterface_beginWaypointTraversal_result__isset() : success(false) {}
+typedef struct _webInterface_requestBearing_result__isset {
+  _webInterface_requestBearing_result__isset() : success(false) {}
   bool success;
-} _webInterface_beginWaypointTraversal_result__isset;
+} _webInterface_requestBearing_result__isset;
 
-class webInterface_beginWaypointTraversal_result {
+class webInterface_requestBearing_result {
  public:
 
-  webInterface_beginWaypointTraversal_result() : success(0) {
+  webInterface_requestBearing_result() : success(0) {
   }
 
-  virtual ~webInterface_beginWaypointTraversal_result() throw() {}
+  virtual ~webInterface_requestBearing_result() throw() {}
 
-  bool success;
+  double success;
 
-  _webInterface_beginWaypointTraversal_result__isset __isset;
+  _webInterface_requestBearing_result__isset __isset;
 
-  void __set_success(const bool val) {
+  void __set_success(const double val) {
     success = val;
   }
 
-  bool operator == (const webInterface_beginWaypointTraversal_result & rhs) const
+  bool operator == (const webInterface_requestBearing_result & rhs) const
   {
     if (!(success == rhs.success))
       return false;
     return true;
   }
-  bool operator != (const webInterface_beginWaypointTraversal_result &rhs) const {
+  bool operator != (const webInterface_requestBearing_result &rhs) const {
     return !(*this == rhs);
   }
 
-  bool operator < (const webInterface_beginWaypointTraversal_result & ) const;
+  bool operator < (const webInterface_requestBearing_result & ) const;
 
   uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
   uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
 
 };
 
-typedef struct _webInterface_beginWaypointTraversal_presult__isset {
-  _webInterface_beginWaypointTraversal_presult__isset() : success(false) {}
+typedef struct _webInterface_requestBearing_presult__isset {
+  _webInterface_requestBearing_presult__isset() : success(false) {}
   bool success;
-} _webInterface_beginWaypointTraversal_presult__isset;
+} _webInterface_requestBearing_presult__isset;
 
-class webInterface_beginWaypointTraversal_presult {
+class webInterface_requestBearing_presult {
  public:
 
 
-  virtual ~webInterface_beginWaypointTraversal_presult() throw() {}
+  virtual ~webInterface_requestBearing_presult() throw() {}
 
-  bool* success;
+  double* success;
 
-  _webInterface_beginWaypointTraversal_presult__isset __isset;
+  _webInterface_requestBearing_presult__isset __isset;
 
   uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
 
@@ -756,38 +746,38 @@ class webInterface_requestNextWaypoint_presult {
 
 };
 
-typedef struct _webInterface_addWaypoint_args__isset {
-  _webInterface_addWaypoint_args__isset() : wp(false) {}
-  bool wp;
-} _webInterface_addWaypoint_args__isset;
+typedef struct _webInterface_updateWaypoints_args__isset {
+  _webInterface_updateWaypoints_args__isset() : wpts(false) {}
+  bool wpts;
+} _webInterface_updateWaypoints_args__isset;
 
-class webInterface_addWaypoint_args {
+class webInterface_updateWaypoints_args {
  public:
 
-  webInterface_addWaypoint_args() {
+  webInterface_updateWaypoints_args() {
   }
 
-  virtual ~webInterface_addWaypoint_args() throw() {}
+  virtual ~webInterface_updateWaypoints_args() throw() {}
 
-  coordDeg wp;
+  std::vector<coordDeg>  wpts;
 
-  _webInterface_addWaypoint_args__isset __isset;
+  _webInterface_updateWaypoints_args__isset __isset;
 
-  void __set_wp(const coordDeg& val) {
-    wp = val;
+  void __set_wpts(const std::vector<coordDeg> & val) {
+    wpts = val;
   }
 
-  bool operator == (const webInterface_addWaypoint_args & rhs) const
+  bool operator == (const webInterface_updateWaypoints_args & rhs) const
   {
-    if (!(wp == rhs.wp))
+    if (!(wpts == rhs.wpts))
       return false;
     return true;
   }
-  bool operator != (const webInterface_addWaypoint_args &rhs) const {
+  bool operator != (const webInterface_updateWaypoints_args &rhs) const {
     return !(*this == rhs);
   }
 
-  bool operator < (const webInterface_addWaypoint_args & ) const;
+  bool operator < (const webInterface_updateWaypoints_args & ) const;
 
   uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
   uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
@@ -795,295 +785,70 @@ class webInterface_addWaypoint_args {
 };
 
 
-class webInterface_addWaypoint_pargs {
+class webInterface_updateWaypoints_pargs {
  public:
 
 
-  virtual ~webInterface_addWaypoint_pargs() throw() {}
+  virtual ~webInterface_updateWaypoints_pargs() throw() {}
 
-  const coordDeg* wp;
+  const std::vector<coordDeg> * wpts;
 
   uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
 
 };
 
-typedef struct _webInterface_addWaypoint_result__isset {
-  _webInterface_addWaypoint_result__isset() : success(false) {}
+typedef struct _webInterface_updateWaypoints_result__isset {
+  _webInterface_updateWaypoints_result__isset() : success(false) {}
   bool success;
-} _webInterface_addWaypoint_result__isset;
+} _webInterface_updateWaypoints_result__isset;
 
-class webInterface_addWaypoint_result {
+class webInterface_updateWaypoints_result {
  public:
 
-  webInterface_addWaypoint_result() : success(0) {
+  webInterface_updateWaypoints_result() : success(0) {
   }
 
-  virtual ~webInterface_addWaypoint_result() throw() {}
+  virtual ~webInterface_updateWaypoints_result() throw() {}
 
   bool success;
 
-  _webInterface_addWaypoint_result__isset __isset;
+  _webInterface_updateWaypoints_result__isset __isset;
 
   void __set_success(const bool val) {
     success = val;
   }
 
-  bool operator == (const webInterface_addWaypoint_result & rhs) const
+  bool operator == (const webInterface_updateWaypoints_result & rhs) const
   {
     if (!(success == rhs.success))
       return false;
     return true;
   }
-  bool operator != (const webInterface_addWaypoint_result &rhs) const {
+  bool operator != (const webInterface_updateWaypoints_result &rhs) const {
     return !(*this == rhs);
   }
 
-  bool operator < (const webInterface_addWaypoint_result & ) const;
+  bool operator < (const webInterface_updateWaypoints_result & ) const;
 
   uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
   uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
 
 };
 
-typedef struct _webInterface_addWaypoint_presult__isset {
-  _webInterface_addWaypoint_presult__isset() : success(false) {}
+typedef struct _webInterface_updateWaypoints_presult__isset {
+  _webInterface_updateWaypoints_presult__isset() : success(false) {}
   bool success;
-} _webInterface_addWaypoint_presult__isset;
+} _webInterface_updateWaypoints_presult__isset;
 
-class webInterface_addWaypoint_presult {
+class webInterface_updateWaypoints_presult {
  public:
 
 
-  virtual ~webInterface_addWaypoint_presult() throw() {}
+  virtual ~webInterface_updateWaypoints_presult() throw() {}
 
   bool* success;
 
-  _webInterface_addWaypoint_presult__isset __isset;
-
-  uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
-
-};
-
-typedef struct _webInterface_updateWaypoint_args__isset {
-  _webInterface_updateWaypoint_args__isset() : wp(false), no(false) {}
-  bool wp;
-  bool no;
-} _webInterface_updateWaypoint_args__isset;
-
-class webInterface_updateWaypoint_args {
- public:
-
-  webInterface_updateWaypoint_args() : no(0) {
-  }
-
-  virtual ~webInterface_updateWaypoint_args() throw() {}
-
-  coordDeg wp;
-  int32_t no;
-
-  _webInterface_updateWaypoint_args__isset __isset;
-
-  void __set_wp(const coordDeg& val) {
-    wp = val;
-  }
-
-  void __set_no(const int32_t val) {
-    no = val;
-  }
-
-  bool operator == (const webInterface_updateWaypoint_args & rhs) const
-  {
-    if (!(wp == rhs.wp))
-      return false;
-    if (!(no == rhs.no))
-      return false;
-    return true;
-  }
-  bool operator != (const webInterface_updateWaypoint_args &rhs) const {
-    return !(*this == rhs);
-  }
-
-  bool operator < (const webInterface_updateWaypoint_args & ) const;
-
-  uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
-  uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
-
-};
-
-
-class webInterface_updateWaypoint_pargs {
- public:
-
-
-  virtual ~webInterface_updateWaypoint_pargs() throw() {}
-
-  const coordDeg* wp;
-  const int32_t* no;
-
-  uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
-
-};
-
-typedef struct _webInterface_updateWaypoint_result__isset {
-  _webInterface_updateWaypoint_result__isset() : success(false) {}
-  bool success;
-} _webInterface_updateWaypoint_result__isset;
-
-class webInterface_updateWaypoint_result {
- public:
-
-  webInterface_updateWaypoint_result() : success(0) {
-  }
-
-  virtual ~webInterface_updateWaypoint_result() throw() {}
-
-  bool success;
-
-  _webInterface_updateWaypoint_result__isset __isset;
-
-  void __set_success(const bool val) {
-    success = val;
-  }
-
-  bool operator == (const webInterface_updateWaypoint_result & rhs) const
-  {
-    if (!(success == rhs.success))
-      return false;
-    return true;
-  }
-  bool operator != (const webInterface_updateWaypoint_result &rhs) const {
-    return !(*this == rhs);
-  }
-
-  bool operator < (const webInterface_updateWaypoint_result & ) const;
-
-  uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
-  uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
-
-};
-
-typedef struct _webInterface_updateWaypoint_presult__isset {
-  _webInterface_updateWaypoint_presult__isset() : success(false) {}
-  bool success;
-} _webInterface_updateWaypoint_presult__isset;
-
-class webInterface_updateWaypoint_presult {
- public:
-
-
-  virtual ~webInterface_updateWaypoint_presult() throw() {}
-
-  bool* success;
-
-  _webInterface_updateWaypoint_presult__isset __isset;
-
-  uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
-
-};
-
-typedef struct _webInterface_removeWaypoints_args__isset {
-  _webInterface_removeWaypoints_args__isset() : no(false) {}
-  bool no;
-} _webInterface_removeWaypoints_args__isset;
-
-class webInterface_removeWaypoints_args {
- public:
-
-  webInterface_removeWaypoints_args() : no(0) {
-  }
-
-  virtual ~webInterface_removeWaypoints_args() throw() {}
-
-  int32_t no;
-
-  _webInterface_removeWaypoints_args__isset __isset;
-
-  void __set_no(const int32_t val) {
-    no = val;
-  }
-
-  bool operator == (const webInterface_removeWaypoints_args & rhs) const
-  {
-    if (!(no == rhs.no))
-      return false;
-    return true;
-  }
-  bool operator != (const webInterface_removeWaypoints_args &rhs) const {
-    return !(*this == rhs);
-  }
-
-  bool operator < (const webInterface_removeWaypoints_args & ) const;
-
-  uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
-  uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
-
-};
-
-
-class webInterface_removeWaypoints_pargs {
- public:
-
-
-  virtual ~webInterface_removeWaypoints_pargs() throw() {}
-
-  const int32_t* no;
-
-  uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
-
-};
-
-typedef struct _webInterface_removeWaypoints_result__isset {
-  _webInterface_removeWaypoints_result__isset() : success(false) {}
-  bool success;
-} _webInterface_removeWaypoints_result__isset;
-
-class webInterface_removeWaypoints_result {
- public:
-
-  webInterface_removeWaypoints_result() : success(0) {
-  }
-
-  virtual ~webInterface_removeWaypoints_result() throw() {}
-
-  bool success;
-
-  _webInterface_removeWaypoints_result__isset __isset;
-
-  void __set_success(const bool val) {
-    success = val;
-  }
-
-  bool operator == (const webInterface_removeWaypoints_result & rhs) const
-  {
-    if (!(success == rhs.success))
-      return false;
-    return true;
-  }
-  bool operator != (const webInterface_removeWaypoints_result &rhs) const {
-    return !(*this == rhs);
-  }
-
-  bool operator < (const webInterface_removeWaypoints_result & ) const;
-
-  uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
-  uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
-
-};
-
-typedef struct _webInterface_removeWaypoints_presult__isset {
-  _webInterface_removeWaypoints_presult__isset() : success(false) {}
-  bool success;
-} _webInterface_removeWaypoints_presult__isset;
-
-class webInterface_removeWaypoints_presult {
- public:
-
-
-  virtual ~webInterface_removeWaypoints_presult() throw() {}
-
-  bool* success;
-
-  _webInterface_removeWaypoints_presult__isset __isset;
+  _webInterface_updateWaypoints_presult__isset __isset;
 
   uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
 
@@ -1218,21 +983,15 @@ class webInterfaceClient : virtual public webInterfaceIf {
   void requestCoords(coordDeg& _return);
   void send_requestCoords();
   void recv_requestCoords(coordDeg& _return);
-  bool beginWaypointTraversal();
-  void send_beginWaypointTraversal();
-  bool recv_beginWaypointTraversal();
+  double requestBearing();
+  void send_requestBearing();
+  double recv_requestBearing();
   void requestNextWaypoint(coordDeg& _return);
   void send_requestNextWaypoint();
   void recv_requestNextWaypoint(coordDeg& _return);
-  bool addWaypoint(const coordDeg& wp);
-  void send_addWaypoint(const coordDeg& wp);
-  bool recv_addWaypoint();
-  bool updateWaypoint(const coordDeg& wp, const int32_t no);
-  void send_updateWaypoint(const coordDeg& wp, const int32_t no);
-  bool recv_updateWaypoint();
-  bool removeWaypoints(const int32_t no);
-  void send_removeWaypoints(const int32_t no);
-  bool recv_removeWaypoints();
+  bool updateWaypoints(const std::vector<coordDeg> & wpts);
+  void send_updateWaypoints(const std::vector<coordDeg> & wpts);
+  bool recv_updateWaypoints();
   bool resetWaypoints();
   void send_resetWaypoints();
   bool recv_resetWaypoints();
@@ -1256,11 +1015,9 @@ class webInterfaceProcessor : public ::apache::thrift::TDispatchProcessor {
   void process_allStop(int32_t seqid, ::apache::thrift::protocol::TProtocol* iprot, ::apache::thrift::protocol::TProtocol* oprot, void* callContext);
   void process_requestStatus(int32_t seqid, ::apache::thrift::protocol::TProtocol* iprot, ::apache::thrift::protocol::TProtocol* oprot, void* callContext);
   void process_requestCoords(int32_t seqid, ::apache::thrift::protocol::TProtocol* iprot, ::apache::thrift::protocol::TProtocol* oprot, void* callContext);
-  void process_beginWaypointTraversal(int32_t seqid, ::apache::thrift::protocol::TProtocol* iprot, ::apache::thrift::protocol::TProtocol* oprot, void* callContext);
+  void process_requestBearing(int32_t seqid, ::apache::thrift::protocol::TProtocol* iprot, ::apache::thrift::protocol::TProtocol* oprot, void* callContext);
   void process_requestNextWaypoint(int32_t seqid, ::apache::thrift::protocol::TProtocol* iprot, ::apache::thrift::protocol::TProtocol* oprot, void* callContext);
-  void process_addWaypoint(int32_t seqid, ::apache::thrift::protocol::TProtocol* iprot, ::apache::thrift::protocol::TProtocol* oprot, void* callContext);
-  void process_updateWaypoint(int32_t seqid, ::apache::thrift::protocol::TProtocol* iprot, ::apache::thrift::protocol::TProtocol* oprot, void* callContext);
-  void process_removeWaypoints(int32_t seqid, ::apache::thrift::protocol::TProtocol* iprot, ::apache::thrift::protocol::TProtocol* oprot, void* callContext);
+  void process_updateWaypoints(int32_t seqid, ::apache::thrift::protocol::TProtocol* iprot, ::apache::thrift::protocol::TProtocol* oprot, void* callContext);
   void process_resetWaypoints(int32_t seqid, ::apache::thrift::protocol::TProtocol* iprot, ::apache::thrift::protocol::TProtocol* oprot, void* callContext);
  public:
   webInterfaceProcessor(boost::shared_ptr<webInterfaceIf> iface) :
@@ -1270,11 +1027,9 @@ class webInterfaceProcessor : public ::apache::thrift::TDispatchProcessor {
     processMap_["allStop"] = &webInterfaceProcessor::process_allStop;
     processMap_["requestStatus"] = &webInterfaceProcessor::process_requestStatus;
     processMap_["requestCoords"] = &webInterfaceProcessor::process_requestCoords;
-    processMap_["beginWaypointTraversal"] = &webInterfaceProcessor::process_beginWaypointTraversal;
+    processMap_["requestBearing"] = &webInterfaceProcessor::process_requestBearing;
     processMap_["requestNextWaypoint"] = &webInterfaceProcessor::process_requestNextWaypoint;
-    processMap_["addWaypoint"] = &webInterfaceProcessor::process_addWaypoint;
-    processMap_["updateWaypoint"] = &webInterfaceProcessor::process_updateWaypoint;
-    processMap_["removeWaypoints"] = &webInterfaceProcessor::process_removeWaypoints;
+    processMap_["updateWaypoints"] = &webInterfaceProcessor::process_updateWaypoints;
     processMap_["resetWaypoints"] = &webInterfaceProcessor::process_resetWaypoints;
   }
 
@@ -1351,13 +1106,13 @@ class webInterfaceMultiface : virtual public webInterfaceIf {
     return;
   }
 
-  bool beginWaypointTraversal() {
+  double requestBearing() {
     size_t sz = ifaces_.size();
     size_t i = 0;
     for (; i < (sz - 1); ++i) {
-      ifaces_[i]->beginWaypointTraversal();
+      ifaces_[i]->requestBearing();
     }
-    return ifaces_[i]->beginWaypointTraversal();
+    return ifaces_[i]->requestBearing();
   }
 
   void requestNextWaypoint(coordDeg& _return) {
@@ -1370,31 +1125,13 @@ class webInterfaceMultiface : virtual public webInterfaceIf {
     return;
   }
 
-  bool addWaypoint(const coordDeg& wp) {
+  bool updateWaypoints(const std::vector<coordDeg> & wpts) {
     size_t sz = ifaces_.size();
     size_t i = 0;
     for (; i < (sz - 1); ++i) {
-      ifaces_[i]->addWaypoint(wp);
+      ifaces_[i]->updateWaypoints(wpts);
     }
-    return ifaces_[i]->addWaypoint(wp);
-  }
-
-  bool updateWaypoint(const coordDeg& wp, const int32_t no) {
-    size_t sz = ifaces_.size();
-    size_t i = 0;
-    for (; i < (sz - 1); ++i) {
-      ifaces_[i]->updateWaypoint(wp, no);
-    }
-    return ifaces_[i]->updateWaypoint(wp, no);
-  }
-
-  bool removeWaypoints(const int32_t no) {
-    size_t sz = ifaces_.size();
-    size_t i = 0;
-    for (; i < (sz - 1); ++i) {
-      ifaces_[i]->removeWaypoints(no);
-    }
-    return ifaces_[i]->removeWaypoints(no);
+    return ifaces_[i]->updateWaypoints(wpts);
   }
 
   bool resetWaypoints() {

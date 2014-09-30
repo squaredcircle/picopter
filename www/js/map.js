@@ -1,13 +1,11 @@
 var uwa = [-31.979839, 115.817546];
 var markers = [];
 var copterMarker;
-var map;
+var map = L.map('map-canvas').setView(uwa, 18);
+
+var popup = L.popup();
 
 function initialise() {
-	map = L.map('map-canvas').setView(uwa, 18);
-
-	
-	// /tiles/{z}/{x}/{y}.jpg
 	L.tileLayer('/tiles/sat/gs_{x}_{y}_{z}.jpg', {
 		maxZoom: 21,
 		minZoom: 17
@@ -16,21 +14,43 @@ function initialise() {
 	addCopter();
 }
 
+function onMapClick(e) {
+	if (canEdit) addMarker(e.latlng, true);
+}
+
+map.on('click', onMapClick);
+
 function addCopter() {
+	var copterIcon = L.icon({
+		iconUrl:	'/css/helicopter.png',
+		iconSize:	[32,37],
+		iconAnchor:	[16,35]
+	});
+	
 	copterMarker =
 		new L.marker( uwa, {
 			draggable: false,
-			icon: '/css/heli.png'
+			icon: copterIcon
 		}).addTo(map);
 }
 
-function addMarker() {
-	markers.push(
-		new L.marker( map.getCenter(), {
-			draggable: true,
-			icon:	new L.NumberedDivIcon({number: (markers.length+1)})
-		} ).addTo(map)
-	);
+function addMarker(loc,red) {
+	//map.getCenter()
+	if (red) {
+		markers.push(
+			new L.marker( loc, {
+				draggable: true,
+				icon:	new L.NumberedDivIconRed({number: (markers.length+1)})
+			} ).addTo(map)
+		);
+	} else {
+		markers.push(
+			new L.marker( loc, {
+				draggable: true,
+				icon:	new L.NumberedDivIcon({number: (markers.length+1)})
+			} ).addTo(map)
+		);
+	}
 
 	var thisNo = markers.length-1;	
 	var thisMarker = markers[thisNo];
@@ -47,16 +67,30 @@ function addMarker() {
 		waypointLine.setMap(map);
 	}*/
 	
-	ajaxSend('addWaypoint',thisMarker.getLatLng().lat,thisMarker.getLatLng().lng);
+	//ajaxSend('addWaypoint',thisMarker.getLatLng().lat,thisMarker.getLatLng().lng);
 
-	thisMarker.on('dragend', function(event) {
-		ajaxSend('updateWaypoint',thisMarker.getLatLng().lat,thisMarker.getLatLng().lng,thisNo);
+	thisMarker.on('click', function(event) {
+		if (canEdit) {
+			map.removeLayer(thisMarker);
+			markers.splice( $.inArray(thisMarker,markers) ,1 );
+		}
+	});
+	
+	//thisMarker.on('dragend', function(event) {
+	//	ajaxSend('updateWaypoint',thisMarker.getLatLng().lat,thisMarker.getLatLng().lng,thisNo);
+	//});
+}
+
+function toggleMarkerRed() {
+	tmpmarkers = markers.slice();
+	clearMarkers(false);
+	$.each( tmpmarkers, function( index, value ){
+		addMarker(value.getLatLng(), canEdit);
 	});
 }
 
-
 // Removes the markers from the map, but keeps them in the array.
-function clearMarkers() {
+function clearMarkers(ajax) {
 	for (var i = 0; i < markers.length; i++) {
 		map.removeLayer(markers[i]);
 	}
@@ -64,41 +98,9 @@ function clearMarkers() {
 	while(markers.length > 0) {
 		markers.pop();
 	}
-	ajaxSend('resetWaypoints');
+	if (ajax) ajaxSend('resetWaypoints');
 }
 
 $(function() {
     initialise();
 });
-
-
-
-		
-		
-	/*	
-		L.tileLayer('https://{s}.tiles.mapbox.com/v3/{id}/{z}/{x}/{y}.png', {
-			maxZoom: 18,
-			attribution: 'Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, ' +
-				'<a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, ' +
-				'Imagery © <a href="http://mapbox.com">Mapbox</a>',
-			id: 'examples.map-i875mjb7'
-		}).addTo(map);
-
-
-		L.marker([-31.979839, 115.817546]).addTo(map)
-			.bindPopup("<b>Hello world!</b><br />I am a popup.").openPopup();
-
-
-
-		var popup = L.popup();
-
-		function onMapClick(e) {
-			popup
-				.setLatLng(e.latlng)
-				.setContent("You clicked the map at " + e.latlng.toString())
-				.openOn(map);
-		}
-
-		map.on('click', onMapClick);
-
-*/

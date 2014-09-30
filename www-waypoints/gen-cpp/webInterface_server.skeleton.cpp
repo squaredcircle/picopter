@@ -47,9 +47,9 @@ class webInterfaceHandler : virtual public webInterfaceIf {
     printf("requestCoords\n");
   }
 
-  bool beginWaypointTraversal() {
+  double requestBearing() {
     // Your implementation goes here
-    printf("beginWaypointTraversal\n");
+    printf("requestBearing\n");
   }
 
   void requestNextWaypoint(coordDeg& _return) {
@@ -57,19 +57,9 @@ class webInterfaceHandler : virtual public webInterfaceIf {
     printf("requestNextWaypoint\n");
   }
 
-  bool addWaypoint(const coordDeg& wp) {
+  bool updateWaypoints(const std::vector<coordDeg> & wpts) {
     // Your implementation goes here
-    printf("addWaypoint\n");
-  }
-
-  bool updateWaypoint(const coordDeg& wp, const int32_t no) {
-    // Your implementation goes here
-    printf("updateWaypoint\n");
-  }
-
-  bool removeWaypoints(const int32_t no) {
-    // Your implementation goes here
-    printf("removeWaypoints\n");
+    printf("updateWaypoints\n");
   }
 
   bool resetWaypoints() {
