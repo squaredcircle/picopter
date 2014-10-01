@@ -4,10 +4,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include  <ncurses.h>
+#include <ncurses.h>
+#include <math.h> 
 
-#include <gpio.h>
-#include <flightBoard.h>
 #include <gps_qstarz.h>
 #include "logger.h"
 #include "lawnmower_control.h"	//Really only need distance function
@@ -22,13 +21,6 @@ void startCurses(void);
 
 int main() {
 
-	gpio::startWiringPi();			//Initailises wiringPi
-	FlightBoard fb = FlightBoard();	//Initialises flightboard
-	if(fb.setup() != FB_OK) {
-		cout << "Error setting up flight board. Terminating program." << endl;
-		return -1;
-	}
-	fb.start();
 	GPS gps = GPS();		//Initialises GPS
 	if(gps.setup() != GPS_OK) {
 		cout << "Error setting up gps (check that it has been switched on). Terminating program." << endl;
@@ -38,14 +30,20 @@ int main() {
 
 	Logger distLog = Logger("Distance.txt");
 	GPS_Data data;
-	Pos start, end;
-	double distance;
-	char str[BUFSIZ];
-
-	(&gps)->getGPS_Data(&data);
-	start.lat = (data.latitude);
-	start.lon = (data.longitude);
+	Pos start, current;
+	bool started = false;
+	while(!started) {
+		(&gps)->getGPS_Data(&data);
+		start.lat = (data.latitude);
+		start.lon = (data.longitude);
+		cout << start.lat << " " << start.lon << endl;
+		if ((abs((int)(start.lat) - (-31)) < 1) && (abs((int)(start.lon) - (115)) < 1)) {
+			started = true;
+		}
+		usleep(500000);
+	}
 	double startTime = data.time;
+	usleep(1000000);
 
 	initscr();	//Set up curses
 	start_color();
@@ -65,44 +63,28 @@ int main() {
 	
 	WINDOW *msg_window = newwin(LINES - TITLE_HEIGHT -1, COLUMNS -1, TITLE_HEIGHT, 0);
 	wattron(msg_window, COLOR_PAIR(2));
-
+	
+	double distance;
+	char str[BUFSIZ];
 	while(true) {
 		(&gps)->getGPS_Data(&data);
-		end.lat = (data.latitude);
-		end.lon = (data.longitude);
+		current.lat = (data.latitude);
+		current.lon = (data.longitude);
 
-		distance = calculate_distance(start, end);
+		distance = calculate_distance(start, current);
 		sprintf(str, "%f %f", (data.time)-startTime, distance);
 		distLog.writeLogLine(str, false);
 
 		wclear(msg_window);
 		wprintw(msg_window, "\n");
-		wprintw(msg_window, "Distance:\t%d\n", distance);
-		wprintw(msg_window, "Time:\t\t%f\n", (data.time)-startTime);
+		wprintw(msg_window, "Started at \t%f\t%f\n", start.lat, start.lon);
+		wprintw(msg_window, "Currently at \t%f\t%f\n", current.lat, current.lon);
+		wprintw(msg_window, "\n");
+		wprintw(msg_window, "Distance:\t\t%d m\n", distance);
+		wprintw(msg_window, "Time Difference:\t%f seconds\n", (data.time)-startTime);
 		wprintw(msg_window, "\n");
 		wrefresh(msg_window);
 		usleep(100000);
 	}
 	return 0;
-}
-
-void endCurses(void) {
-	if (curses_started && !isendwin())
-	endwin();
-}
-
-
-void startCurses(void) {
-	if (curses_started) {
-		refresh();
-	}
-	else {
-		initscr();
-		cbreak();
-		noecho();
-		intrflush(stdscr, false);
-		keypad(stdscr, true);
-		atexit(endCurses);
-		curses_started = true;
-	}
 }

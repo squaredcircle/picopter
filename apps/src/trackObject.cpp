@@ -2,6 +2,8 @@
 #include <gpio.h>
 #include <flightBoard.h>
 
+void runTrackObject(FlightBoard*);
+
 int main() {
 	gpio::startWiringPi();			//Initailises wiringPi
 	FlightBoard fb = FlightBoard();	//Initialises flightboard

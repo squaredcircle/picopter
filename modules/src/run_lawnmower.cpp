@@ -15,6 +15,7 @@
 #include <cmt3.h>
 #include <sstream>
 #include <ncurses.h>
+#include <RaspiCamCv.h>
 #include "opencv2/core/core.hpp"
 #include "opencv2/highgui/highgui.hpp"
 #include "camera.h"
@@ -27,10 +28,11 @@
 
 using namespace std;
 
-void run_lawnmower(FlightBoard &fb, GPS &gps, IMU &imu, Pos start, Pos end) {
+void run_lawnmower(FlightBoard &fb, GPS &gps, IMU &imu, RaspiCamCvCapture* capture, Pos start, Pos end) {
 
 	cout << "Starting to run lawnmower..." << endl;
-	
+	//sound(500000);
+
 	ConfigParser::ParamMap lawnParameters;		//Load parameters from config file
     lawnParameters.insert("SPEED_LIMIT", &SPEED_LIMIT);
     lawnParameters.insert("SWEEP_SPACING", &SWEEP_SPACING);
@@ -41,21 +43,6 @@ void run_lawnmower(FlightBoard &fb, GPS &gps, IMU &imu, Pos start, Pos end) {
     lawnParameters.insert("KPz", &KPz);
     lawnParameters.insert("KIz", &KIz);
     ConfigParser::loadParameters("LAWNMOWER", &lawnParameters, CONFIG_FILE);
-    ConfigParser::ParamMap camParameters; 
-    camParameters.insert("HMIN", &HMIN);
-    camParameters.insert("HMAX", &HMAX);
-    camParameters.insert("SMIN", &SMIN);
-    camParameters.insert("SMAX", &SMAX);
-    camParameters.insert("VMINIMUM", &VMINIMUM);
-    camParameters.insert("VMAX", &VMAX);
-    camParameters.insert("WHITE", &WHITE);
-    camParameters.insert("BLACK", &BLACK);
-    camParameters.insert("COLSIZE", &COLSIZE);
-    camParameters.insert("ROWSIZE", &ROWSIZE);
-    camParameters.insert("PIXELTHRESH", &PIXELTHRESH);
-    camParameters.insert("DILATE_ELEMENT", &DILATE_ELEMENT);
-    camParameters.insert("ERODE_ELEMENT", &ERODE_ELEMENT);
-    ConfigParser::loadParameters("CAMERA", &camParameters, CONFIG_FILE);
 	
 	if(imu.setup() != IMU_OK) {		//Check if IMU
         cout << "Error opening imu: Will navigate using GPS only." << endl;
@@ -63,8 +50,7 @@ void run_lawnmower(FlightBoard &fb, GPS &gps, IMU &imu, Pos start, Pos end) {
     }
     IMU_Data compassdata;   
 	GPS_Data data;
-	//Start the camera up & load image of James Oval
-	RaspiCamCvCapture* capture = raspiCamCvCreateCameraCapture(0);
+	//Load image of James Oval
 	Mat oval = imread(OVAL_IMAGE_PATH);
 	if (oval.empty()) {	//Checks for loading errors
 		cout << "Error loading the image file " << OVAL_IMAGE_PATH << " Terminating program." << endl;
@@ -129,6 +115,8 @@ void run_lawnmower(FlightBoard &fb, GPS &gps, IMU &imu, Pos start, Pos end) {
 	
 	for (int i = 0; i < (int)gpsPoints.size(); i++) {
 		flyTo(&fb, &gps, &data, &imu, &compassdata, gpsPoints[i], yaw, &lawnlog, &rawgpslog, capture, i, oval);
+		//sound(2000000);
+		//system("sudo aplay home/pi/picopter/modules/config/shortbeeptone.wav");
 		if (i == 0) {	//Are we at the first point?
 			rawgpslog.clearLog();			//Flush data in there - also removers header
 			oval = imread(OVAL_IMAGE_PATH);	//Wipe any extra lines caused by flying to first point
@@ -137,10 +125,10 @@ void run_lawnmower(FlightBoard &fb, GPS &gps, IMU &imu, Pos start, Pos end) {
 			break;
 		}
 	}
-
 	sprintf(str, "photos/James_Oval_%d.jpg", (int)((data.time)*100));
 	imwrite(str, oval);
 	raspiCamCvReleaseCapture(&capture);
-	cout << "Done!" << endl;
+	cout << "Finished Lawnmower!" << endl;
+	//sound(2000000);
 	lawnlog.writeLogLine("Finished!");
 }

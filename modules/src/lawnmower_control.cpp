@@ -208,7 +208,7 @@ void flyTo(FlightBoard *fbPtr, GPS *gpsPtr, GPS_Data *dataPtr, IMU *imuPtr, IMU_
 		imuPtr->getIMU_Data(compDataPtr);
 		yaw = compDataPtr->yaw;
 	}
-	imshow("Oval Map", oval);	//Constantly updates picture
+	if (usingWindows) imshow("Oval Map", oval);	//Constantly updates picture
 	waitKey(1);
 	start.lat = (dataPtr->latitude);
 	start.lon = (dataPtr->longitude);
@@ -271,10 +271,12 @@ void flyTo(FlightBoard *fbPtr, GPS *gpsPtr, GPS_Data *dataPtr, IMU *imuPtr, IMU_
 				centres[frame][1] = -1;
 			}
 		}
-		namedWindow("RaspiCamTest");
-		imshow("RaspiCamTest", image);
-		namedWindow("Connected Components");
-		imshow("Connected Components", imBin);
+		if (usingWindows) {
+			namedWindow("RaspiCamTest");
+			imshow("RaspiCamTest", image);
+			namedWindow("Connected Components");
+			imshow("Connected Components", imBin);
+		}
 		
 		usleep(LOOP_WAIT);	//Wait for instructions
 		gpsPtr->getGPS_Data(dataPtr);
@@ -286,9 +288,11 @@ void flyTo(FlightBoard *fbPtr, GPS *gpsPtr, GPS_Data *dataPtr, IMU *imuPtr, IMU_
 			logPtr->writeLogLine(str);
 		}
 		updatePicture(oval, dataPtr->latitude, dataPtr->longitude, 0);	
-		namedWindow("Oval Map", CV_WINDOW_AUTOSIZE);
-		imshow("Oval Map", oval);
-		waitKey(1); 
+		if (usingWindows) {
+			namedWindow("Oval Map", CV_WINDOW_AUTOSIZE);
+			imshow("Oval Map", oval);
+			waitKey(1);
+		}
 		start.lat = (dataPtr->latitude);
 		start.lon = (dataPtr->longitude);
 		cout << "Needs to move from: " << dataPtr->latitude << " " << dataPtr->longitude << "\n\tto : " <<end.lat << " " << end.lon << endl;

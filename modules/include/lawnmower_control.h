@@ -16,7 +16,7 @@
 
 #include "lawnmower_structures.h"
 
-
+void sound(int);
 double calculate_distance(Pos, Pos);
 double calculate_bearing(Pos, Pos);
 void setLawnCourse(FB_Data*, double, double[], double, double);

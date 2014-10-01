@@ -9,6 +9,7 @@
 #include <flightBoard.h>
 #include <gps_qstarz.h>		//This will be changed later when Piksi has been integrated
 #include <imu_euler.h>
+#include <RaspiCamCV.h>
 
 #include "run_lawnmower.h"
 
@@ -30,7 +31,7 @@ int main() {
 	GPS gps = GPS();		//Initialises GPS
 	if(gps.setup() != GPS_OK) {
 		cout << "Error setting up gps (check that it has been switched on). Terminating program." << endl;
-	//	return -1;
+		return -1;
 	}
 	gps.start();
 	IMU imu = IMU();		//Initialises compass
@@ -40,9 +41,12 @@ int main() {
 	readPosition(&start, 0);	//First line
 	readPosition(&end, 1);		//Second line
 
+	RaspiCamCvCapture* capture = raspiCamCvCreateCameraCapture(0);
+
 	cout << "Set-up complete" << endl;
 
-	run_lawnmower(fb, gps, imu, start, end);
+	run_lawnmower(fb, gps, imu, capture, start, end);
+	raspiCamCvReleaseCapture(&capture);
 	
 	return 0;
 }

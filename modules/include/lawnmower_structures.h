@@ -26,6 +26,7 @@ typedef struct{		//These are in degrees now.
 
 extern bool exitLawnmower;
 extern bool usingIMU;
+extern bool usingWindows;
 
 extern int SPEED_LIMIT;		//Config file parameters - need to be initialised as globals
 extern double SWEEP_SPACING;
