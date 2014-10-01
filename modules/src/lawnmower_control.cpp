@@ -16,7 +16,7 @@
 #include "camera.h"
 #include "logger.h"
 #include "config_parser.h"
-#include "detectObjects.h"
+//#include "detectObjects.h"
 
 #include "lawnmower_structures.h"
 
@@ -224,8 +224,9 @@ void flyTo(FlightBoard *fbPtr, GPS *gpsPtr, GPS_Data *dataPtr, IMU *imuPtr, IMU_
 	for (int i = 0; i < PAST_POINTS; i++) {
 		pastDistances[i] = 0;
 	}
+	cout << "Past points set..." << endl;
 	
-	Mat bestImg, currentImg, imHSV, imBin, BGRTemp, image;
+	/*Mat bestImg, currentImg, imHSV, imBin, BGRTemp, image;
 	IplImage* view;
 	int nObjects = 0;
 	int centres[OBJECT_LIMIT][2];
@@ -237,15 +238,18 @@ void flyTo(FlightBoard *fbPtr, GPS *gpsPtr, GPS_Data *dataPtr, IMU *imuPtr, IMU_
 		photoTaken[i] = false;
 	}
 	int loopCount = 0;
-	int frame;
+	int frame;*/
+
+	cout << "Starting flight loop..." << endl;
 
 	while (!exitLawnmower && distance > WAYPOINT_RADIUS) {
 		setLawnCourse(&course, distance, pastDistances, bearing, yaw);
+		cout << "Course set" << endl;
 		sprintf(str, "Course set to : {%d (A), %d (E)}", course.aileron, course.elevator);
 		logPtr->writeLogLine(str);
 		fbPtr->setFB_Data(&course);
 		
-		view = raspiCamCvQueryFrame(camPtr);
+		/*view = raspiCamCvQueryFrame(camPtr);
 		BGRTemp = cvarrToMat(view);
 		resize(BGRTemp, image, Size(COLSIZE, ROWSIZE), 0, 0, INTER_LINEAR);
 		cvtColor(image, imHSV, CV_BGR2HSV);
@@ -276,7 +280,7 @@ void flyTo(FlightBoard *fbPtr, GPS *gpsPtr, GPS_Data *dataPtr, IMU *imuPtr, IMU_
 			imshow("RaspiCamTest", image);
 			namedWindow("Connected Components");
 			imshow("Connected Components", imBin);
-		}
+		}*/
 		
 		usleep(LOOP_WAIT);	//Wait for instructions
 		gpsPtr->getGPS_Data(dataPtr);

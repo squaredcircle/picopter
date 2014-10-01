@@ -15,7 +15,7 @@
 #include <cmt3.h>
 #include <sstream>
 #include <ncurses.h>
-#include <RaspiCamCv.h>
+#include <RaspiCamCV.h>
 #include "opencv2/core/core.hpp"
 #include "opencv2/highgui/highgui.hpp"
 #include "camera.h"
