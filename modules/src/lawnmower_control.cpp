@@ -321,9 +321,9 @@ void flyTo(FlightBoard *fbPtr, GPS *gpsPtr, GPS_Data *dataPtr, IMU *imuPtr, IMU_
 			return;
 		}
 	}
-	cout << "Arrived" << endl;
-	sprintf(str, "Arrived at %f %f\n----------------------------------\n", end.lat, end.lon);
 	logPtr->writeLogLine(str);
 	fbPtr->setFB_Data(&stop);
 	usleep(LOCATION_WAIT);
+	cout << "Stopped flying to " << end.lat << " " << end.lon << endl;
+	sprintf(str, "Stopped flying to %f %f\n----------------------------------\n", end.lat, end.lon);
 }

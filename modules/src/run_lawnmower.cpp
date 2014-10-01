@@ -125,10 +125,10 @@ void run_lawnmower(FlightBoard &fb, GPS &gps, IMU &imu, RaspiCamCvCapture* captu
 			break;
 		}
 	}
+
 	sprintf(str, "photos/James_Oval_%d.jpg", (int)((data.time)*100));
 	imwrite(str, oval);
-	raspiCamCvReleaseCapture(&capture);
-	cout << "Finished Lawnmower!" << endl;
+	cout << "Finished Lawnmower run!" << endl;
 	//sound(2000000);
 	lawnlog.writeLogLine("Finished!");
 }
