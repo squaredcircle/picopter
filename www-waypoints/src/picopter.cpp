@@ -37,6 +37,7 @@
 #include "gps_qstarz.h"
 #include "imu_euler.h"
 #include "logger.h"
+#include "RaspiCamCV.h"
 
 #include "control.h"
 #include "waypoints.h"
@@ -56,13 +57,14 @@ using namespace boost;
 Logger		logs = Logger("picopter.log");;
 
 boost::thread thread_1;
+RaspiCamCvCapture*	capture;	
 
 class webInterfaceHandler : virtual public webInterfaceIf {
 	public:
 		FlightBoard	fb;
 		GPS			gps;
 		IMU			imu;
-		
+	
 		deque<coord>	waypoints_list;
 		
 		char		str[BUFSIZ];
@@ -72,6 +74,7 @@ class webInterfaceHandler : virtual public webInterfaceIf {
 		webInterfaceHandler() {
 			cout << "\033[36m[THRIFT]\033[0m Initialising hexacopter systems." << endl;
 			if (!initialise(&fb, &gps, &imu)) terminate();
+			capture = raspiCamCvCreateCameraCapture(0);
 		}
 		
 		/* User Control Functions ******************************************************* */
@@ -85,6 +88,7 @@ class webInterfaceHandler : virtual public webInterfaceIf {
 				
 				cout << "\033[36m[THRIFT]\033[0m Beginning waypoints thread." << endl;
 				
+				exitProgram = false;
 				userState = 1;
 				thread_1 = boost::thread(waypointsFlightLoop, boost::ref(fb), boost::ref(gps), boost::ref(imu), boost::ref(logs), waypoints_list);
 				
@@ -111,6 +115,9 @@ class webInterfaceHandler : virtual public webInterfaceIf {
 				corner2.lat = waypoints_list.back().lat;
 				corner2.lon = waypoints_list.back().lon;
 				
+				usingWindows = false;
+				exitLawnmower = false;
+				state = 10;
 				thread_1 = boost::thread(run_lawnmower, boost::ref(fb), boost::ref(gps), boost::ref(imu), corner1, corner2);
 				return true;
 			} else {
@@ -126,6 +133,8 @@ class webInterfaceHandler : virtual public webInterfaceIf {
 		bool allStop() {
 			cout << "\033[36m[THRIFT]\033[0m All Stop!" << endl;
 			userState = 0;
+			exitLawnmower = true;
+			exitProgram = true;
 			return true;
 		}
 
@@ -138,7 +147,7 @@ class webInterfaceHandler : virtual public webInterfaceIf {
 
 			switch(state) {
 				case 0:
-					ss << "All stop.";
+					ss << "All stop. Standing by.";
 					break;
 				case 1:
 					ss << "Travelling to waypoint " << wp_it + 1 << ".";
@@ -150,7 +159,16 @@ class webInterfaceHandler : virtual public webInterfaceIf {
 					ss << "GPS Error.";
 					break;
 				case 4:
-					ss << "Manual mode engaged.";
+					ss << "Automated control suspended. Remote control engaged.";
+					break;
+				case 10:
+					ss << "Scanning region. Standby.";
+					break;
+				case 11:
+					ss << "Waypoint navigation complete. Standing by.";
+					break;
+				case 12:
+					ss << "Scan complete. Standing by.";
 					break;
 			}
 
@@ -246,6 +264,7 @@ webInterfaceHandler*	handlerInternal = NULL;
  */
 void terminate(int signum) {
 	cout << "\033[33m[THRIFT]\033[0m Signal " << signum << " received. Stopping copter. Exiting." << endl;
+	raspiCamCvReleaseCapture(&capture);
 	handlerInternal->allStop();
 	exitProgram = true;
 	thriftServer->stop();
