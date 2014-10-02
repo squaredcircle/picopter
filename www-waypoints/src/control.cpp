@@ -138,7 +138,7 @@ bool initialise(FlightBoard *fb, GPS *gps, IMU *imu) {
 	/* Initialise GPS */
 	if(gps->setup() != GPS_OK) {
 		cout << "\033[1;31m[COPTER]\033[0m Error setting up GPS. Will retry continuously." << endl;
-		while (gps->setup() != GPS_OK) usleep(1000000);
+		//while (gps->setup() != GPS_OK) usleep(1000);
 	}
 	gps->start();
 	cout << "\033[36m[COPTER]\033[0m GPS detected." << endl;
@@ -148,8 +148,8 @@ bool initialise(FlightBoard *fb, GPS *gps, IMU *imu) {
 		cout << "\033[1;31m[COPTER]\033[0m Error setting up IMU. Will retry continuously." << endl;
 		//while (imu->setup() != IMU_OK) usleep(1000);
 	}
-	//imu->start();
-	//cout << "\033[36m[COPTER]\033[0m IMU detected." << endl;
+	imu->start();
+	cout << "\033[36m[COPTER]\033[0m IMU detected." << endl;
 	
 	return true;
 }
