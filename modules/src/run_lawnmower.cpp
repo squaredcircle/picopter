@@ -63,8 +63,10 @@ void run_lawnmower(FlightBoard &fb, GPS &gps, IMU &imu,/* RaspiCamCvCapture* cap
 	Logger lawnlog = Logger(str);						//Initalise logs
 	sprintf(str, "Lawn_Raw_GPS_%d.txt", (int)(data.time));
 	Logger rawgpslog = Logger(str);						//Easier to read into M/Matica
+	rawgpslog.clearLog();								//Flushes header
 	sprintf(str, "Lawn_Points_%d.txt", (int)(data.time));
 	Logger pointsLog = Logger(str);
+	pointsLog.clearLog();
 	
 	sprintf(str, "Config parameters set to:");	//Record parameters
 	lawnlog.writeLogLine(str);
