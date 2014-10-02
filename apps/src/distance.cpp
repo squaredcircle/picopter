@@ -80,7 +80,7 @@ int main() {
 		wprintw(msg_window, "Started at \t%f\t%f\n", start.lat, start.lon);
 		wprintw(msg_window, "Currently at \t%f\t%f\n", current.lat, current.lon);
 		wprintw(msg_window, "\n");
-		wprintw(msg_window, "Distance:\t\t%d m\n", distance);
+		wprintw(msg_window, "Distance:\t\t%f m\n", distance);
 		wprintw(msg_window, "Time Difference:\t%f seconds\n", (data.time)-startTime);
 		wprintw(msg_window, "\n");
 		wrefresh(msg_window);

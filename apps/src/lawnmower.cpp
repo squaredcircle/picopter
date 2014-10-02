@@ -41,12 +41,12 @@ int main() {
 	readPosition(&start, 0);	//First line
 	readPosition(&end, 1);		//Second line
 
-	RaspiCamCvCapture* capture = raspiCamCvCreateCameraCapture(0);
+	//RaspiCamCvCapture* capture = raspiCamCvCreateCameraCapture(0);
 
 	cout << "Set-up complete" << endl;
 
-	run_lawnmower(fb, gps, imu, capture, start, end);
-	raspiCamCvReleaseCapture(&capture);
+	run_lawnmower(fb, gps, imu,/* capture,*/ start, end);
+	//raspiCamCvReleaseCapture(&capture);
 	
 	return 0;
 }

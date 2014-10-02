@@ -98,6 +98,24 @@ double calculate_bearing(Pos pos1, Pos pos2) {
 	return bearing*(180/PI);	//In degrees
 }
 
+void addMidPoints(Pos start, Pos end, vector<Pos> *list) {
+	int direction = 1;
+	if (end.lat < start.lat) {
+		direction = -1;	//Are we going S->N instead of N->S?
+	}
+	double endDistance = calculate_distance(start, end);	//Great circle distance, but ~ straight line distance for close points
+	int points = (endDistance/POINT_SPACING);
+	double fraction, distance, angle;
+	for (int i = 1; i < points; i++) {
+		fraction = (double)i/points;
+		distance = fraction*endDistance;
+		angle = distance/(RADIUS_OF_EARTH)*(180/PI);	//Both points have the same longitude
+		Pos position;
+		position.lat = start.lat + (double)direction*angle;
+		position.lon = start.lon;
+		list->push_back(position);
+	}
+}
 
 void populateVector(Pos start, Pos end, vector<Pos> *list) {
 	int direction = 1;
@@ -119,7 +137,6 @@ void populateVector(Pos start, Pos end, vector<Pos> *list) {
 	}
 	list->push_back(end);
 }
-
 
 void populateMainVector(vector<Pos> *list, Logger *logPtr, Pos start, Pos end) {
 	char str[BUFSIZ];
@@ -146,29 +163,31 @@ void populateMainVector(vector<Pos> *list, Logger *logPtr, Pos start, Pos end) {
 	vector<Pos> sideA;
 	vector<Pos> sideB;
 	populateVector(corners[0], corners[1], &sideA);
-	for(int i = 0; i < (int)sideA.size(); i++) {
+	populateVector(corners[2], corners[3], &sideB);
+	/*for(int i = 0; i < (int)sideA.size(); i++) {
 		sprintf(str, "Point %d of sideA is %f %f", i+1, (sideA[i].lat), (sideA[i].lon));
 		logPtr->writeLogLine(str);
 	}
-	populateVector(corners[2], corners[3], &sideB);
 	for(int i = 0; i < (int)sideB.size(); i++) {
 		sprintf(str, "Point %d of sideB is %f %f", i+1, (sideB[i].lat), (sideB[i].lon));
 		logPtr->writeLogLine(str);
-	}
+	}*/
 	int minVectorLength = sideA.size();
-	if ((int)sideB.size() < minVectorLength) minVectorLength = sideB.size(); //Checks which is smallest
+	if ((int)sideB.size() < minVectorLength) minVectorLength = sideB.size(); //Checks which is smallest, but should be same
 	
 	for (int i = 0; i < minVectorLength; i++) {
 		if (i%2 == 0) {	//Even?
 			//sprintf(str, "%d %d- Even", i,minVectorLength);
 			//lawnlog.writeLogLine(str);
 			list->push_back(sideA[i]);
+			addMidPoints(sideA[i], sideB[i], list);
 			list->push_back(sideB[i]);
 		}
 		else if (i%2 == 1) {//Odd?
 			//sprintf(str, "%d %d - Odd", i, minVectorLength);
 			//lawnlog.writeLogLine(str);
 			list->push_back(sideB[i]);
+			addMidPoints(sideB[i], sideA[i], list);
 			list->push_back(sideA[i]);
 		}
 	}
@@ -199,7 +218,7 @@ double determineBearing(FlightBoard *fbPtr, GPS *gpsPtr, GPS_Data *dataPtr) {
 	return yaw;
 }
 
-void flyTo(FlightBoard *fbPtr, GPS *gpsPtr, GPS_Data *dataPtr, IMU *imuPtr, IMU_Data *compDataPtr, Pos end, double yaw, Logger *logPtr, Logger *rawLogPtr, RaspiCamCvCapture *camPtr, int index, Mat oval) {
+void flyTo(FlightBoard *fbPtr, GPS *gpsPtr, GPS_Data *dataPtr, IMU *imuPtr, IMU_Data *compDataPtr, Pos end, double yaw, Logger *logPtr, Logger *rawLogPtr,/* RaspiCamCvCapture *camPtr,*/ int index, Mat oval) {
 	FB_Data stop = {0, 0, 0, 0};
 	FB_Data course = {0, 0, 0, 0};
 	Pos start;

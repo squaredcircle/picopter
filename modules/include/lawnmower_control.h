@@ -20,10 +20,11 @@ void sound(int);
 double calculate_distance(Pos, Pos);
 double calculate_bearing(Pos, Pos);
 void setLawnCourse(FB_Data*, double, double[], double, double);
+void addMidPoints(Pos, Pos, std::vector<Pos>*);
 void populateVector(Pos, Pos, std::vector<Pos>*);
 void populateMainVector(std::vector<Pos>*, Logger*, Pos, Pos);
-void addPoints(std::vector<Pos>*, Pos, Pos, int);
-void flyTo(FlightBoard*, GPS*, GPS_Data*, IMU*, IMU_Data*, Pos, double, Logger*, Logger* , RaspiCamCvCapture*, int, cv::Mat);
+//void addPoints(std::vector<Pos>*, Pos, Pos, int);
+void flyTo(FlightBoard*, GPS*, GPS_Data*, IMU*, IMU_Data*, Pos, double, Logger*, Logger*,/* RaspiCamCvCapture*,*/ int, cv::Mat);
 double determineBearing(FlightBoard*, GPS*, GPS_Data*);
 
 void captureImage(int, GPS_Data*);

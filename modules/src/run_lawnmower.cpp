@@ -28,7 +28,7 @@
 
 using namespace std;
 
-void run_lawnmower(FlightBoard &fb, GPS &gps, IMU &imu, RaspiCamCvCapture* capture, Pos start, Pos end) {
+void run_lawnmower(FlightBoard &fb, GPS &gps, IMU &imu,/* RaspiCamCvCapture* capture,*/ Pos start, Pos end) {
 
 	cout << "Starting to run lawnmower..." << endl;
 	//sound(500000);
@@ -50,6 +50,7 @@ void run_lawnmower(FlightBoard &fb, GPS &gps, IMU &imu, RaspiCamCvCapture* captu
     }
     IMU_Data compassdata;   
 	GPS_Data data;
+	gps.getGPS_Data(&data);
 	//Load image of James Oval
 	Mat oval = imread(OVAL_IMAGE_PATH);
 	if (oval.empty()) {	//Checks for loading errors
@@ -57,10 +58,14 @@ void run_lawnmower(FlightBoard &fb, GPS &gps, IMU &imu, RaspiCamCvCapture* captu
 		return;
 	}
 
-	Logger lawnlog = Logger("Lawn.log");	//Initalise logs
-	Logger rawgpslog = Logger("Lawn_Raw_GPS.txt");	//Easier to read into M/Matica
-	Logger pointsLog = Logger("Lawn_Points.txt");
 	char str[BUFSIZ];
+	sprintf(str, "Lawn_%d.log", (int)(data.time));
+	Logger lawnlog = Logger(str);						//Initalise logs
+	sprintf(str, "Lawn_Raw_GPS_%d.txt", (int)(data.time));
+	Logger rawgpslog = Logger(str);						//Easier to read into M/Matica
+	sprintf(str, "Lawn_Points_%d.txt", (int)(data.time));
+	Logger pointsLog = Logger(str);
+	
 	sprintf(str, "Config parameters set to:");	//Record parameters
 	lawnlog.writeLogLine(str);
 	sprintf(str, "\tSPEED_LIMIT\t%d", SPEED_LIMIT);
@@ -114,7 +119,7 @@ void run_lawnmower(FlightBoard &fb, GPS &gps, IMU &imu, RaspiCamCvCapture* captu
 	cout << "Location and Orienation determined" << endl;
 	
 	for (int i = 0; i < (int)gpsPoints.size(); i++) {
-		flyTo(&fb, &gps, &data, &imu, &compassdata, gpsPoints[i], yaw, &lawnlog, &rawgpslog, capture, i, oval);
+		flyTo(&fb, &gps, &data, &imu, &compassdata, gpsPoints[i], yaw, &lawnlog, &rawgpslog,/* capture,*/ i, oval);
 		//sound(2000000);
 		//system("sudo aplay home/pi/picopter/modules/config/shortbeeptone.wav");
 		if (i == 0) {	//Are we at the first point?

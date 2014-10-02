@@ -11,7 +11,7 @@ typedef struct{		//These are in degrees now.
 	double lon;
 } Pos;
 
-void run_lawnmower(FlightBoard &, GPS &, IMU &, RaspiCamCvCapture*, Pos, Pos);
+void run_lawnmower(FlightBoard &, GPS &, IMU &,/* RaspiCamCvCapture*,*/ Pos, Pos);
 
 extern bool exitLawnmower;
 extern bool usingWindows;
