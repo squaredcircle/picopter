@@ -30,7 +30,7 @@ int main() {
 
 	Logger distLog = Logger("Distance.txt");
 	GPS_Data data;
-	Pos start, current;
+	Pos start, currentLat, currentLon;
 	bool started = false;
 	while(!started) {
 		(&gps)->getGPS_Data(&data);
@@ -64,23 +64,27 @@ int main() {
 	WINDOW *msg_window = newwin(LINES - TITLE_HEIGHT -1, COLUMNS -1, TITLE_HEIGHT, 0);
 	wattron(msg_window, COLOR_PAIR(2));
 	
-	double distance;
+	double latDist, lonDist;
 	char str[BUFSIZ];
+	currentLat.lon = start.lon;
+	currentLon.lat = start.lat;
 	while(true) {
 		(&gps)->getGPS_Data(&data);
-		current.lat = (data.latitude);
-		current.lon = (data.longitude);
+		currentLat.lat = (data.latitude);
+		currentLon.lon = (data.longitude);
 
-		distance = calculate_distance(start, current);
-		sprintf(str, "%f %f", (data.time)-startTime, distance);
+		latDist = calculate_distance(start, currentLat);
+		lonDist = calculate_distance(start, currentLon);
+		sprintf(str, "%f %f %f", (data.time)-startTime, latDist, lonDist);
 		distLog.writeLogLine(str, false);
 
 		wclear(msg_window);
 		wprintw(msg_window, "\n");
 		wprintw(msg_window, "Started at \t%f\t%f\n", start.lat, start.lon);
-		wprintw(msg_window, "Currently at \t%f\t%f\n", current.lat, current.lon);
+		wprintw(msg_window, "Currently at \t%f\t%f\n", currentLat.lat, currentLon.lon);
 		wprintw(msg_window, "\n");
-		wprintw(msg_window, "Distance:\t\t%f m\n", distance);
+		wprintw(msg_window, "Latitude Distance:\t\t%f m\n", latDist);
+		wprintw(msg_window, "Longitude Distance:\t\t%f m\n", lonDist);
 		wprintw(msg_window, "Time Difference:\t%f seconds\n", (data.time)-startTime);
 		wprintw(msg_window, "\n");
 		wrefresh(msg_window);
