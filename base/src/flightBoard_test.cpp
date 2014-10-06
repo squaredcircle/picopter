@@ -85,7 +85,7 @@ int main(int argc, char* argv[]) {
 			}
 			
 		} else {	//not first time
-			usleep(PAUSE_DURATION);
+			delay(PAUSE_DURATION);
 		}
 	}
     fb.stop();

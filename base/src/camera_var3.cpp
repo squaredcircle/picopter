@@ -1,6 +1,10 @@
-#include "camera_var2.h"
+//v1.1	4-10-2014	BAX
+//Changed names.  Added sexy mutexs.
 
-CAMERA_VAR2::CAMERA_VAR2() {
+
+#include "camera_var3.h"
+
+CAMERA_VAR3::CAMERA_VAR3() {
 	this->ready = false;
 	this->running = false;
 	
@@ -13,7 +17,9 @@ CAMERA_VAR2::CAMERA_VAR2() {
 	this->MIN_VAL		= 95;
 	this->MAX_VAL		= 255;
 	this->PIXLE_THRESHOLD	= 60;
-    this->PIXLE_SKIP        = 3;
+    this->PIXLE_SKIP        = 2;
+    
+    this->BOX_SIZE		= 1.8;
     
     this->THREAD_SLEEP_TIME = 0;
 	
@@ -32,11 +38,11 @@ CAMERA_VAR2::CAMERA_VAR2() {
 	this->imageFileName = "image.jpg";
 }
 
-CAMERA_VAR2::CAMERA_VAR2(const CAMERA_VAR2& orig) {}
-CAMERA_VAR2::~CAMERA_VAR2() {}
+CAMERA_VAR3::CAMERA_VAR3(const CAMERA_VAR3& orig) {}
+CAMERA_VAR3::~CAMERA_VAR3() {}
 
 
-int CAMERA_VAR2::setup() {
+int CAMERA_VAR3::setup() {
 	if(ready) return -1;
 	if(running) return -1;
 	
@@ -57,7 +63,7 @@ int CAMERA_VAR2::setup() {
 	return 0;
 }
 
-int CAMERA_VAR2::setup(std::string fileName) {
+int CAMERA_VAR3::setup(std::string fileName) {
     ConfigParser::ParamMap parameters;
     
     parameters.insert("MIN_HUE", &MIN_HUE);
@@ -67,19 +73,21 @@ int CAMERA_VAR2::setup(std::string fileName) {
     parameters.insert("MIN_VAL", &MIN_VAL);
     parameters.insert("MAX_VAL", &MAX_VAL);
     
+    parameters.insert("BOX_SIZE", &BOX_SIZE);
+    
     parameters.insert("PIXLE_THRESHOLD", &PIXLE_THRESHOLD);
     parameters.insert("PIXLE_SKIP", &PIXLE_SKIP);
     parameters.insert("THREAD_SLEEP_TIME", &THREAD_SLEEP_TIME);
     
-    ConfigParser::loadParameters("CAMERA_VAR2", &parameters, fileName);
+    ConfigParser::loadParameters("CAMERA_VAR3", &parameters, fileName);
 	return setup();
 }
 
-int CAMERA_VAR2::start() {
+int CAMERA_VAR3::start() {
 	if(!ready) return -1;
 	if(running) return -1;
 	
-	process_thread = new boost::thread(&CAMERA_VAR2::processImages, this);
+	process_thread = new boost::thread(&CAMERA_VAR3::processImages, this);
 	process_thread->detach();
 	
 	running = true;
@@ -87,20 +95,20 @@ int CAMERA_VAR2::start() {
 	return 0;
 }
 
-int CAMERA_VAR2::stop() {
+int CAMERA_VAR3::stop() {
 	if(!running) return -1;
 	
 	running = false;
+	boost::mutex::scoped_lock lock(process_mutex);
 	//log->writeLogLine("Camera stopped.");
 	return 0;
 }
 
-int CAMERA_VAR2::close() {
+int CAMERA_VAR3::close() {
     if(running) stop();
 	if(running) return -1;
 	if(!ready) return -1;
 	
-	waitKey(200);
 	raspiCamCvReleaseCapture(&capture);
 	ready = false;
 	//log->writeLogLine("Connection to Camera closed");
@@ -109,39 +117,44 @@ int CAMERA_VAR2::close() {
 
 
 //this thread does all the work
-void CAMERA_VAR2::processImages() {
+void CAMERA_VAR3::processImages() {
 	time(&start_time);
 	frame_counter = 0;
 	while(running) {
+		process_mutex.lock();
 		
 		IplImage* image_raspi = raspiCamCvQueryFrame(capture);	//MAYBE DO THIS BETTER
-		Mat image(image_raspi);
+		cv::Mat image(image_raspi);
 		
-		if(getRedObjectCentre(image, lookup_reduce_colourspace, lookup_threshold, &redObjectDetected, &redObject, &window)) {
-			drawObjectMarker(image, Point(redObject.x+image.cols/2, -redObject.y+image.rows/2));
+		if(findObject(image, lookup_reduce_colourspace, lookup_threshold, &redObjectDetected, &redObject, &window)) {
+			CAMERA_COMMON::drawObjectMarker(image, cv::Point(redObject.x+image.cols/2, -redObject.y+image.rows/2), cv::Scalar(0, 0, 0));
 		}
-		drawBox(image, window);
-		drawCrosshair(image);
-        imshow("Image", image);
+		CAMERA_COMMON::drawBox(image, cv::Point(window.x, window.y), cv::Point(window.x+window.w, window.y+window.l), cv::Scalar(255, 255, 255));
+		CAMERA_COMMON::drawCrosshair(image);
+        cv::imshow("Image", image);
         
 		if(takePhotoThisCycle) {
 			//imwrite(std::string("photos/") + imageFileName, image);
-			imwrite(imageFileName, image);
+			cv::imwrite(imageFileName, image);
 			takePhotoThisCycle = false;
 		}
 		frame_counter++;
-		waitKey(1);
+		cv::waitKey(1);
+		
+		process_mutex.unlock();
         if(THREAD_SLEEP_TIME > 0) {
             boost::this_thread::sleep(boost::posix_time::milliseconds(THREAD_SLEEP_TIME));
         }
 	}
 }
 
-bool CAMERA_VAR2::objectDetected() {
+bool CAMERA_VAR3::objectDetected() {
+	boost::mutex::scoped_lock lock(process_mutex);
 	return redObjectDetected;
 }
 
-int CAMERA_VAR2::getObjectLocation(ObjectLocation *data) {
+int CAMERA_VAR3::getObjectLocation(ObjectLocation *data) {
+	boost::mutex::scoped_lock lock(process_mutex);
 	data->x = redObject.x;
 	data->y = redObject.y;
     
@@ -152,18 +165,20 @@ int CAMERA_VAR2::getObjectLocation(ObjectLocation *data) {
     }
 }
 
-double CAMERA_VAR2::getFramerate() {
+double CAMERA_VAR3::getFramerate() {
+	boost::mutex::scoped_lock lock(process_mutex);
 	time(&end_time);
 	return frame_counter/difftime(end_time, start_time);
 }
 
-void CAMERA_VAR2::takePhoto(std::string fileName) {
+void CAMERA_VAR3::takePhoto(std::string fileName) {
+	boost::mutex::scoped_lock lock(process_mutex);
 	if(!fileName.empty()) imageFileName = fileName;
 	takePhotoThisCycle = true;
 }
 
 
-bool CAMERA_VAR2::getRedObjectCentre(Mat& Isrc, const uchar table_reduce_colorspace[],  const uchar table_threshold[][LOOKUP_SIZE][LOOKUP_SIZE], bool *redObjectDetected, ObjectLocation *redObject, CamWindow *window) {
+bool CAMERA_VAR3::findObject(cv::Mat& Isrc, const uchar table_reduce_colorspace[],  const uchar table_threshold[][LOOKUP_SIZE][LOOKUP_SIZE], bool *redObjectDetected, ObjectLocation *redObject, CamWindow *window) {
 	int rowStart = window->y;
 	int rowEnd = rowStart + window->l;
     int colStart = window->x;
@@ -206,8 +221,8 @@ bool CAMERA_VAR2::getRedObjectCentre(Mat& Isrc, const uchar table_reduce_colorsp
         //int l = (int)sqrt((a+b+temp)/2);
         //int w = (int)sqrt((a+b-temp)/2);
         
-        int l = (int)(1.8*PIXLE_SKIP*sqrt(M00));
-        //int w = (int)(1.8*PIXLE_SKIP*sqrt(M00));
+        int l = (int)(BOX_SIZE*PIXLE_SKIP*sqrt(M00));
+        //int w = (int)(BOX_SIZE*PIXLE_SKIP*sqrt(M00));
         int w = l;
         
         redObject->x = M10/M00 - Isrc.cols/2;
@@ -225,45 +240,5 @@ bool CAMERA_VAR2::getRedObjectCentre(Mat& Isrc, const uchar table_reduce_colorsp
         window->y = 0;
         window->l = Isrc.rows;
 		return false;
-	}
-}
-
-void CAMERA_VAR2::drawObjectMarker(Mat img, Point centre) {
-	int thickness = 3;
-	int lineType = 8;
-	Point cross_points[4];
-	cross_points[0] = Point(centre.x,	0);
-	cross_points[1] = Point(centre.x,	img.rows);
-	cross_points[2] = Point(0,			centre.y);
-	cross_points[3] = Point(img.cols,	centre.y);
-	for(int i=0; i<4; i+=2) {
-		line(img, cross_points[i], cross_points[i+1], Scalar(0, 0, 0), thickness, lineType);
-	}
-}
-
-void CAMERA_VAR2::drawCrosshair(Mat img) {
-	int thickness = 3;
-	int lineType = 8;
-	int size = 20;
-	Point cross_points[4];
-	cross_points[0] = Point(img.cols/2 - size,	img.rows/2);
-	cross_points[1] = Point(img.cols/2 + size,	img.rows/2);
-	cross_points[2] = Point(img.cols/2,	img.rows/2 - size);
-	cross_points[3] = Point(img.cols/2,	img.rows/2 + size);
-	for(int i=0; i<4; i+=2) {
-		line(img, cross_points[i], cross_points[i+1], Scalar(255, 255, 255), thickness, lineType);
-	}
-}
-
-void CAMERA_VAR2::drawBox(Mat img, CamWindow window) {
-	int thickness = 3;
-	int lineType = 8;
-	Point box_points[4];
-	box_points[0] = Point(window.x,	window.y);
-	box_points[1] = Point(window.x + window.w,	window.y);
-	box_points[2] = Point(window.x + window.w,	window.y + window.l);
-	box_points[3] = Point(window.x,	window.y + window.l);
-	for(int i=0; i<4; i++) {
-		line(img, box_points[i], box_points[(i+1)%4], Scalar(255, 255, 255 ), thickness, lineType);
 	}
 }

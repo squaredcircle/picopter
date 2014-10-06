@@ -1,6 +1,6 @@
 //Author:	Michael Baxter 	20503664@student.uwa.edu.au
-//Date:		15-8-2014
-//Version:	v1.0
+//Date:		3-10-2014
+//Version:	v1.1
 //
 //Desciption:	Class used for xsens.  Starts imu data reading thread which saves data in this object.
 //
@@ -10,9 +10,15 @@
 #ifndef __IMU_EULER_H_INCLUDED__
 #define __IMU_EULER_H_INCLUDED__
 
+#include <string>
+#include <sstream>
+#include <iostream>
+
 #include "cmt3.h"
-#include "logger.h"
 #include <boost/thread.hpp>
+#include <boost/lexical_cast.hpp>
+#include "logger.h"
+#include "config_parser.h"
 
 #define IMU_DEVICE_FILE "/dev/ttyUSB0"
 #define IMU_BAUD_RATE B115200
@@ -35,12 +41,15 @@ public:
 	virtual ~IMU(void);
 	
 	int setup(void);
+	int setup(std::string);
 	int start(void);
 	int stop(void);
 	int close(void);
 	
 	int getIMU_Data(IMU_Data*);
 private:
+	int THREAD_SLEEP_TIME, TIMEOUT; //Configurable parameters
+	
 	IMU_Data currentData;
 	bool ready;
 	bool running;
@@ -48,6 +57,7 @@ private:
 	
 	void uploadData(void);
 	boost::thread* uploader_thread;
+	boost::mutex uploader_mutex;
 	
 	Cmt3* device;
 	Packet* msg;

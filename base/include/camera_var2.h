@@ -1,10 +1,10 @@
 /**
  * @file    camera_var2.h
  * @author	Michael Baxter	<20503664@student.uwa.edu.au>
- * @date	11-9-2014
- * @version	1.0
+ * @date	4-10-2014
+ * @version	1.1
  * 
- * Camera class 2nd variation - camshift algorithm.
+ * Camera class 2nd variation - detect two different coloured objects (red and blue).
  * 
  **/
  
@@ -13,13 +13,6 @@
 #define __CAMERA_VAR2_INCLUDED__
 
 #include "camera.h"
-
-typedef struct {
-	int x;
-	int y;
-    int l;
-    int w;
-} CamWindow;
 
 class CAMERA_VAR2 {
 public:
@@ -34,16 +27,19 @@ public:
 	int stop(void);
 	int close(void);
 	
-	bool objectDetected();
+	bool objectOneDetected();
+    bool objectTwoDetected();
 
-	int getObjectLocation(ObjectLocation*);
+	int getObjectOneLocation(ObjectLocation*);
+    int getObjectTwoLocation(ObjectLocation*);
 
 	double getFramerate();
 	void takePhoto(std::string);
     
 private:
-	int MIN_HUE, MAX_HUE, MIN_SAT, MAX_SAT, MIN_VAL, MAX_VAL, PIXLE_THRESHOLD, PIXLE_SKIP, THREAD_SLEEP_TIME;
-
+    int MIN_HUE1, MAX_HUE1, MIN_SAT1, MAX_SAT1, MIN_VAL1, MAX_VAL1, PIXLE_THRESHOLD1;
+    int MIN_HUE2, MAX_HUE2, MIN_SAT2, MAX_SAT2, MIN_VAL2, MAX_VAL2, PIXLE_THRESHOLD2;
+    int PIXLE_SKIP, THREAD_SLEEP_TIME;
     
 	bool ready;
 	bool running;
@@ -51,31 +47,29 @@ private:
 	
 	void processImages(void);
 	boost::thread* process_thread;
+	boost::mutex process_mutex;
 	
 
-	uchar lookup_threshold[LOOKUP_SIZE][LOOKUP_SIZE][LOOKUP_SIZE];
+	uchar lookup_threshold_red[LOOKUP_SIZE][LOOKUP_SIZE][LOOKUP_SIZE];
+	uchar lookup_threshold_blue[LOOKUP_SIZE][LOOKUP_SIZE][LOOKUP_SIZE];
 	uchar lookup_reduce_colourspace[CHAR_SIZE];
 
 	
-	bool getRedObjectCentre(Mat& Isrc, const uchar lookup_reduce_colorspace[], const uchar lookup_threshold_red[][LOOKUP_SIZE][LOOKUP_SIZE], bool *redObjectDetected, ObjectLocation *redObject, CamWindow *window);
+	void findObjects(cv::Mat& Isrc, const uchar lookup_reduce_colorspace[], const uchar lookup_threshold_red[][LOOKUP_SIZE][LOOKUP_SIZE], bool *redObjectDetected, ObjectLocation *redObject, const uchar lookup_threshold_blue[][LOOKUP_SIZE][LOOKUP_SIZE], bool *blueObjectDetected, ObjectLocation *blueObject);
     
 	ObjectLocation redObject;
 	bool redObjectDetected;
-	CamWindow window;
+    ObjectLocation blueObject;
+	bool blueObjectDetected;
 	
 	RaspiCamCvCapture* capture;
 	
 	time_t start_time, end_time;
 	int frame_counter;
 	
-	void drawObjectMarker(Mat img, Point centre);
-	void drawCrosshair(Mat img);
-	void drawBox(Mat img, CamWindow window);
-	
 	bool takePhotoThisCycle;
 	std::string imageFileName;
 };
 
 #endif// __CAMERA_VAR2_INCLUDED__
-
 

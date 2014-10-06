@@ -1,3 +1,6 @@
+//v1.4	5-10-2014	BAX
+//Added buzzer.
+
 //v1.4	9-9-2014	BAX
 //Fixed the gimbal angle ->  pwm scaling equation
 //Documented code.
@@ -8,10 +11,6 @@
 //v1.2	1-8-2014	OMID
 //PWMs calibrated.
 
-#include <cstdio>	//sprintf
-#include <cstdlib>	//system
-
-#include <wiringPi.h>
 
 #include "gpio.h"
 
@@ -23,6 +22,7 @@ int gpio::startWiringPi() {
 	if(!gpio::wiringPiRunning) {
 		wiringPiSetup();
 		pinMode(MODE_PIN, INPUT);
+		pinMode(BUZZER_PIN, OUTPUT);
 		gpio::wiringPiRunning = true;
 		return 0;
 	} else {
@@ -46,6 +46,14 @@ bool gpio::isAutoMode() {
 		return yesAuto;
 	} else {
 		return noAuto;
+	}
+}
+
+void gpio::setBuzzer(bool buzzerOn) {
+	if(buzzerOn) {
+		digitalWrite(BUZZER_PIN, HIGH);
+	} else {
+		digitalWrite(BUZZER_PIN, LOW);
 	}
 }
 

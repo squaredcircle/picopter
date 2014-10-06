@@ -1,8 +1,6 @@
-#include <string>
-#include <sstream>
-#include <iostream>
+//v1.7	3-10-2014	BAX
+//Got mi some mutex.  Also can config now.  Also also decreased frequency.
 
-#include <boost/lexical_cast.hpp>
 
 #include "imu_euler.h"
 
@@ -13,6 +11,9 @@ IMU::IMU() {
 	this->currentData.pitch		= -1;
 	this->currentData.roll		= -1;
 	this->currentData.yaw		= -1;
+	
+	this->THREAD_SLEEP_TIME = 5;   //milliseconds
+    this->TIMEOUT = 500; 			 //milliseconds
 }
 
 IMU::IMU(const IMU& orig) {}
@@ -32,14 +33,13 @@ int IMU::setup() {
 		log->writeLogLine("Unable to open port.");
 		return -1;
 	}
-	
-	int timeout = 100;
-	if(device -> setTimeoutMeasurement(timeout)  != XRV_OK) {
+
+	if(device -> setTimeoutMeasurement(TIMEOUT)  != XRV_OK) {
 		log->writeLogLine("Unable to set timeout.");
 		return -1;
 	}
 	
-	CmtDeviceMode mode(CMT_OUTPUTMODE_ORIENT, CMT_OUTPUTSETTINGS_TIMESTAMP_SAMPLECNT | CMT_OUTPUTSETTINGS_ORIENTMODE_EULER, 100);
+	CmtDeviceMode mode(CMT_OUTPUTMODE_ORIENT, CMT_OUTPUTSETTINGS_TIMESTAMP_SAMPLECNT | CMT_OUTPUTSETTINGS_ORIENTMODE_EULER, 10);
     if(device -> setDeviceMode(mode, false, CMT_DID_BROADCAST)  != XRV_OK) {
 		log->writeLogLine("Unable to set mode.");
 		return -1;
@@ -53,6 +53,14 @@ int IMU::setup() {
 	ready = true;
 	log->writeLogLine("IMU set up sucessfully.");
 	return 0;
+}
+
+int IMU::setup(std::string fileName) {
+    ConfigParser::ParamMap parameters;
+    parameters.insert("THREAD_SLEEP_TIME", &THREAD_SLEEP_TIME);
+    parameters.insert("TIMEOUT", &TIMEOUT);
+    ConfigParser::loadParameters("IMU", &parameters, fileName);
+	return setup();
 }
 
 int IMU::start() {
@@ -71,6 +79,7 @@ int IMU::stop() {
 	if(!running) return -1;
 	
 	running = false;
+	boost::mutex::scoped_lock lock(uploader_mutex);
 	log->writeLogLine("IMU stopped.");
 	return 0;
 }
@@ -92,18 +101,25 @@ void IMU::uploadData() {
 	CmtEuler euler_data;
 	char strBuf[128];
 	while(running) {
+		uploader_mutex.lock();
 		if(device -> waitForDataMessage(msg) != XRV_OK) {
 			log->writeLogLine("Unable to get message");
 		} else {
 			euler_data = msg->getOriEuler();
+
 			currentData.pitch = euler_data.m_pitch;
 			currentData.roll = euler_data.m_roll;
 			currentData.yaw = -euler_data.m_yaw;
 			
 			sprintf(strBuf, "Pitch:\t%3.3f, Roll:\t%3.3f, Yaw:\t%3.3f.", currentData.pitch, currentData.roll, currentData.yaw);					
 			log->writeLogLine(std::string(strBuf));
+
 		}
-		boost::this_thread::sleep(boost::posix_time::milliseconds(10));
+		uploader_mutex.unlock();
+		
+        if(THREAD_SLEEP_TIME > 0) {
+            boost::this_thread::sleep(boost::posix_time::milliseconds(THREAD_SLEEP_TIME));
+       	}
 	}
 }
 
@@ -112,6 +128,7 @@ void IMU::uploadData() {
 int IMU::getIMU_Data(IMU_Data *data) {
 	if(!running) return -1;
 	
+	boost::mutex::scoped_lock lock(uploader_mutex);
 	data->pitch = currentData.pitch;
 	data->roll = currentData.roll;
 	data->yaw = currentData.yaw;

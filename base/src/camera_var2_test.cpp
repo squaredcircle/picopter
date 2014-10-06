@@ -1,11 +1,11 @@
 #include <iostream>
 #include <string>
+#include <boost/thread.hpp>
 #include <csignal>
 
 using namespace std;
 
 #include "camera_var2.h"
-#include <wiringPi.h>
 
 
 bool exitProgram = false;
@@ -31,16 +31,23 @@ int main(int argc, char* argv[]) {
 	ObjectLocation object_data;
 	
 	while(!exitProgram) {
-		if(cam.objectDetected()) {
-			cam.getObjectLocation(&object_data);
+		if(cam.objectOneDetected()) {
+			cam.getObjectOneLocation(&object_data);
 			cout << "Red object detected at: " << object_data.x << ", " << object_data.y << endl;
 		} else {
 			cout << "No red objects. " << endl;
 		}
+		if(cam.objectTwoDetected()) {
+			cam.getObjectTwoLocation(&object_data);
+			cout << "Blue object detected at: " << object_data.x << ", " << object_data.y << endl;
+		} else {
+			cout << "No blue objects. " << endl;
+		}
 		
-		cout << "\t\t\t\t" << "Framerate: " << cam.getFramerate() << endl;
+		cout << "Framerate: " << cam.getFramerate() << endl;
+		cout << endl;
 		
-		delay(500);
+		boost::this_thread::sleep(boost::posix_time::milliseconds(500));
 	}
 	cam.stop();
 	cam.close();

@@ -1,8 +1,8 @@
 /**
  * @file    gpio.h
  * @author	Michael Baxter	<20503664@student.uwa.edu.au>
- * @date	9-9-2014
- * @version	1.4
+ * @date	5-10-2014
+ * @version	1.5
  * 
  * Wrapper for the GPIO interfaces: wiringPi and servoblaser.
  * 
@@ -14,12 +14,16 @@
 #ifndef __GPIO_H_INCLUDED__
 #define __GPIO_H_INCLUDED__
 
+#include <cstdio>	//sprintf
+#include <cstdlib>	//system
 
-#define SERVOBLASTER_PATH "/home/pi/lib/PiBits/ServoBlaster/user/servod"
+#include <wiringPi.h>
+#define SERVOBLASTER_PATH "/home/pi/PiBits/ServoBlaster/user/servod"
 
 #define GPIO_OK 0
 
 #define MODE_PIN 5
+#define BUZZER_PIN 6
 
 #define AILERON_CHANNEL 0
 #define AILERON_PIN_PHYSICAL 11
@@ -44,8 +48,8 @@
 
 #define GIMBAL_CHANNEL 3
 #define GIMBAL_PIN_PHYSICAL 16
-#define GIMBAL_PWM_LOW 110
-#define GIMBAL_PWM_HIGH 190
+#define GIMBAL_PWM_LOW 95			//Calibrated on October 5th
+#define GIMBAL_PWM_HIGH 210
 #define GIMBAL_ANGLE_LOW 0
 #define GIMBAL_ANGLE_HIGH 90
 
@@ -80,12 +84,22 @@ namespace gpio {
      *
 	 * Checks whether copter is in auto mode or not.
 	 * 
-	 * This function requires the wiringPi daemon to be running berfore use.  Be sure to run startWiringPi() before use.
+	 * This function requires the wiringPi daemon to be running berfore use.  Be sure to run startWiringPi() before use.  Or use the wrapper.
 	 * 
 	 * @return	strue if the copter is in autonomous mode, false otherwise;
 	 **/
 	bool isAutoMode(void);
 		
+	/**
+     * @fn void setBuzzer(bool buzzerOn)
+     *
+	 * Turns the buzzer on or off.
+	 * 
+	 * This function requires the wiringPi daemon to be running berfore use.  Be sure to run startWiringPi() before use.  Or use the wrapper.
+	 * 
+	 * @param	buzzerOn	boolean to turn the buzzer on or off. (true = on or false = off).
+	 **/
+	void setBuzzer(bool);
 	
 	/**
      *@fn int startServoBlaster

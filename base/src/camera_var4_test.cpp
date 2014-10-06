@@ -5,7 +5,7 @@
 
 using namespace std;
 
-#include "camera_var1.h"
+#include "camera_var4.h"
 
 
 bool exitProgram = false;
@@ -24,20 +24,15 @@ int main(int argc, char* argv[]) {
 	sigaction(SIGINT,  &signalHandler, NULL);
 
 	//Main program
-	CAMERA_VAR1 cam = CAMERA_VAR1();
+	CAMERA_VAR4 cam = CAMERA_VAR4();
 	cam.setup();
 	cam.start();
 	
 	ObjectLocation object_data;
 	
 	while(!exitProgram) {
-		if(cam.objectDetected()) {
-			cam.getObjectLocation(&object_data);
-			cout << "Red object detected at: " << object_data.x << ", " << object_data.y << endl;
-		} else {
-			cout << "No red objects. " << endl;
-		}
-		
+		cout << "Objects detected: " << cam.numObjectsDetected() << endl;
+
 		cout << "Framerate: " << cam.getFramerate() << endl;
 		cout << endl;
 		

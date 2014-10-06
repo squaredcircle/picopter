@@ -5,7 +5,7 @@
 
 using namespace std;
 
-#include "camera_var1.h"
+#include "camera_var3.h"
 
 
 bool exitProgram = false;
@@ -24,7 +24,7 @@ int main(int argc, char* argv[]) {
 	sigaction(SIGINT,  &signalHandler, NULL);
 
 	//Main program
-	CAMERA_VAR1 cam = CAMERA_VAR1();
+	CAMERA_VAR3 cam = CAMERA_VAR3();
 	cam.setup();
 	cam.start();
 	

@@ -2,8 +2,8 @@
  * @file    gps_qstarz.h
  * @author	Michael Baxter	<20503664@student.uwa.edu.au>
  * @author	Omid Targhagh	<20750454@student.uwa.edu.au>
- * @date	10-9-2014
- * @version	1.6
+ * @date	3-10-2014
+ * @version	1.7
  * 
  * Class used to read and monitor qstarz gps.
  * 
@@ -46,10 +46,17 @@
 #ifndef __GPS_QSTARZ_H_INCLUDED__
 #define __GPS_QSTARZ_H_INCLUDED__
 
+#include <string>
+#include <sstream>
+#include <iostream>
+#include <ctime>
+
+#include "gpio.h"
+#include <wiringSerial.h>
 #include <boost/thread.hpp>
 #include <boost/lexical_cast.hpp>
-
 #include "logger.h"
+#include "config_parser.h"
 
 #define GPS_DEVICE_FILE "/dev/ttyACM0"
 #define GPS_BAUD_RATE 115200
@@ -180,6 +187,7 @@ private:
 	
 	void uploadData(void);
 	boost::thread* uploader_thread;
+	boost::mutex uploader_mutex;
 	
 	int fileDes;
 	std::string getGPSString(int);
