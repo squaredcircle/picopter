@@ -6,9 +6,7 @@
 
 using namespace std;
 
-#include "opencv2/highgui/highgui.hpp"
-
-#include "camera.h"
+#include "camera_var1.h"
 #include "flightBoard.h"
 #include "gpio.h"
 
@@ -60,7 +58,7 @@ int main(int argc, char* argv[]) {
 	FB_Data course = {0, 0, 0, 0};
 	FB_Data stop = {0, 0, 0, 0};
 	
-	CAMERA cam = CAMERA();
+	CAMERA_VAR1 cam = CAMERA_VAR1();
 	if(cam.setup("./config/camera_config.txt") != CAMERA_OK) {
 		cout << "Error setting up camera." << endl;
         fb.stop();

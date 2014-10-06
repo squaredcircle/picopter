@@ -11,7 +11,7 @@
 using namespace std;
 
 
-#include "camera_var2.h"
+#include "camera_var3.h"
 #include "flightBoard.h"
 #include "gpio.h"
 #include "config_parser.h"
@@ -74,7 +74,7 @@ int main(int argc, char* argv[]) {
 	FB_Data course = {0, 0, 0, 0};
 	FB_Data stop = {0, 0, 0, 0};
 	
-	CAMERA_VAR2 cam = CAMERA_VAR2();
+	CAMERA_VAR3 cam = CAMERA_VAR3();
 	if(cam.setup("./config/camera_config.txt") != CAMERA_OK) {
 		cout << "Error setting up camera." << endl;
         fb.stop();

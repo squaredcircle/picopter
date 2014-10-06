@@ -27,6 +27,7 @@
 #define OVAL_IMAGE_PATH "/home/pi/picopter/modules/config/James_Oval.png"
 
 using namespace std;
+using namespace cv;
 
 void run_lawnmower(FlightBoard &fb, GPS &gps, IMU &imu,/* RaspiCamCvCapture* capture,*/ Pos start, Pos end) {
 

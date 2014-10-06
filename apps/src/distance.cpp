@@ -29,8 +29,9 @@ int main() {
 	gps.start();
 
 	Logger distLog = Logger("Distance.txt");
+	distLog.clearLog();
 	GPS_Data data;
-	Pos start, currentLat, currentLon;
+	Pos start, current, currentLat, currentLon;
 	bool started = false;
 	while(!started) {
 		(&gps)->getGPS_Data(&data);
@@ -64,18 +65,27 @@ int main() {
 	WINDOW *msg_window = newwin(LINES - TITLE_HEIGHT -1, COLUMNS -1, TITLE_HEIGHT, 0);
 	wattron(msg_window, COLOR_PAIR(2));
 	
-	double latDist, lonDist;
+	double dist, latDist, lonDist, lastUpdate;
 	char str[BUFSIZ];
 	currentLat.lon = start.lon;
 	currentLon.lat = start.lat;
+	lastUpdate = data.time;
 	while(true) {
 		(&gps)->getGPS_Data(&data);
-		currentLat.lat = (data.latitude);
-		currentLon.lon = (data.longitude);
+		if ((data.time) == lastUpdate) {
+			usleep(100000);
+			continue;
+		}
+		current.lat = data.latitude;
+		currentLat.lat = data.latitude;
+		current.lon = data.longitude;
+		currentLon.lon = data.longitude;
+		lastUpdate = data.time;
 
+		dist = calculate_distance(start, current);
 		latDist = calculate_distance(start, currentLat);
 		lonDist = calculate_distance(start, currentLon);
-		sprintf(str, "%f %f %f", (data.time)-startTime, latDist, lonDist);
+		sprintf(str, "%f %f %f %f %d", (data.time)-startTime, latDist, lonDist, dist, data.numSatelites);
 		distLog.writeLogLine(str, false);
 
 		wclear(msg_window);
@@ -83,9 +93,11 @@ int main() {
 		wprintw(msg_window, "Started at \t%f\t%f\n", start.lat, start.lon);
 		wprintw(msg_window, "Currently at \t%f\t%f\n", currentLat.lat, currentLon.lon);
 		wprintw(msg_window, "\n");
+		wprintw(msg_window, "Distance:\t\t\t%f\n", dist);
 		wprintw(msg_window, "Latitude Distance:\t\t%f m\n", latDist);
 		wprintw(msg_window, "Longitude Distance:\t\t%f m\n", lonDist);
-		wprintw(msg_window, "Time Difference:\t%f seconds\n", (data.time)-startTime);
+		wprintw(msg_window, "Time Difference:\t\t%f seconds\n", (data.time)-startTime);
+		wprintw(msg_window, "Number of Satellites:\t%d satellites\n", data.numSatelites);
 		wprintw(msg_window, "\n");
 		wrefresh(msg_window);
 		usleep(100000);
