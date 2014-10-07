@@ -22,6 +22,7 @@ int Buzzer::playBuzzer(double duration_sec, double frequency, int volume) {
 	}
 	buzzer_mutex.unlock();
 	
+	quit = false;
 	buzzer_thread = new boost::thread(&Buzzer::buzzerLoop, this,  duration_ms, period, dutyCycle);
 	buzzer_thread->detach();
 	return 0;
