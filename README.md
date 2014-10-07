@@ -69,12 +69,21 @@ See http://www.cmake.org for more information.
 
 
 ---------------------------------------------
-5.  Install wiringPi
+5.  Make libraries directory
+---------------------------------------------
+
+We'll put all of the hexacopter relevant libraries and drivers here.
+
+    mkdir ~/lib
+
+
+---------------------------------------------
+6.  Install wiringPi
 ---------------------------------------------
 
 wiringPi is the library used to interact with the pi's gpio pins.
 
-    cd ~
+    cd ~/lib
     git clone git://git.drogon.net/wiringPi
     cd wiringPi
     ./build
@@ -83,12 +92,12 @@ See https://projects.drogon.net/raspberry-pi/wiringpi/ for more information.
 
 
 ---------------------------------------------
-6.  Install ServoBlaster
+7.  Install ServoBlaster
 ---------------------------------------------
 
 ServoBlaster is the program used to output pwm on some of the pi's gpio pins.  These are used as inputs to the flight board.
 
-    cd ~
+    cd ~/lib
     git clone git://github.com/richardghirst/PiBits.git
     cd PiBits/ServoBlaster/user
     make servod
@@ -97,7 +106,7 @@ See https://github.com/richardghirst/PiBits/tree/master/ServoBlaster for more in
 
 
 ---------------------------------------------
-7.  Install OpenCV
+8.  Install OpenCV
 ---------------------------------------------
 
 OpenCV is the library used for all image processing.
@@ -108,12 +117,12 @@ See http://docs.opencv.org/trunk/modules/core/doc/intro.html for more informatio
 
 
 ---------------------------------------------
-8.  Install userland
+9.  Install userland
 ---------------------------------------------
 
 userland is the collection of development files used by raspivid_cv to interface with the GPU and thus the camera board.
 
-    cd ~
+    cd ~/lib
     git clone git://github.com/raspberrypi/userland.git
     cd userland
     ./buildme
@@ -122,12 +131,12 @@ See https://github.com/raspberrypi/userland for more information.
 
 
 ---------------------------------------------
-9.  Install raspivid_cv
+10.  Install raspivid_cv
 ---------------------------------------------
 
 raspivid_cv is a library which allows us to use OpenCV on the pi's camera.
 
-    cd ~
+    cd ~/lib
     git clone git://github.com/robidouille/robidouille.git
     cd robidouille/raspicam_cv
     mkdir objs
@@ -136,7 +145,9 @@ One line needs to be changed in the make file for this to work:
 
     nano Makefile
 
-On line 6, remove "/git/raspberrypi".  ctrl-x to exit nano (y, return).
+On line 6, remove "/git/raspberrypi" and replace it with "/lib".  The line should now read:
+    USERLAND_ROOT = $(HOME)/lib/userland
+Ctrl-x to exit nano (y, return).
 
 Then make raspicam_cv;
 
@@ -147,7 +158,21 @@ See https://github.com/robidouille/robidouille/tree/master/raspicam_cv for more 
 
 
 ---------------------------------------------
-10.  Install picopter
+11.  Install Xsens libraries
+---------------------------------------------
+
+The hexacopter used an Xsens MTi IMU (accelerometers and magnetometers).  It is used largely as a compass.  I've put the libraries up on my git, since they aren't available anymore (too old).  Alternatively, they should be on the Xsens usb memory stick.  Provided you can find the box.
+
+    cd ~/lib
+    git clone git://github.com/TGLogic/Xsens.git
+    cd Xsens
+    make
+
+The compiler usually complains about some 'cdecl' attribute.  It's fine to ignore it, as long as you don't compile with -Werror.
+
+
+---------------------------------------------
+11.  Install picopter
 ---------------------------------------------
 Yo! Champ in the making.  Almost there.  There's just a few more things to do before you're very own picopter is out there, stalking unsuspecting red bucket lids.
 
@@ -155,52 +180,24 @@ Yo! Champ in the making.  Almost there.  There's just a few more things to do be
     git clone git://github.com/crazyoldmans/picopter.git
 
 
-*10.1   Building Xsens drivers*
+*11.1   Build the project*
 
-The Xsens is the IMU (incl. compass) we use on the copter.
+Nowadays, there's a nice makefile that calls all the other make files.  All you have to do is start it off and make a cuppa tea.
 
-    cd ~/picopter/Xsens
+    cd ~/picopter
     make
 
 
-*10.2   Building base systems*
-
-This set of classes forms the low-level system and wraps many of the previously introduced programs.  The low-level systems are multi-threaded, so they gather data in the background, while a higher level control system runs in the foreground.  Test programs (examples) are also included in the bin folder.
-
-    cd ~/picopter/base
-    mkdir obj bin
-    make
-
-
-*10.3   Building application modules*
-
-This set of programs are modularised snippets of code common to both application executables and the applications launched by the web server.
-
-    cd ~/picopter/modules
-    mkdir obj
-    make
-    
-
-
-*10.4   Building controller applications*
-
-This set of programs controls the picopter as it sets to follow waypoints and track red objects.
-
-    cd ~/picopter/apps
-    mkdir obj bin photos
-    make
-    
-
-*10.5   Create logs directory*
+*11.2   Create logs directory*
 
 Logs will magically appear here.  See logger.h to change the path.
 
-    cd ~/picopter
+    cd ~
     mkdir logs
     
     
 ---------------------------------------------
-11.  Have fun!
+12.  Have fun!
 ---------------------------------------------
 
 Yeah, that one's a joke.
