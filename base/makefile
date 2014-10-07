@@ -1,6 +1,6 @@
 CC = g++
 
-CFLAGS = -Wall -c -g -static
+CFLAGS = -Wall -c -g
 INCLUDES = -I./include -I/usr/local/include
 LDFLAGS = -L/usr/local/lib -lwiringPi -lboost_thread -lboost_system -lpthread -lncurses -g
 
@@ -37,16 +37,13 @@ all: $(CORE_OBJECTS) $(BASE_OBJECTS) $(EXECUTABLES)
 bin/% : obj/%.o $(CORE_OBJECTS) $(BASE_OBJECTS)
 	$(CC) $(LDFLAGS) $(INCLUDES) $(CORE_OBJECTS) $(BASE_OBJECTS) $(XSENS_INCLUDES) $(XSENS_LINKS) $(RASPICAM_INCLUDES) $(RASPICAM_LINKS) $(OPEN_CV) $< -o $@
 
-$(CORE_OBJECTS) : obj/%.o : src/%.cpp $(CORE_HEADERS)
-	$(CC) $(CFLAGS) $(INCLUDES) $< -o $@
+bin/%_test : obj/%_test.o $(CORE_OBJECTS) obj/%.o obj/camera.o
+	$(CC) $(LDFLAGS) $(INCLUDES) $(CORE_OBJECTS) $(BASE_OBJECTS) $(XSENS_INCLUDES) $(XSENS_LINKS) $(RASPICAM_INCLUDES) $(RASPICAM_LINKS) $(OPEN_CV) $< -o $@
 
-$(filter-out obj/camera_%.o, $(BASE_OBJECTS)) : obj/%.o : src/%.cpp $(CORE_HEADERS)
+obj/%.o : src/%.cpp $(CORE_HEADERS) include/camera.h
 	$(CC) $(CFLAGS) $(INCLUDES) $(XSENS_INCLUDES) $(RASPICAM_INCLUDES) $(OPEN_CV) $< -o $@
 
-$(filter obj/camera_%.o, $(BASE_OBJECTS)) : obj/%.o : src/%.cpp $(CORE_HEADERS) include/camera.h
-	$(CC) $(CFLAGS) $(INCLUDES) $(RASPICAM_INCLUDES) $(OPEN_CV) $< -o $@
-
-$(EXAMPLE_OBJECTS) : obj/%_test.o : src/%_test.cpp include/%.h $(CORE_HEADERS)
+obj/%_test.o : src/%_test.cpp $(CORE_HEADERS) include/%.h include/camera.h
 	$(CC) $(CFLAGS) $(INCLUDES) $(XSENS_INCLUDES) $(RASPICAM_INCLUDES) $(OPEN_CV) $< -o $@
 
 
