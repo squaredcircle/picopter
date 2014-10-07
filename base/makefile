@@ -35,16 +35,11 @@ all: $(CORE_OBJECTS) $(BASE_OBJECTS) $(EXECUTABLES)
 
 
 bin/% : obj/%.o $(CORE_OBJECTS) $(BASE_OBJECTS)
-	$(CC) $(LDFLAGS) $(INCLUDES) $(CORE_OBJECTS) $(BASE_OBJECTS) $(XSENS_INCLUDES) $(XSENS_LINKS) $(RASPICAM_INCLUDES) $(RASPICAM_LINKS) $(OPEN_CV) $< -o $@
+	$(CC) $(LDFLAGS) $(INCLUDES) $(CORE_OBJECTS) $(BASE_OBJECTS) $(XSENS_INCLUDES) $(XSENS_LINKS) $(RASPICAM_INCLUDES) $(RASPICAM_LINKS) $(OPEN_CV) $< -o $@_test
 
-bin/%_test : obj/%_test.o $(CORE_OBJECTS) obj/%.o obj/camera.o
-	$(CC) $(LDFLAGS) $(INCLUDES) $(CORE_OBJECTS) $(BASE_OBJECTS) $(XSENS_INCLUDES) $(XSENS_LINKS) $(RASPICAM_INCLUDES) $(RASPICAM_LINKS) $(OPEN_CV) $< -o $@
-
-obj/%.o : src/%.cpp include/%.h $(CORE_HEADERS) include/camera.h
+obj/%.o : src/%.cpp $(CORE_HEADERS) $(BASE_HEADERS)
 	$(CC) $(CFLAGS) $(INCLUDES) $(XSENS_INCLUDES) $(RASPICAM_INCLUDES) $(OPEN_CV) $< -o $@
 
-obj/%_test.o : src/%_test.cpp include/%_test.h $(CORE_HEADERS) include/%.h include/camera.h
-	$(CC) $(CFLAGS) $(INCLUDES) $(XSENS_INCLUDES) $(RASPICAM_INCLUDES) $(OPEN_CV) $< -o $@
 
 
 clean:
