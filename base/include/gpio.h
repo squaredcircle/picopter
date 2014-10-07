@@ -18,7 +18,7 @@
 #include <cstdlib>	//system
 
 #include <wiringPi.h>
-#define SERVOBLASTER_PATH "/home/pi/PiBits/ServoBlaster/user/servod"
+#define SERVOBLASTER_PATH "/home/pi/lib/PiBits/ServoBlaster/user/servod"
 
 #define GPIO_OK 0
 
