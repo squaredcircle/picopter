@@ -34,6 +34,7 @@ int main() {
 	Pos start, current, currentLat, currentLon;
 	bool started = false;
 	while(!started) {
+		usleep(500000);
 		(&gps)->getGPS_Data(&data);
 		start.lat = (data.latitude);
 		start.lon = (data.longitude);
@@ -41,10 +42,8 @@ int main() {
 		if ((abs((int)(start.lat) - (-31)) < 1) && (abs((int)(start.lon) - (115)) < 1)) {
 			started = true;
 		}
-		usleep(500000);
 	}
 	double startTime = data.time;
-	usleep(1000000);
 
 	initscr();	//Set up curses
 	start_color();
@@ -93,11 +92,11 @@ int main() {
 		wprintw(msg_window, "Started at \t%f\t%f\n", start.lat, start.lon);
 		wprintw(msg_window, "Currently at \t%f\t%f\n", currentLat.lat, currentLon.lon);
 		wprintw(msg_window, "\n");
-		wprintw(msg_window, "Distance:\t\t\t%f\n", dist);
+		wprintw(msg_window, "Distance:\t\t\t%f m\n", dist);
 		wprintw(msg_window, "Latitude Distance:\t\t%f m\n", latDist);
 		wprintw(msg_window, "Longitude Distance:\t\t%f m\n", lonDist);
 		wprintw(msg_window, "Time Difference:\t\t%f seconds\n", (data.time)-startTime);
-		wprintw(msg_window, "Number of Satellites:\t%d satellites\n", data.numSatelites);
+		wprintw(msg_window, "Number of Satellites:\t\t%d satellites\n", data.numSatelites);
 		wprintw(msg_window, "\n");
 		wrefresh(msg_window);
 		usleep(100000);

@@ -23,7 +23,7 @@
 #define GPIO_OK 0
 
 #define MODE_PIN 5
-#define BUZZER_PIN 6
+#define BUZZER_PIN 2
 
 #define AILERON_CHANNEL 0
 #define AILERON_PIN_PHYSICAL 11
