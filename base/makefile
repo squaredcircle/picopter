@@ -16,15 +16,18 @@ BASE_OBJECTS = $(addprefix obj/, $(addsuffix .o, $(BASE)))
 
 EXAMPLE = $(patsubst src/%.cpp, %, $(filter src/%test.cpp, $(wildcard src/*.cpp)))
 EXAMPLE_SOURCES = $(addprefix src/, $(addsuffix .cpp, $(EXAMPLE)))
+EXAMPLE_OBJECTS = $(addprefix obj/, $(addsuffix .o, $(EXAMPLE)))
 EXECUTABLES = $(addprefix bin/, $(EXAMPLE))
 
+XSENS_DIR = ../../lib/Xsens
+XSENS_LINKS = -L$(XSENS_DIR) -lcmt -lpthread -lrt
+XSENS_INCLUDES = -I$(XSENS_DIR)
+XSENS_OBJECTS = $(addprefix $(XSENS_DIR)/, cmt1.o cmt2.o cmt3.o cmtmessage.o cmtpacket.o cmtscan.o xsens_std.o xsens_time.o xsens_exception.o)
 
-XSENS_LINKS = -L../../lib/Xsens -lcmt -lpthread -lrt
-XSENS_INCLUDES = -I../../lib/Xsens
-XSENS_OBJECTS = $(addprefix ../../lib/Xsens/, cmt1.o cmt2.o cmt3.o cmtmessage.o cmtpacket.o cmtscan.o xsens_std.o xsens_time.o xsens_exception.o)
-
-RASPICAM_LINKS = -L../../lib/robidouille/raspicam_cv -L../../lib/raspberrypi/userland/build/lib -lraspicamcv -lmmal_core -lmmal -lmmal_util -lvcos -lbcm_host
-RASPICAM_INCLUDES = -I../../lib/robidouille/raspicam_cv
+RASPICAM_DIR = ../../lib/robidouille/raspicam_cv
+USERLAND_DIR = ../../lib/userland
+RASPICAM_LINKS = -L$(RASPICAM_DIR) -L$(USERLAND_DIR)/build/lib -lraspicamcv -lmmal_core -lmmal -lmmal_util -lvcos -lbcm_host
+RASPICAM_INCLUDES = -I$(RASPICAM_DIR)
 OPEN_CV = `pkg-config --cflags --libs opencv`
 
 
@@ -32,9 +35,18 @@ all: $(CORE_OBJECTS) $(BASE_OBJECTS) $(EXECUTABLES)
 
 
 bin/% : obj/%.o $(CORE_OBJECTS) $(BASE_OBJECTS)
-	$(CC) $(LDFLAGS) $(INCLUDES) $(CORE_SOURCES) $(BASE_OBJECTS) $(XSENS_INCLUDES) $(XSENS_LINKS) $(RASPICAM_INCLUDES) $(RASPICAM_LINKS) $(OPEN_CV) $< -o $@
+	$(CC) $(LDFLAGS) $(INCLUDES) $(CORE_OBJECTS) $(BASE_OBJECTS) $(XSENS_INCLUDES) $(XSENS_LINKS) $(RASPICAM_INCLUDES) $(RASPICAM_LINKS) $(OPEN_CV) $< -o $@
 
-obj/%.o : src/%.cpp $(CORE_HEADERS) $(BASE_HEADERS)
+$(CORE_OBJECTS) : obj/%.o : src/%.cpp $(CORE_HEADERS)
+	$(CC) $(CFLAGS) $(INCLUDES) $< -o $@
+
+$(filter-out obj/camera_%.o, $(BASE_OBJECTS)) : obj/%.o : src/%.cpp $(CORE_HEADERS)
+	$(CC) $(CFLAGS) $(INCLUDES) $(XSENS_INCLUDES) $(RASPICAM_INCLUDES) $(OPEN_CV) $< -o $@
+
+$(filter obj/camera_%.o, $(BASE_OBJECTS)) : obj/%.o : src/%.cpp $(CORE_HEADERS) include/camera.h
+	$(CC) $(CFLAGS) $(INCLUDES) $(RASPICAM_INCLUDES) $(OPEN_CV) $< -o $@
+
+$(EXAMPLE_OBJECTS) : obj/%_test.o : src/%_test.cpp include/%.h $(CORE_HEADERS)
 	$(CC) $(CFLAGS) $(INCLUDES) $(XSENS_INCLUDES) $(RASPICAM_INCLUDES) $(OPEN_CV) $< -o $@
 
 

@@ -9,6 +9,8 @@ using namespace std;
 bool exitProgram = false;
 void terminate(int);
 
+Buzzer* buzzer;
+
 int main(int argc, char* argv[]) {
 	
 	//Signal to exit program.
@@ -24,26 +26,27 @@ int main(int argc, char* argv[]) {
 	double frequency;
 	int volume;
 	
-	Buzzer buzzer = Buzzer();
+	buzzer = new Buzzer();
 	
 	cout << "Buzz duration (sec) :";
 	cin >> duration;
 
-		
 	cout << "Frequency (Hz) :";
 	cin >> frequency;
-
-		
+	
 	cout << "Volume (%) :";
 	cin >> volume;
-		
-	buzzer.playBuzzer(duration, frequency, volume);
-	delay(duration*1000);
+	
 	cout << endl;
+	
+	
+	buzzer->playBuzzer(duration, frequency, volume);
+	delay(duration*1005);
+	delay(200);	//since I detached that thread in buzzer, I can't let this one finish first.
 }
 
 void terminate(int signum) {
 	cout << "Signal " << signum << " received. Stopping buzzer test. Exiting." << endl;
-	gpio::stopWiringPi();
+	buzzer->shutup();
 	exitProgram = true;
 }
