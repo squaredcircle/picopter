@@ -10,7 +10,7 @@ THRIFT_FLAGS      = -DHAVE_INTTYPES_H -DHAVE_NETINET_IN_H
 THRIFT_INCLUDES   = -Igen-cpp -I/usr/local/include/thrift
 
 ##### picopter-base
-BASE              = gpio logger flightBoard config_parser gps_qstarz imu_euler 
+BASE              = gpio logger flightBoard config_parser gps_qstarz imu_euler buzzer 
 BASE_INCLUDES     = -I../base/include
 BASE_OBJECTS      = $(addprefix ../base/obj/, $(addsuffix .o, $(BASE)))
 
@@ -20,15 +20,12 @@ MODULES_INCLUDES     = -I../modules/include
 MODULES_OBJECTS      = $(addprefix ../modules/obj/, $(addsuffix .o, $(MODULES)))
 
 ##### IMU
-XSENS_DIR         = ../../lib/Xsens
-XSENS_INCLUDES    = -I$(XSENS_DIR)
-XSENS_OBJECTS     = $(addprefix $(XSENS_DIR)/, cmt1.o cmt2.o cmt3.o cmtmessage.o cmtpacket.o cmtscan.o xsens_std.o xsens_time.o xsens_exception.o)
+XSENS_INCLUDES    = -I../../lib/Xsens
+XSENS_OBJECTS     = $(addprefix ../../lib/Xsens/, cmt1.o cmt2.o cmt3.o cmtmessage.o cmtpacket.o cmtscan.o xsens_std.o xsens_time.o xsens_exception.o)
 
 ##### Vision
-RASPICAM_DIR      = ../../lib/robidouille/raspicam_cv
-USERLAND_DIR      = ../../lib/userland
-RASPICAM_LINKS    = -L$(RASPICAM_DIR) -L$(USERLAND_DIR)/build/lib -lraspicamcv -lmmal_core -lmmal -lmmal_util -lvcos -lbcm_host
-RASPICAM_INCLUDES = -I$(RASPICAM_DIR)
+RASPICAM_LINKS    = -L../../lib/robidouille/raspicam_cv -L../../lib/userland/build/lib -lraspicamcv -lmmal_core -lmmal -lmmal_util -lvcos -lbcm_host
+RASPICAM_INCLUDES = -I../../lib/robidouille/raspicam_cv
 OPEN_CV           = `pkg-config --cflags --libs opencv`
 	
 default: gen-cpp/picopter_types.h bin/picopter
@@ -37,8 +34,8 @@ gen-cpp/picopter_types.h: picopter.thrift
 	thrift --gen cpp picopter.thrift
 	thrift --gen php picopter.thrift
 	
-bin/picopter: obj/webInterface.o obj/picopter_types.o obj/picopter.o obj/waypoints.o obj/control.o obj/structures.o
-	$(CC) $(INCLUDES) $^ $(BASE_OBJECTS) $(MODULES_OBJECTS) -o $@ $(LIBS) $(RASPICAM_LINKS) $(OPEN_CV) $(LDFLAGS)
+bin/picopter: $(MODULES_OBJECTS) $(BASE_OBJECTS) obj/webInterface.o obj/picopter_types.o obj/picopter.o obj/waypoints.o obj/control.o obj/structures.o
+	$(CC) $(INCLUDES) $^ -o $@ $(LIBS) $(RASPICAM_LINKS) $(OPEN_CV) $(LDFLAGS)
 	
 obj/webInterface.o: gen-cpp/webInterface.cpp
 	$(CC) $(CFLAGS) $(THRIFT_FLAGS) $(INCLUDES) $(THRIFT_INCLUDES) $^ -o $@ $(LIBS)
@@ -47,7 +44,7 @@ obj/picopter_types.o: gen-cpp/picopter_types.cpp
 	$(CC) $(CFLAGS) $(THRIFT_FLAGS) $(INCLUDES) $(THRIFT_INCLUDES) $^ -o $@ $(LIBS)
 	
 obj/picopter.o: src/picopter.cpp
-	$(CC) $(CFLAGS) $(THRIFT_FLAGS) $(INCLUDES) $(BASE_INCLUDES) $(MODULES_INCLUDES) $(XSENS_INCLUDES) $(THRIFT_INCLUDES) $^ -o $@ $(LIBS)
+	$(CC) $(CFLAGS) $(THRIFT_FLAGS) $(INCLUDES) $(BASE_INCLUDES) $(RASPICAM_INCLUDES) $(MODULES_INCLUDES) $(XSENS_INCLUDES) $(THRIFT_INCLUDES) $^ -o $@ $(LIBS)
 	
 obj/waypoints.o: src/waypoints.cpp
 	$(CC) $(CFLAGS) $(INCLUDES) $(BASE_INCLUDES) $(XSENS_INCLUDES) $^ -o $@

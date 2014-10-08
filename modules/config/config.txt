@@ -10,5 +10,9 @@
 %F	KPxy	KIxy	KPz	KIz
 %R	10	0.06	0	0
 
+%T	BUZZER
+%F	DURATION	FREQUENCY	VOLUME
+%R 	0.5		50		50
+
 %E
 

@@ -10,3 +10,6 @@ double KPxy = 10;
 double KIxy= 0;
 double KPz = 0;
 double KIz = 0;
+double DURATION = 0.5;
+double FREQUENCY = 50;
+int VOLUME = 50;

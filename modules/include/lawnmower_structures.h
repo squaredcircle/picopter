@@ -36,6 +36,9 @@ extern double KPxy;
 extern double KIxy;
 extern double KPz;
 extern double KIz;
+extern double DURATION;
+extern double FREQUENCY;
+extern int VOLUME;
 
 extern int HMIN;
 extern int HMAX;

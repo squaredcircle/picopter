@@ -1,6 +1,5 @@
 //Basic function that causes the Hexacpter to search a square, lawnmower fashion
-//Written by Omid Targhagh, based on work done by Michael Baxter
-//Includes image detection of Merrick Cloete. Further modularised by Alexander Mazur.
+//Written by Omid Targhagh, based on work done by Michael Baxter. Further modularised by Alexander Mazur.
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -20,6 +19,7 @@
 #include "opencv2/highgui/highgui.hpp"
 #include "camera.h"
 #include "config_parser.h"
+#include "buzzer.h"
 
 #include "lawnmower_control.h"
 
@@ -32,8 +32,7 @@ using namespace cv;
 void run_lawnmower(FlightBoard &fb, GPS &gps, IMU &imu,/* RaspiCamCvCapture* capture,*/ Pos start, Pos end) {
 
 	cout << "Starting to run lawnmower..." << endl;
-	//sound(500000);
-
+	
 	ConfigParser::ParamMap lawnParameters;		//Load parameters from config file
     lawnParameters.insert("SPEED_LIMIT", &SPEED_LIMIT);
     lawnParameters.insert("SWEEP_SPACING", &SWEEP_SPACING);
@@ -44,6 +43,14 @@ void run_lawnmower(FlightBoard &fb, GPS &gps, IMU &imu,/* RaspiCamCvCapture* cap
     lawnParameters.insert("KPz", &KPz);
     lawnParameters.insert("KIz", &KIz);
     ConfigParser::loadParameters("LAWNMOWER", &lawnParameters, CONFIG_FILE);
+
+    lawnParameters.insert("DURATION", &DURATION);
+    lawnParameters.insert("FREQUENCY", &FREQUENCY);
+    lawnParameters.insert("VOLUME", &VOLUME);
+    ConfigParser::loadParameters("BUZZER", &lawnParameters, CONFIG_FILE);
+
+    Buzzer* buzzer = new Buzzer();
+    buzzer->playBuzzer(DURATION, FREQUENCY, VOLUME);
 	
 	if(imu.setup() != IMU_OK) {		//Check if IMU
         cout << "Error opening imu: Will navigate using GPS only." << endl;
@@ -105,6 +112,7 @@ void run_lawnmower(FlightBoard &fb, GPS &gps, IMU &imu,/* RaspiCamCvCapture* cap
 	cout  << "Waiting to enter autonomous mode..." << endl;
 	while(!gpio::isAutoMode()) usleep(100);	//Hexacopter waits until put into auto mode
 	cout << "Autonomous Mode has been Entered" << endl;
+    buzzer->playBuzzer(DURATION, FREQUENCY, VOLUME);
 
 	double yaw;
 	if (usingIMU) {
@@ -123,8 +131,7 @@ void run_lawnmower(FlightBoard &fb, GPS &gps, IMU &imu,/* RaspiCamCvCapture* cap
 	
 	for (int i = 0; i < (int)gpsPoints.size(); i++) {
 		flyTo(&fb, &gps, &data, &imu, &compassdata, gpsPoints[i], yaw, &lawnlog, &rawgpslog,/* capture,*/ i, oval);
-		//sound(2000000);
-		//system("sudo aplay home/pi/picopter/modules/config/shortbeeptone.wav");
+		buzzer->playBuzzer(DURATION, FREQUENCY, VOLUME);
 		if (i == 0) {	//Are we at the first point?
 			rawgpslog.clearLog();			//Flush data in there - also removers header
 			oval = imread(OVAL_IMAGE_PATH);	//Wipe any extra lines caused by flying to first point
@@ -134,9 +141,9 @@ void run_lawnmower(FlightBoard &fb, GPS &gps, IMU &imu,/* RaspiCamCvCapture* cap
 		}
 	}
 
+	buzzer->playBuzzer(DURATION, FREQUENCY, VOLUME);
 	sprintf(str, "photos/James_Oval_%d.jpg", (int)((data.time)*100));
 	imwrite(str, oval);
 	cout << "Finished Lawnmower run!" << endl;
-	//sound(2000000);
 	lawnlog.writeLogLine("Finished!");
 }

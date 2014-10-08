@@ -89,7 +89,7 @@ void CAMERA_VAR5::processImages() {
 		IplImage* image_raspi = raspiCamCvQueryFrame(capture);	//MAYBE DO THIS BETTER
 		cv::Mat image = cv::Mat(image_raspi);
 
-		cv::imshow("Image", image);
+//		cv::imshow("Image", image);
 		frame_counter++;
 		
 		/*----------------------*
