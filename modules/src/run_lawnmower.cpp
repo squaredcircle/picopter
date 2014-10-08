@@ -32,6 +32,12 @@ using namespace cv;
 void run_lawnmower(FlightBoard &fb, GPS &gps, IMU &imu,/* RaspiCamCvCapture* capture,*/ Pos start, Pos end) {
 
 	cout << "Starting to run lawnmower..." << endl;
+
+	if ((start.lat > -30) || (start.lat < -32) || (start.lon < 114) || (start.lon > 116) ||(end.lat > -30) || (end.lat < -32) || (end.lon < 114) || (end.lon > 116)) {
+		cout << "ERROR :: Locations passed are NOT IN PERTH!" << endl;
+		cout << "ERROR :: Quitting..." << endl;
+		return;
+	}
 	
 	ConfigParser::ParamMap lawnParameters;		//Load parameters from config file
     lawnParameters.insert("SPEED_LIMIT", &SPEED_LIMIT);
@@ -131,7 +137,7 @@ void run_lawnmower(FlightBoard &fb, GPS &gps, IMU &imu,/* RaspiCamCvCapture* cap
 	
 	for (int i = 0; i < (int)gpsPoints.size(); i++) {
 		flyTo(&fb, &gps, &data, &imu, &compassdata, gpsPoints[i], yaw, &lawnlog, &rawgpslog,/* capture,*/ i, oval);
-		buzzer->playBuzzer(DURATION, FREQUENCY, VOLUME);
+		buzzer->playBuzzer(DURATION, FREQUENCY*2, VOLUME);
 		if (i == 0) {	//Are we at the first point?
 			rawgpslog.clearLog();			//Flush data in there - also removers header
 			oval = imread(OVAL_IMAGE_PATH);	//Wipe any extra lines caused by flying to first point
