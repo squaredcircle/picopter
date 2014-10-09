@@ -1,5 +1,10 @@
 #include "gps_piksi.h"
 
+#include <string>
+#include <sstream>
+#include <iostream>
+#include <cstdlib>
+
 PIKSI::PIKSI() {
 	this->ready = false;
 	this->running = false;

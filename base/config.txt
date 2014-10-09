@@ -1,0 +1,4 @@
+%T	CAMERA_VAR4
+%F	PIXLE_SKIP
+%R	1
+%E

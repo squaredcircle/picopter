@@ -1,5 +1,14 @@
 #include <config_parser.h>
 
+#include <iostream>
+#include <sstream>
+#include <fstream>
+
+#include <utility>
+#include <map>
+#include <queue>
+#include <iterator>
+
 ConfigParser::ParamMap::ParamMap() {}
 ConfigParser::ParamMap::ParamMap(const ParamMap& orig) {}
 ConfigParser::ParamMap::~ParamMap() {}

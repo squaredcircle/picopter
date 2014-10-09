@@ -12,14 +12,7 @@
 #define __CONFIG_PARSER_H_INCLUDED__
 
 #include <string>
-#include <iostream>
-#include <sstream>
-#include <fstream>
-
-#include <utility>
 #include <map>
-#include <queue>
-#include <iterator>
 
 namespace ConfigParser {
     typedef std::map<std::string, int*> ParamMap_int;

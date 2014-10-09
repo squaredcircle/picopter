@@ -4,6 +4,16 @@
 
 #include "imu_euler.h"
 
+//#include <string>
+#include <sstream>
+#include <iostream>
+
+//#include "cmt3.h"
+//#include <boost/thread.hpp>
+#include <boost/lexical_cast.hpp>
+//#include "logger.h"
+#include "config_parser.h"
+
 IMU::IMU() {
 	this->ready = false;
 	this->running = false;

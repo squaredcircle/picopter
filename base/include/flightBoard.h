@@ -42,8 +42,6 @@
 #ifndef __FLIGHTBOARD_H_INCLUDED__
 #define __FLIGHTBOARD_H_INCLUDED__
 
-
-#include "gpio.h"
 #include "logger.h"
 
 #define FB_OK 0

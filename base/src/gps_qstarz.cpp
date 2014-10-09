@@ -13,6 +13,17 @@
 
 #include "gps_qstarz.h"
 
+#include <sstream>
+#include <iostream>
+#include <ctime>
+
+#include "gpio.h"
+#include <wiringSerial.h>
+//#include <boost/thread.hpp>
+#include <boost/lexical_cast.hpp>
+//#include "logger.h"
+#include "config_parser.h"
+
 GPS::GPS() {
 	this->ready = false;
 	this->running = false;

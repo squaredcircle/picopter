@@ -45,19 +45,11 @@
 #ifndef __CAMERA_H_INCLUDED__
 #define __CAMERA_H_INCLUDED__
 
-#include <iostream>
-#include <sstream>
-#include "opencv2/highgui/highgui.hpp"
-#include "opencv2/imgproc/imgproc.hpp"
-#include "RaspiCamCV.h"
-#include <time.h>
 #include <string>
-#include <utility>
-#include <stdio.h>
+#include "opencv2/imgproc/imgproc.hpp"
 #include <boost/thread.hpp>
 
 //#include "logger.h"
-#include "config_parser.h"
 
 //These defines are used in the variations
 #define LOOKUP_SIZE 8

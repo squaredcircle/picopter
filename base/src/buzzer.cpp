@@ -1,5 +1,7 @@
 #include "buzzer.h"
 
+#include "gpio.h"
+
 Buzzer::Buzzer() {
 	gpio::startWiringPi();
 	this->SLEEP_PERIOD = 5;

@@ -11,14 +11,10 @@
 #define __IMU_EULER_H_INCLUDED__
 
 #include <string>
-#include <sstream>
-#include <iostream>
-
 #include "cmt3.h"
 #include <boost/thread.hpp>
-#include <boost/lexical_cast.hpp>
 #include "logger.h"
-#include "config_parser.h"
+
 
 #define IMU_DEVICE_FILE "/dev/ttyUSB0"
 #define IMU_BAUD_RATE B115200

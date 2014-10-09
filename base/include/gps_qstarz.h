@@ -47,16 +47,9 @@
 #define __GPS_QSTARZ_H_INCLUDED__
 
 #include <string>
-#include <sstream>
-#include <iostream>
-#include <ctime>
-
-#include "gpio.h"
-#include <wiringSerial.h>
 #include <boost/thread.hpp>
-#include <boost/lexical_cast.hpp>
+
 #include "logger.h"
-#include "config_parser.h"
 
 #define GPS_DEVICE_FILE "/dev/ttyACM0"
 #define GPS_BAUD_RATE 115200

@@ -10,11 +10,8 @@
 #ifndef __GPS_PIKSI_H_INCLUDED__
 #define __GPS_PIKSI_H_INCLUDED__
 
-#include <string>
-#include <sstream>
-#include <iostream>
+
 #include <fstream>
-#include <cstdlib>
 
 #include "logger.h"
 

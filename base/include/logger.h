@@ -5,11 +5,7 @@
 #define LOG_DIRECTORY "/home/pi/logs"
 
 #include <string>
-#include <iostream>
 #include <fstream>
-#include <ctime>
-#include <algorithm>
-#include <stdio.h>
 
 class Logger {
 public:

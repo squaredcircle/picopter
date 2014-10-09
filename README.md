@@ -172,7 +172,7 @@ The compiler usually complains about some 'cdecl' attribute.  It's fine to ignor
 
 
 ---------------------------------------------
-11.  Install picopter
+12.  Install picopter
 ---------------------------------------------
 Yo! Champ in the making.  Almost there.  There's just a few more things to do before you're very own picopter is out there, stalking unsuspecting red bucket lids.
 
@@ -180,7 +180,7 @@ Yo! Champ in the making.  Almost there.  There's just a few more things to do be
     git clone git://github.com/crazyoldmans/picopter.git
 
 
-*11.1   Build the project*
+*12.1   Build the project*
 
 Nowadays, there's a nice makefile that calls all the other make files.  All you have to do is start it off and make a cuppa tea.
 
@@ -188,7 +188,7 @@ Nowadays, there's a nice makefile that calls all the other make files.  All you 
     make
 
 
-*11.2   Create logs directory*
+*12.2   Create logs directory*
 
 Logs will magically appear here.  See logger.h to change the path.
 
@@ -197,7 +197,7 @@ Logs will magically appear here.  See logger.h to change the path.
     
     
 ---------------------------------------------
-12.  Have fun!
+13.  Have fun!
 ---------------------------------------------
 
 Yeah, that one's a joke.

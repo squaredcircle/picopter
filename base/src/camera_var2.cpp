@@ -4,6 +4,17 @@
 
 #include "camera_var2.h"
 
+#include <iostream>
+#include <sstream>
+#include "opencv2/highgui/highgui.hpp"
+#include "opencv2/imgproc/imgproc.hpp"
+#include "RaspiCamCV.h"
+#include <time.h>
+#include <utility>
+#include <stdio.h>
+
+#include "config_parser.h"
+
 CAMERA_VAR2::CAMERA_VAR2() {
 	this->ready = false;
 	this->running = false;

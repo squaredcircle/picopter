@@ -17,6 +17,17 @@
 
 #include "camera_var1.h"
 
+#include <iostream>
+#include <sstream>
+#include "opencv2/highgui/highgui.hpp"
+#include "opencv2/imgproc/imgproc.hpp"
+#include "RaspiCamCV.h"
+#include <time.h>
+#include <utility>
+#include <stdio.h>
+
+#include "config_parser.h"
+
 /*----------------------------------
 	CAMERA_VAR1 class functions here	
 ----------------------------------*/

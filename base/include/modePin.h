@@ -10,9 +10,6 @@
 #ifndef __MODEPIN_H_INCLUDED__
 #define __MODEPIN_H_INCLUDED__
 
-
-#include "gpio.h"
-
 class ModePin {
 public:
 	ModePin(void);

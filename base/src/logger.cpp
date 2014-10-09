@@ -11,6 +11,13 @@
 
 #include "logger.h"
 
+//#include <string>
+#include <iostream>
+//#include <fstream>
+#include <ctime>
+#include <algorithm>
+#include <stdio.h>
+
 
 /**
  * Purpose: Creates a new instance of the Logger object.

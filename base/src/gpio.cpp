@@ -14,6 +14,11 @@
 
 #include "gpio.h"
 
+#include <cstdio>	//sprintf
+#include <cstdlib>	//system
+
+#include <wiringPi.h>
+
 bool gpio::wiringPiRunning;
 bool gpio::servoBlasterRunning;
 

@@ -7,6 +7,9 @@
 
 #include "flightBoard.h"
 
+
+#include "gpio.h"
+
 FlightBoard::FlightBoard() {
 	this->ready = false;
 	this->running = false;

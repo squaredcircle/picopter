@@ -1,5 +1,7 @@
 #include "modePin.h"
 
+#include "gpio.h"
+
 ModePin::ModePin() {
 	this->lastState = false;
 	

@@ -10,7 +10,6 @@
 #ifndef __BUZZER_H_INCLUDED__
 #define __BUZZER_H_INCLUDED__
 
-#include "gpio.h"
 #include <boost/thread.hpp>
 
 class Buzzer {
