@@ -46,6 +46,7 @@
 #define __CAMERA_H_INCLUDED__
 
 #include <string>
+#include "RaspiCamCV.h"
 #include "opencv2/imgproc/imgproc.hpp"
 #include <boost/thread.hpp>
 

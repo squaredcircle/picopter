@@ -1,10 +1,11 @@
 #include <iostream>
 #include <csignal>
+#include <unistd.h>
 
 using namespace std;
 
 #include "buzzer.h"
-#include "gpio.h"
+
 
 bool exitProgram = false;
 void terminate(int);
@@ -41,8 +42,8 @@ int main(int argc, char* argv[]) {
 	
 	
 	buzzer->playBuzzer(duration, frequency, volume);
-	delay(duration*1005);
-	delay(200);	//since I detached that thread in buzzer, I can't let this one finish first.
+	usleep(duration*1005*1000);
+	usleep(200*1000);	//since I detached that thread in buzzer, I can't let this one finish first.
 }
 
 void terminate(int signum) {

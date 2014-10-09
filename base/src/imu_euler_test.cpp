@@ -1,9 +1,9 @@
 #include <iostream>
 #include <iomanip>
 #include <csignal>
+#include <unistd.h>
 
 #include "imu_euler.h"
-#include <wiringPi.h>	//delay()
 
 using namespace std;
 
@@ -38,7 +38,7 @@ int main (int argc, char* argcv[]) {
 		cout << "Yaw:\t" << setprecision(12) << positionData.yaw << endl;
 		cout << endl;
 	
-		delay(500);
+		usleep(500*1000);
 	}
     imu.stop();
     imu.close();

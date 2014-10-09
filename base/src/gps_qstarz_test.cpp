@@ -1,9 +1,10 @@
 #include <iostream>
 #include <iomanip>
 #include <csignal>
+#include <unistd.h>
 
 #include "gps_qstarz.h"
-#include <wiringPi.h>	//delay()
+
 
 #define DELIM ", "
 
@@ -39,7 +40,7 @@ int main (int argc, char* argcv[]) {
 		cout << setprecision(12) << positionData.latitude << DELIM;
 		cout << setprecision(12) << positionData.longitude << endl;
 	
-		delay(1000);
+		usleep(1000*1000);
 	}
     gps.stop();
     gps.close();
