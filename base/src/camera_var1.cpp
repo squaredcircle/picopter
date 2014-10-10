@@ -221,7 +221,6 @@ bool CAMERA_VAR1::findRedObject(cv::Mat& Isrc, const uchar table_reduce_colorspa
 			}
 		}
 	}
-	//cout << "red points:" << pixle_counter;
 	if(M00 > PIXLE_THRESHOLD) {
 		*redObjectDetected = true;
 		redObject->x = M10/M00 - nCols/2;
