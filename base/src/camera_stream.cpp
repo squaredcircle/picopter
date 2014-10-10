@@ -118,6 +118,17 @@ int CAMERA_STREAM::setup(std::string fileName) {
 	return setup();
 }
 
+int CAMERA_STREAM::start() {
+	if(!ready) return -1;
+	if(running) return -1;
+	
+	process_thread = new boost::thread(&CAMERA_STREAM::processImages, this);
+	process_thread->detach();
+	
+	running = true;
+	return 0;
+}
+
 
 int CAMERA_STREAM::stop() {
 	if(!running) return -1;
