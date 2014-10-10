@@ -1,2 +1,4 @@
 obj/
 bin/
+gen-cpp/
+gen-php/

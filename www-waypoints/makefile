@@ -10,7 +10,7 @@ THRIFT_FLAGS      = -DHAVE_INTTYPES_H -DHAVE_NETINET_IN_H
 THRIFT_INCLUDES   = -Igen-cpp -I/usr/local/include/thrift
 
 ##### picopter-base
-BASE              = gpio logger flightBoard config_parser gps_qstarz imu_euler buzzer 
+BASE              = gpio logger flightBoard config_parser gps_qstarz imu_euler buzzer camera_stream
 BASE_INCLUDES     = -I../base/include
 BASE_OBJECTS      = $(addprefix ../base/obj/, $(addsuffix .o, $(BASE)))
 
@@ -24,9 +24,9 @@ XSENS_INCLUDES    = -I../../lib/Xsens
 XSENS_OBJECTS     = $(addprefix ../../lib/Xsens/, cmt1.o cmt2.o cmt3.o cmtmessage.o cmtpacket.o cmtscan.o xsens_std.o xsens_time.o xsens_exception.o)
 
 ##### Vision
-RASPICAM_LINKS    = -L../../lib/robidouille/raspicam_cv -L../../lib/userland/build/lib -lraspicamcv -lmmal_core -lmmal -lmmal_util -lvcos -lbcm_host
-RASPICAM_INCLUDES = -I../../lib/robidouille/raspicam_cv
-OPEN_CV           = `pkg-config --cflags --libs opencv`
+#RASPICAM_LINKS    = -L../../lib/robidouille/raspicam_cv -L../../lib/userland/build/lib -lraspicamcv -lmmal_core -lmmal -lmmal_util -lvcos -lbcm_host
+#RASPICAM_INCLUDES = -I../../lib/robidouille/raspicam_cv
+#OPEN_CV           = `pkg-config --cflags --libs opencv`
 	
 default: gen-cpp/picopter_types.h bin/picopter
 	

@@ -51,14 +51,14 @@ void waypointsFlightLoop(FlightBoard &fb, GPS &gps, IMU &imu, Logger &logs, dequ
 	cout << "\033[1;32m[WAYPTS]\033[0m Waypoints thread initiated, travelling to the following waypoints:" << endl;
 	
 	char str_buf[BUFSIZ];
-	bool useimu = true;	// Manual setting for debug
+	bool useimu = false;	// Manual setting for debug
 	double yaw = 0;	
 	
-	for(int i = 0; i != waypoints_list.size(); i++) {
+	for(size_t i = 0; i != waypoints_list.size(); i++) {
 		cout << '         ' << i+1 << ": (" << waypoints_list[i].lat << ", " << waypoints_list[i].lon << ")" << endl;
 	}
 	
-	//	if (!useimu) yaw = inferBearing(&fb, &gps, &logs);
+	if (!useimu) yaw = inferBearing(&fb, &gps, &logs);
 	
 	coord		currentCoord = {-1, -1};
 	double		distanceToNextWaypoint;
@@ -70,7 +70,7 @@ void waypointsFlightLoop(FlightBoard &fb, GPS &gps, IMU &imu, Logger &logs, dequ
 		while(!exitProgram) {
 			currentCoord = getCoord(&gps);
 			
-			if (wp_it > waypoints_list.size()) {
+			if (wp_it == waypoints_list.size()) {
 				wp_it = 0;
 				userState = 0;
 			}
@@ -185,4 +185,5 @@ void waypointsFlightLoop(FlightBoard &fb, GPS &gps, IMU &imu, Logger &logs, dequ
 		printFB_Data(&stop);
 	}
 	cout << "\033[1;32m[WAYPTS]\033[0m Waypoints flight loop terminating." << endl;
+	state = 11;
 }

@@ -122,7 +122,7 @@ void setCourse(FB_Data *instruction, double distance, double bearing, double yaw
 	instruction->gimbal   = 0;
 }	
 
-bool initialise(FlightBoard *fb, GPS *gps, IMU *imu) {
+bool initialise(FlightBoard *fb, GPS *gps, IMU *imu, CAMERA_STREAM *cam) {
 	cout << "\033[36m[COPTER]\033[0m Initialising." << endl;
 	
 	/* Initialise WiringPi */
@@ -138,7 +138,7 @@ bool initialise(FlightBoard *fb, GPS *gps, IMU *imu) {
 	/* Initialise GPS */
 	if(gps->setup() != GPS_OK) {
 		cout << "\033[1;31m[COPTER]\033[0m Error setting up GPS. Will retry continuously." << endl;
-		//while (gps->setup() != GPS_OK) usleep(1000);
+		while (gps->setup() != GPS_OK) usleep(1000000);
 	}
 	gps->start();
 	cout << "\033[36m[COPTER]\033[0m GPS detected." << endl;
@@ -148,8 +148,15 @@ bool initialise(FlightBoard *fb, GPS *gps, IMU *imu) {
 		cout << "\033[1;31m[COPTER]\033[0m Error setting up IMU. Will retry continuously." << endl;
 		//while (imu->setup() != IMU_OK) usleep(1000);
 	}
-	imu->start();
-	cout << "\033[36m[COPTER]\033[0m IMU detected." << endl;
+	//imu->start();
+	//cout << "\033[36m[COPTER]\033[0m IMU detected." << endl;
+	
+	
+	if (cam->setup() != CAMERA_OK) {
+		cout << "\033[1;31m[COPTER]\033[0m Error setting up camera. Will retry continuously." << endl;
+		while (cam->setup() != CAMERA_OK) usleep(1000000);
+	}
+	cam->start();
 	
 	return true;
 }
