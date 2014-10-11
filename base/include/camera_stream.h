@@ -26,6 +26,9 @@
 #define CHAR_SIZE 256
 
 #define CAMERA_OK 0
+
+#define CAMERA_WIDTH 320
+#define CAMERA_HEIGHT 240
  
 
 typedef struct {
@@ -70,7 +73,7 @@ private:
 	int MIN_HUE, MAX_HUE, MIN_SAT, MAX_SAT, MIN_VAL, MAX_VAL, PIXLE_THRESHOLD;
 	double PROCESS_IMAGE_REDUCE, STREAM_IMAGE_REDUCE;
 	int DILATE_ELEMENT, ERODE_ELEMENT;
-    double FRAME_RATE;
+    double THREAD_SLEEP_TIME;
     double BOX_SIZE;
     
 	bool ready;
@@ -96,7 +99,6 @@ private:
 	bool camShift(cv::Mat& Isrc, const uchar table_reduce_colorspace[], const uchar table_threshold[][LOOKUP_SIZE][LOOKUP_SIZE], std::vector<ObjectLocation>*, std::vector<CamWindow>*);
     int connectComponents(cv::Mat& Isrc, const uchar table_reduce_colorspace[], const uchar table_threshold[][LOOKUP_SIZE][LOOKUP_SIZE], std::vector<ObjectLocation>*, std::vector<CamWindow>*);
     
-    int sleepytime;
     int PIXLE_SKIP;
         
     std::vector<ObjectLocation> redObjectList;

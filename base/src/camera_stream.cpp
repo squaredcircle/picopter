@@ -50,7 +50,7 @@ CAMERA_STREAM::CAMERA_STREAM() {
     
     this->BOX_SIZE		= 1.5;
     
-    this->FRAME_RATE = 10;
+    this->THREAD_SLEEP_TIME = 5;
     
     this->DILATE_ELEMENT = 8;
     this->ERODE_ELEMENT = 8;
@@ -59,8 +59,6 @@ CAMERA_STREAM::CAMERA_STREAM() {
 	
 	this->takePhotoThisCycle = false;
 	this->imageFileName = "image.jpg";
-	
-	this->sleepytime = 500/FRAME_RATE;
 }
 
 CAMERA_STREAM::CAMERA_STREAM(const CAMERA_STREAM& orig) {}
@@ -108,8 +106,7 @@ int CAMERA_STREAM::setup(std::string fileName) {
     
     parameters.insert("BOX_SIZE", &BOX_SIZE);
     
-    parameters.insert("FRAME_RATE", &FRAME_RATE);
-    this->sleepytime = 500/FRAME_RATE;
+    parameters.insert("THREAD_SLEEP_TIME", &THREAD_SLEEP_TIME);
     
     parameters.insert("DILATE_ELEMENT", &DILATE_ELEMENT);
     parameters.insert("ERODE_ELEMENT", &ERODE_ELEMENT);
@@ -263,7 +260,7 @@ void CAMERA_STREAM::processImages() {
 		
 		cv::Mat frame;
 		cv::resize(image, frame, cv::Size(), STREAM_IMAGE_REDUCE, STREAM_IMAGE_REDUCE, cv::INTER_NEAREST);
-		cv::VideoWriter outStream(STREAM_FILE, CV_FOURCC('M','J','P','G'), FRAME_RATE, frame.size(), true);
+		cv::VideoWriter outStream(STREAM_FILE, CV_FOURCC('M','J','P','G'), 4, frame.size(), true);
 		if(outStream.isOpened()) {
 			outStream.write(frame);
 		}
@@ -277,13 +274,8 @@ void CAMERA_STREAM::processImages() {
 		
 		process_mutex.unlock();
 		
-        if(frame_counter > 6000) {
-			sleepytime += (int)(10 * (FRAME_RATE - getFramerate()) );
-			if(sleepytime < 0) sleepytime = 0;
-		}
-		
-		if(sleepytime > 0) {
-            boost::this_thread::sleep(boost::posix_time::milliseconds(sleepytime));
+		if(THREAD_SLEEP_TIME > 0) {
+            boost::this_thread::sleep(boost::posix_time::milliseconds(THREAD_SLEEP_TIME));
         }
 	}
 }
