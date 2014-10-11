@@ -34,8 +34,7 @@ double navigation::calculate_distance(coord pos1, coord pos2) {
 	double h = sin2((pos1.lat-pos2.lat)/2) + cos(pos1.lat)*cos(pos2.lat) * sin2((pos2.lon-pos1.lon)/2);
 	//if(h > 1) std::cout << "Distance calculation error" << std::endl;
 	
-	double distance = 2 * RADIUS_OF_EARTH * asin(sqrt(h));
-	return distance * 1000;	//meters
+	return 2 * RADIUS_OF_EARTH * asin(sqrt(h)) * 1000;
 }
 
 /*
@@ -50,13 +49,12 @@ double navigation::calculate_bearing(coord pos1, coord pos2) {
 	double num = sin(pos2.lon - pos1.lon) * cos(pos2.lat);
 	double den = cos(pos1.lat)*sin(pos2.lat) - sin(pos1.lat)*cos(pos2.lat)*cos(pos2.lon-pos1.lon);
 
-	double bearing = atan2(num, den);
-	return RAD2DEG(bearing);
+	return RAD2DEG( atan2(num, den) );
 }
 
 
 
-hardware_checks navigation::initialise(FlightBoard *fb, GPS *gps, IMU *imu) {
+hardware_checks navigation::initialise(FlightBoard *fb, GPS *gps, IMU *imu, CAMERA_STREAM *cam) {
 	
 	hardware_checks hardware = {false, false, false, false};
 	
@@ -100,6 +98,14 @@ hardware_checks navigation::initialise(FlightBoard *fb, GPS *gps, IMU *imu) {
 	} else {
 		imu->start();
 		hardware.IMU_Working = true;
+	}
+	
+	/* Initialise CAMERA_STREAM */
+	if(cam->setup() != CAMERA_OK) {
+		hardware.CAM_Working = false;
+	} else {
+		cam->start();
+		hardware.CAM_Working = true;
 	}
 	
 	return hardware;
@@ -232,12 +238,12 @@ velocity nav_path_planning::get_velocity(PID *controller, coord here, std::deque
 	double sumWeights = 0;
 	for(std::deque<coord>::iterator it = path->begin(); it != path->end(); ++it) {
 		count++;
-		weight = 1/count;
-		sumSines   += weight * sin(navigation::calculate_bearing(here, *it));
-		sumCosines += weight * cos(navigation::calculate_bearing(here, *it));
+		weight = 1.0/count;
+		sumSines   += weight * sin(DEG2RAD( navigation::calculate_bearing(here, *it)));
+		sumCosines += weight * cos(DEG2RAD( navigation::calculate_bearing(here, *it)));
 		sumWeights += weight;
 	}
-	v.bearing = atan2(sumSines/sumWeights, sumCosines/sumWeights);
+	v.bearing = RAD2DEG( atan2(sumSines/sumWeights, sumCosines/sumWeights) );
 	
 	return v;
 }
@@ -342,7 +348,7 @@ velocity nav_path_line::get_velocity(PID *control_perp, PID *control_para, coord
 	
 	velocity v;
 	v.speed = navigation::clipSpeed(sqrt(speed_perp*speed_perp + speed_para*speed_para), SPEED_LIMIT);
-	v.bearing = atan2(speed_perp, speed_para) * PI/180 + nav_components::calculate_bearing(l.X1, l.X2);
+	v.bearing = RAD2DEG( atan2(speed_perp, speed_para) ) + nav_components::calculate_bearing(l.X1, l.X2);
 	
 	return v;
 }
