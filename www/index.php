@@ -18,6 +18,7 @@
 		<div id="mainwindow">
 			<div id="main-side"></div>
 			<div id="map-canvas"></div>
+			<div id="camera-main" style="display: none"></div>
 			<div id="main-bottom"></div>
 		</div>
 		<div id="sidepanel">
@@ -25,11 +26,23 @@
 				<button type="button" class="cbtn nav-a" onclick="allStop()">All Stop</button>
 				<button type="button" class="cbtn nav-b" onclick="statusMode()">Status</button>
 				<button type="button" class="cbtn nav-c" onclick="manualMode()">Manual</button>
-				<button type="button" class="cbtn nav-d" onclick="autoMode()">Automatic</button>
+				<button type="button" class="cbtn nav-c" onclick="autoMode()">Automatic</button>
+				<button type="button" class="cbtn nav-c" onclick="trackingMode()">Tracking</button>
+				<button type="button" class="cbtn nav-d" onclick="settingsMode()">Settings</button>
+				
 			</div>
 			<div id="secondary-button-holder">
 				<div id="menu-top-a">
 					<div id="menu-top-b"></div>
+				</div>
+				
+				<div id="settings-holder" style="display: none">
+					<div class="headline">
+						<span class="h3">Settings</span>
+					</div>
+					
+					<button id="settings-camera" class="cbtn roundbtn" onclick="cameraMode();">Toggle Camera</button>
+					<button id="settings-path" class="cbtn roundbtn" onclick="togglePath()">Toggle Flight Path</button>
 				</div>
 				
 				<div id="status-holder" style="display: none">
@@ -37,6 +50,7 @@
 						<span class="h3">Status Report</span>
 					</div>
 					
+					<div id="bearing" class="text"></div>
 					<div id="response" class="text"></div>
 				</div>
 				
@@ -50,7 +64,7 @@
 					<button id="manual-begin" class="cbtn squarebtn" onclick="beginManual()">Begin Flight</button>
 				</div>
 				
-				<div id="auto-holder"  style="display: none">
+				<div id="auto-holder" style="display: none">
 					<div class="headline">
 						<span class="h3">Automatic Mode</span>
 					</div>
@@ -58,6 +72,15 @@
 					<button id="auto-edit" class="cbtn roundbtn" onclick="toggleBoundsEdit()">Edit Boundaries</button>
 					<button id="auto-reset" class="cbtn roundbtn" onclick="clearMarkers(true)">Reset Boundaries</button>
 					<button id="auto-begin" class="cbtn squarebtn" onclick="beginAuto()">Begin Flight</button>
+				</div>
+				
+				<div id="tracking-holder" style="display: none">
+					<div class="headline">
+						<span class="h3">Tracking Mode</span>
+					</div>
+
+					<button id="track-user" class="cbtn roundbtn" onclick="beginUserTracking()">Track Device</button>
+					<button id="track-object" class="cbtn roundbtn disabled" onclick="beginObjectTracking()">Track Object</button>
 				</div>
 				
 				<div id="information" class="text"></div>

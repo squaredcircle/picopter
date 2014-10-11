@@ -13,7 +13,6 @@ bool		checkInPerth(coord*);
 void		printFB_Data(FB_Data*);
 
 void		setCourse(FB_Data*, double, double, double);
-bool		initialise(FlightBoard *fb, GPS *gps, IMU *imu);
 double		inferBearing(FlightBoard *fb, GPS *gps, Logger *logs);
 
 #endif

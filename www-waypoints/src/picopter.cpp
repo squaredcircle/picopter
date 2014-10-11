@@ -33,14 +33,18 @@
 
 #include "webInterface.h"
 
+#include "gpio.h"
 #include "flightBoard.h"
 #include "gps_qstarz.h"
 #include "imu_euler.h"
 #include "logger.h"
 #include "camera_stream.h"
+#include "state.h"
+#include "buzzer.h"
 
 #include "control.h"
 #include "waypoints.h"
+#include "userTracking.h"
 
 #include "run_lawnmower.h"
 
@@ -58,14 +62,61 @@ Logger		logs = Logger("picopter.log");;
 
 boost::thread thread_1;
 
+FlightBoard		fb;
+GPS				gps;
+IMU				imu;
+CAMERA_STREAM	cam;
+Buzzer			buzzer;
+
+int 			state = 0;
+bool			exitProgram = false;
+int				userState = -1;
+string 			state_message;
+
+bool initialise(FlightBoard *fb, GPS *gps, IMU *imu, CAMERA_STREAM *cam) {
+	cout << "\033[36m[COPTER]\033[0m Initialising." << endl;
+	
+	/* Initialise WiringPi */
+	gpio::startWiringPi();
+	
+	/* Initialise Flight Board */
+	if(fb->setup() != FB_OK) {
+		cout << "\033[1;31m[COPTER]\033[0m Error setting up flight board.  Terminating program" << endl;
+		return false;
+	}
+	fb->start();
+	
+	/* Initialise GPS */
+	if(gps->setup() != GPS_OK) {
+		cout << "\033[1;31m[COPTER]\033[0m Error setting up GPS. Will retry continuously." << endl;
+		while (gps->setup() != GPS_OK) usleep(1000000);
+	}
+	gps->start();
+	cout << "\033[36m[COPTER]\033[0m GPS detected." << endl;
+	
+	/* Initialise IMU 
+	if(imu->setup() != IMU_OK) {
+		cout << "\033[1;31m[COPTER]\033[0m Error setting up IMU. Will retry continuously." << endl;
+		while (imu->setup() != IMU_OK) usleep(1000);
+	}
+	imu->start();
+	cout << "\033[36m[COPTER]\033[0m IMU detected." << endl;*/
+	
+	
+	/* Initialise Camera */
+	if (cam->setup() != CAMERA_OK) {
+		cout << "\033[1;31m[COPTER]\033[0m Error setting up camera. Will retry continuously." << endl;
+		while (cam->setup() != CAMERA_OK) usleep(1000000);
+	}
+	cam->start();
+
+	return true;
+}
+
 class webInterfaceHandler : virtual public webInterfaceIf {
 	public:
-		FlightBoard		fb;
-		GPS				gps;
-		IMU				imu;
-		CAMERA_STREAM	cam;
-	
 		deque<coord>	waypoints_list;
+		coord			user_position;
 		
 		char		str[BUFSIZ];
 		
@@ -74,6 +125,7 @@ class webInterfaceHandler : virtual public webInterfaceIf {
 		webInterfaceHandler() {
 			cout << "\033[36m[THRIFT]\033[0m Initialising hexacopter systems." << endl;
 			if (!initialise(&fb, &gps, &imu, &cam)) terminate();
+			buzzer.playBuzzer(0.4, 100, 100);
 		}
 		
 		/* User Control Functions ******************************************************* */
@@ -88,8 +140,8 @@ class webInterfaceHandler : virtual public webInterfaceIf {
 				cout << "\033[36m[THRIFT]\033[0m Beginning waypoints thread." << endl;
 				
 				exitProgram = false;
-				userState = 1;
-				thread_1 = boost::thread(waypointsFlightLoop, boost::ref(fb), boost::ref(gps), boost::ref(imu), boost::ref(logs), waypoints_list);
+				userState = -1;
+				thread_1 = boost::thread(waypointsFlightLoop, boost::ref(fb), boost::ref(gps), boost::ref(imu), boost::ref(buzzer), boost::ref(logs), waypoints_list);
 				
 				return true;
 			} else {
@@ -99,12 +151,37 @@ class webInterfaceHandler : virtual public webInterfaceIf {
 		}
 
 		/*
+		 *	beginUserTrackingThread
+		 *		Starts the user tracking thread.
+		 */
+		bool beginUserTrackingThread() {
+			if ( thread_1.timed_join(boost::posix_time::milliseconds(10)) ) {
+				
+				cout << "\033[36m[THRIFT]\033[0m Beginning user tracking thread." << endl;
+				
+				exitProgram = false;
+				userState = -1;
+				thread_1 = boost::thread(userTracking, boost::ref(fb), boost::ref(gps), boost::ref(imu), boost::ref(buzzer), boost::ref(logs), boost::ref(user_position));
+				
+				return true;
+			} else {
+				cout << "\033[31m[THRIFT]\033[0m  Cannot start user tracking, copter is flying." << endl;
+				return false;
+			}
+		}
+		
+		/*
 		 *	beginLawnmowerThread
 		 *		Starts the lawnmower code.
 		 */
 		bool beginLawnmowerThread() {
 			if ( thread_1.timed_join(boost::posix_time::milliseconds(10)) ) {
 				cout << "\033[36m[THRIFT]\033[0m Beginning lawnmower thread." << endl;
+				
+				if (waypoints_list.size() != 2) {
+					cout << "\033[31m[THRIFT]\033[0m Cannot start lawnmower without boundaries!" << endl;
+					return false;
+				}
 				
 				Pos corner1;
 				Pos corner2;
@@ -115,9 +192,9 @@ class webInterfaceHandler : virtual public webInterfaceIf {
 				corner2.lon = waypoints_list.back().lon;
 				
 				usingWindows = false;
-				exitLawnmower = false;
-				state = 10;
-				thread_1 = boost::thread(run_lawnmower, boost::ref(fb), boost::ref(gps), boost::ref(imu), corner1, corner2);
+				exitProgram = false;
+				userState = -1;
+				thread_1 = boost::thread(run_lawnmower, boost::ref(fb), boost::ref(gps), boost::ref(imu), boost::ref(buzzer), corner1, corner2);
 				return true;
 			} else {
 				cout << "\033[31m[THRIFT]\033[0m Cannot start lawnmower, copter is flying." << endl;
@@ -132,7 +209,6 @@ class webInterfaceHandler : virtual public webInterfaceIf {
 		bool allStop() {
 			cout << "\033[36m[THRIFT]\033[0m All Stop!" << endl;
 			userState = 0;
-			exitLawnmower = true;
 			exitProgram = true;
 			return true;
 		}
@@ -160,6 +236,12 @@ class webInterfaceHandler : virtual public webInterfaceIf {
 				case 4:
 					ss << "Automated control suspended. Remote control engaged.";
 					break;
+				case 5:
+					ss << "Bearing test under way. Standby.";
+					break;
+				case 6:
+					ss << "Waiting for flight authorisation from remote.";
+					break;
 				case 10:
 					ss << "Scanning region. Standby.";
 					break;
@@ -168,6 +250,15 @@ class webInterfaceHandler : virtual public webInterfaceIf {
 					break;
 				case 12:
 					ss << "Scan complete. Standing by.";
+					break;
+				case 21:
+					ss << "Travelling to user.";
+					break;
+				case 22:
+					ss << "At user, continuing to monitor.";
+					break;
+				case 99:
+					ss << state_message;
 					break;
 			}
 
@@ -214,6 +305,12 @@ class webInterfaceHandler : virtual public webInterfaceIf {
 
 			wp.lat = waypoints_list[wp_it].lat;
 			wp.lon = waypoints_list[wp_it].lon;
+		}
+	
+		bool updateUserPosition(const coordDeg& wp) {
+			user_position.lat = wp.lat;
+			user_position.lon = wp.lon;
+			return true;
 		}
 	
 		/*
@@ -263,9 +360,12 @@ webInterfaceHandler*	handlerInternal = NULL;
  */
 void terminate(int signum) {
 	cout << "\033[33m[THRIFT]\033[0m Signal " << signum << " received. Stopping copter. Exiting." << endl;
-	raspiCamCvReleaseCapture(&capture);
 	handlerInternal->allStop();
 	exitProgram = true;
+	cam.close();
+	fb.close();
+	gps.close();
+	imu.close();
 	thriftServer->stop();
 }
 

@@ -24,6 +24,11 @@ html, body {
 	padding-left:			20px;
 }
 
+#bearing {
+	width:				100%;
+	padding-left:			20px;
+}
+
 #response {
 	color:					#FF965B;
 	width:					100%;
@@ -198,7 +203,7 @@ html, body {
 @media screen and (orientation:portrait) {
  	/* Primary and secondary containers */
 	#mainwindow {
-		height:				65%;
+		height:				55%;
 		width:				100%;
 		margin-bottom:		4px;
 	}
@@ -217,8 +222,16 @@ html, body {
 		background-color:	#7F74EF;
 	}
 	
-	#map-canvas {
+	#map-canvas{
 		height:				100%;
+	}
+	
+	#camera-main {
+		height:				100%;
+	}
+	
+	#camera-main-img {
+		width:				calc(100% - 10px);
 	}
 	
 	#main-bottom {
@@ -257,11 +270,19 @@ html, body {
 		width:				100%;
 	}
 	
+	#camera-main {
+		height:				100%;
+		width:				100%;
+	}
+	
+	#camera-main-img {
+		width:				100%;
+	}
+	
 	#main-vertical {
 		overflow:			hidden;
 		width:				1.5%;
 		height:				100%;
-		margin-top:			4px;
 		background-color:	#7F74EF;
 		border-top-right-radius: 30px;
 	}

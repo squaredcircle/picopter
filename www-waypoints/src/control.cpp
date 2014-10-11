@@ -16,7 +16,6 @@
 #include <string>
 #include <sstream>
 
-#include "gpio.h"
 #include "flightBoard.h"
 #include "gps_qstarz.h"
 #include "imu_euler.h"
@@ -120,45 +119,6 @@ void setCourse(FB_Data *instruction, double distance, double bearing, double yaw
 	instruction->elevator = (int) (speed * cos( DEGTORAD(bearing - yaw) ));
 	instruction->rudder   = 0;
 	instruction->gimbal   = 0;
-}	
-
-bool initialise(FlightBoard *fb, GPS *gps, IMU *imu, CAMERA_STREAM *cam) {
-	cout << "\033[36m[COPTER]\033[0m Initialising." << endl;
-	
-	/* Initialise WiringPi */
-	gpio::startWiringPi();
-	
-	/* Initialise Flight Board */
-	if(fb->setup() != FB_OK) {
-		cout << "\033[1;31m[COPTER]\033[0m Error setting up flight board.  Terminating program" << endl;
-		return false;
-	}
-	fb->start();
-	
-	/* Initialise GPS */
-	if(gps->setup() != GPS_OK) {
-		cout << "\033[1;31m[COPTER]\033[0m Error setting up GPS. Will retry continuously." << endl;
-		while (gps->setup() != GPS_OK) usleep(1000000);
-	}
-	gps->start();
-	cout << "\033[36m[COPTER]\033[0m GPS detected." << endl;
-	
-	/* Initialise IMU */
-	if(imu->setup() != IMU_OK) {
-		cout << "\033[1;31m[COPTER]\033[0m Error setting up IMU. Will retry continuously." << endl;
-		//while (imu->setup() != IMU_OK) usleep(1000);
-	}
-	//imu->start();
-	//cout << "\033[36m[COPTER]\033[0m IMU detected." << endl;
-	
-	
-	if (cam->setup() != CAMERA_OK) {
-		cout << "\033[1;31m[COPTER]\033[0m Error setting up camera. Will retry continuously." << endl;
-		while (cam->setup() != CAMERA_OK) usleep(1000000);
-	}
-	cam->start();
-	
-	return true;
 }
 
 double inferBearing(FlightBoard *fb, GPS *gps, Logger *logs) {

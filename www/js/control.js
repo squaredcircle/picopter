@@ -1,39 +1,94 @@
 var canEdit = false;
 var canEditMarkers = false;
 var canEditBounds = false;
+var cameraEnabled = false;
+var pathEnabled = true;
+
+
+function cameraMode() {
+	if (!cameraEnabled) {
+		$("#map-canvas").hide();
+		$("#camera-main").show();
+		
+		url = "http://" + document.domain + ":5000/?action=stream";
+		$("#camera-main").html("<img id='camera-main-img' src='" + url + "'/>");
+		
+		$("#settings-camera").toggleClass('orange-toggle');
+	} else {
+		$("#camera-main").hide();
+		$("#map-canvas").show();
+		$("#camera-main").html();
+		
+		$("#settings-camera").toggleClass('orange-toggle');
+	}
+	
+	cameraEnabled = !cameraEnabled;
+}
+
+function setTab(tab) {
+	tabs = ["manual-holder", "auto-holder", "tracking-holder", "status-holder", "settings-holder"];
+	
+	$.each(tabs, function(i, val) {
+		if (val == tab) {
+			$("#" + val).show();
+		} else {
+			$("#" + val).hide();
+		}
+	});
+}
 
 function manualMode() {
 	if (!canEdit) {
-		$("#manual-holder").show();
-		$("#auto-holder").hide();
-		$("#status-holder").hide();
+		
+		setTab("manual-holder");
+		
 		showMarkers(markers);
 		hideMarkers(bounds);
 		hideRectangle();
-		
-		ajaxSend('updateWaypoints', markers);
 	}
 }
 
 function autoMode() {
 	if (!canEdit) {
-		$("#manual-holder").hide();
-		$("#auto-holder").show();
-		$("#status-holder").hide();
+		setTab("auto-holder");
 		hideMarkers(markers);
 		showMarkers(bounds);
 		showRectangle();
-		
-		ajaxSend('updateWaypoints', bounds);
+
+	}
+}
+
+function trackingMode() {
+	if (!canEdit) {
+		setTab("tracking-holder");
+		hideMarkers(markers);
+		hideMarkers(bounds);
+		hideRectangle();
 	}
 }
 
 function statusMode() {
 	if (!canEdit) {
-		$("#manual-holder").hide();
-		$("#auto-holder").hide();
-		$("#status-holder").show();
+		setTab("status-holder");
 	}
+}
+
+function settingsMode() {
+	if (!canEdit) {
+		setTab("settings-holder");
+	}
+}
+
+function togglePath() {
+	if (!pathEnabled) {
+		addPath();
+		$("#settings-path").toggleClass('orange-toggle');
+	} else {
+		removePath();
+		$("#settings-path").toggleClass('orange-toggle');
+	}
+	
+	pathEnabled = !pathEnabled;
 }
 
 function toggleEdit(data) {
@@ -44,6 +99,7 @@ function toggleEdit(data) {
 	$("#main-side").toggleClass('orange-toggle');
 	$("#main-bottom").toggleClass('orange-toggle');
 	
+	$("button[class*='nav-']").not('.nav-a').toggleClass('btn-disabled');
 	$("button[id*='begin']").toggleClass('btn-disabled');
 	
 	canEdit = !canEdit;

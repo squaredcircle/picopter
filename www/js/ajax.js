@@ -27,40 +27,67 @@ function allStop() {
 }
 
 function beginAuto() {
-	if (!canEdit && bounds.length == 2) ajaxSend('beginAuto');
+	if (!canEdit && bounds.length == 2) {
+		ajaxSend('updateWaypoints', bounds);
+		setTimeout(function() {
+			ajaxSend('beginAuto');
+		},500);
+	}
 }
 
 function beginManual() {
-	if (!canEdit && markers.length > 0) ajaxSend('beginManual');
+	if (!canEdit && markers.length > 0) {
+		ajaxSend('updateWaypoints', markers);
+		setTimeout(function() {
+			ajaxSend('beginManual');
+		},500);
+	}
+}
+
+function beginUserTracking() {
+	if ((navigator.geolocation)) {
+		ajaxSend('beginUserTracking');
+	}
 }
 
 (function worker() {
-	$.ajax({
-		type: "POST",
-		url:'ajax-thrift.php',
-		data: {
-			'action': 'requestCoords',
-		},
-		success: function(data) {
-			var arr = data.split(',');
-			
-			var latlng = L.latLng(parseFloat(arr[0]),parseFloat(arr[1]));
-
-			//copterMarker.setLatLng(latlng).update();
+	if ( typeof userMarker !== 'undefined' ) {
+		lat = userMarker.getLatLng().lat;
+		lon = userMarker.getLatLng().lng;
+		
+		data = {
+			'action': 'requestAll',
+			'lat': lat,
+			'lon': lon
 		}
-	});
+	} else {
+		data = {
+			'action': 'requestAll'
+		}
+	}
+	
 	$.ajax({
 		type: "POST",
+		dataType: "json",
 		url:'ajax-thrift.php',
-		data: {
-			'action': 'requestStatus',
-		},
+		data: data,
 		success: function(data) {
-			$("#status").html(data);
+			$("#status").html(data.status);
+			
+			$("#bearing").html("Facing " + Math.round(data.bearing) + "&deg;");
+			
+			var latlng = L.latLng(data.lat, data.lon);
+			copterMarker.setLatLng(latlng).update();
+			
+			if (pathEnabled) updatePath(latlng);
+			
 		},
 		error: function() {
 			$("#status").html("ERROR: No connection to flight control program.");
 		}
 	});
-	setTimeout(worker, 5000);
+	
+	if (navigator.geolocation) navigator.geolocation.getCurrentPosition(updateUserPosition);
+	
+	setTimeout(worker, 2000);
 })();

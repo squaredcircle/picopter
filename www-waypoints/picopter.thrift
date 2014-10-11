@@ -26,6 +26,7 @@ struct coordDeg {
 service webInterface {
 	bool		beginWaypointsThread();
 	bool		beginLawnmowerThread();
+	bool		beginUserTrackingThread();
 	
 	bool		allStop();
 	
@@ -34,6 +35,7 @@ service webInterface {
 	double		requestBearing();
 	
 	coordDeg	requestNextWaypoint();
+	bool		updateUserPosition(1: coordDeg wpt);
 	bool		updateWaypoints(1: list<coordDeg> wpts);
 	bool		resetWaypoints();
 }

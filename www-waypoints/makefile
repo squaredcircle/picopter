@@ -24,9 +24,9 @@ XSENS_INCLUDES    = -I../../lib/Xsens
 XSENS_OBJECTS     = $(addprefix ../../lib/Xsens/, cmt1.o cmt2.o cmt3.o cmtmessage.o cmtpacket.o cmtscan.o xsens_std.o xsens_time.o xsens_exception.o)
 
 ##### Vision
-#RASPICAM_LINKS    = -L../../lib/robidouille/raspicam_cv -L../../lib/userland/build/lib -lraspicamcv -lmmal_core -lmmal -lmmal_util -lvcos -lbcm_host
-#RASPICAM_INCLUDES = -I../../lib/robidouille/raspicam_cv
-#OPEN_CV           = `pkg-config --cflags --libs opencv`
+RASPICAM_LINKS    = -L../../lib/robidouille/raspicam_cv -L../../lib/userland/build/lib -lraspicamcv -lmmal_core -lmmal -lmmal_util -lvcos -lbcm_host
+RASPICAM_INCLUDES = -I../../lib/robidouille/raspicam_cv
+OPEN_CV           = `pkg-config --cflags --libs opencv`
 	
 default: gen-cpp/picopter_types.h bin/picopter
 	
@@ -34,7 +34,7 @@ gen-cpp/picopter_types.h: picopter.thrift
 	thrift --gen cpp picopter.thrift
 	thrift --gen php picopter.thrift
 	
-bin/picopter: $(MODULES_OBJECTS) $(BASE_OBJECTS) obj/webInterface.o obj/picopter_types.o obj/picopter.o obj/waypoints.o obj/control.o obj/structures.o
+bin/picopter: $(MODULES_OBJECTS) $(BASE_OBJECTS) obj/webInterface.o obj/picopter_types.o obj/picopter.o obj/waypoints.o obj/userTracking.o obj/control.o obj/structures.o
 	$(CC) $(INCLUDES) $^ -o $@ $(LIBS) $(RASPICAM_LINKS) $(OPEN_CV) $(LDFLAGS)
 	
 obj/webInterface.o: gen-cpp/webInterface.cpp
@@ -47,6 +47,9 @@ obj/picopter.o: src/picopter.cpp
 	$(CC) $(CFLAGS) $(THRIFT_FLAGS) $(INCLUDES) $(BASE_INCLUDES) $(RASPICAM_INCLUDES) $(MODULES_INCLUDES) $(XSENS_INCLUDES) $(THRIFT_INCLUDES) $^ -o $@ $(LIBS)
 	
 obj/waypoints.o: src/waypoints.cpp
+	$(CC) $(CFLAGS) $(INCLUDES) $(BASE_INCLUDES) $(XSENS_INCLUDES) $^ -o $@
+	
+obj/userTracking.o: src/userTracking.cpp
 	$(CC) $(CFLAGS) $(INCLUDES) $(BASE_INCLUDES) $(XSENS_INCLUDES) $^ -o $@
 	
 obj/control.o: src/control.cpp

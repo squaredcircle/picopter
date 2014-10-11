@@ -8,6 +8,8 @@ BASE_INCLUDE = -I../base/include
 BASE_HEADERS = $(wildcard ../base/include/*.h)
 BASE_OBJECTS = $(wildcard ../base/obj/*.o)
 
+STATE_INCLUDE = -I../www-waypoints/include
+
 XSENS_DIR = ../../lib/Xsens
 XSENS_LINKS = -L$(XSENS_DIR) -lcmt -lpthread -lrt
 XSENS_INCLUDES = -I$(XSENS_DIR)
@@ -25,7 +27,7 @@ OBJECTS = $(patsubst src/%.cpp, obj/%.o, $(wildcard src/*.cpp))
 all: $(OBJECTS)
 
 obj/%.o :  src/%.cpp include/%.h $(BASE_HEADERS)
-	$(CC) $(CFLAGS) $(INCLUDES) $(BASE_INCLUDE) $(XSENS_INCLUDES) $(RASPICAM_INCLUDES) $(OPEN_CV) $< -o $@
+	$(CC) $(CFLAGS) $(INCLUDES) $(BASE_INCLUDE) $(STATE_INCLUDE) $(XSENS_INCLUDES) $(RASPICAM_INCLUDES) $(OPEN_CV) $< -o $@
 
 
 clean:

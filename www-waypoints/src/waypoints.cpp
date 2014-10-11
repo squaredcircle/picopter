@@ -23,15 +23,14 @@
 #include "gps_qstarz.h"
 #include "imu_euler.h"
 #include "logger.h"
+#include "state.h"
+#include "buzzer.h"
 
 #include "control.h"
 
 using namespace std;
 
 /* Declare global variables */
-bool exitProgram	= false;
-int userState		= 0;
-int state			= 0;
 size_t wp_it		= 0;
 
 /*
@@ -47,7 +46,7 @@ size_t wp_it		= 0;
  *		resuming flight, the copter will read in the new list of waypoints and start at the
  *		beginning.
  */
-void waypointsFlightLoop(FlightBoard &fb, GPS &gps, IMU &imu, Logger &logs, deque<coord> &waypoints_list) {	
+void waypointsFlightLoop(FlightBoard &fb, GPS &gps, IMU &imu, Buzzer &buzzer, Logger &logs, deque<coord> &waypoints_list) {	
 	cout << "\033[1;32m[WAYPTS]\033[0m Waypoints thread initiated, travelling to the following waypoints:" << endl;
 	
 	char str_buf[BUFSIZ];
@@ -58,7 +57,14 @@ void waypointsFlightLoop(FlightBoard &fb, GPS &gps, IMU &imu, Logger &logs, dequ
 		cout << '         ' << i+1 << ": (" << waypoints_list[i].lat << ", " << waypoints_list[i].lon << ")" << endl;
 	}
 	
-	if (!useimu) yaw = inferBearing(&fb, &gps, &logs);
+	state = 6;
+	while ( !gpio::isAutoMode() ) usleep(1000000);
+	
+	if (!useimu) {
+		buzzer.playBuzzer(0.25, 100, 100);
+		state = 5;
+		yaw = inferBearing(&fb, &gps, &logs);
+	}
 	
 	coord		currentCoord = {-1, -1};
 	double		distanceToNextWaypoint;
@@ -86,7 +92,7 @@ void waypointsFlightLoop(FlightBoard &fb, GPS &gps, IMU &imu, Logger &logs, dequ
 				exitProgram = true;
 			/* State 0: All stop */
 			} else if (waypoints_list.empty() || userState == 0 ) {
-				state = 0;
+				state = 11;
 				wp_it = 0;
 				exitProgram = true;
 			/* State 3: Error. */
@@ -157,6 +163,7 @@ void waypointsFlightLoop(FlightBoard &fb, GPS &gps, IMU &imu, Logger &logs, dequ
 				
 				case 2:
 					fb.setFB_Data(&stop);
+					buzzer.playBuzzer(0.4, 100, 100);
 					
 					logs.writeLogLine("\033[1;32m[WAYPTS]\033[0m Reached waypoint, stopping");
 					
@@ -183,7 +190,14 @@ void waypointsFlightLoop(FlightBoard &fb, GPS &gps, IMU &imu, Logger &logs, dequ
 		cout << "\033[31m[WAYPTS]\033[0m Error encountered. Stopping copter." << endl;
 		fb.setFB_Data(&stop);
 		printFB_Data(&stop);
+		state = 3;
 	}
 	cout << "\033[1;32m[WAYPTS]\033[0m Waypoints flight loop terminating." << endl;
-	state = 11;
+	
+	buzzer.playBuzzer(0.2, 100, 100);
+	usleep(400000);
+	buzzer.playBuzzer(0.2, 100, 100);
+	usleep(400000);
+	buzzer.playBuzzer(0.2, 100, 100);
+	usleep(400000);
 }

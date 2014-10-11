@@ -5,6 +5,23 @@
 	
 	if (isset($_POST["action"])) {
 		switch ($_POST['action']) {
+			
+			case "requestAll":
+				$coords = $client->requestCoords();
+				
+				if (isset($_POST["lat"])) {
+					$wp = new \picopter\coordDeg();
+					$wp->lat = $_POST['lat'];
+					$wp->lon = $_POST['lon'];
+					
+					$client->updateUserPosition($wp);
+				}
+				
+				$ans = array( 'lat' => $coords->lat, 'lon' => $coords->lon, 'bearing' => $client->requestBearing(), 'status' => $client->requestStatus() );
+				
+				echo json_encode($ans);
+				break;
+				
 			case "requestCoords":
 				$ans = $client->requestCoords();
 				print $ans->lat . "," . $ans->lon;
@@ -12,7 +29,7 @@
 				
 			case "requestBearing":
 				$ans = $client->requestBearing();
-				print $ans;
+				print "Bearing: " . $ans . " degrees.\n";
 				break;
 				
 			case "requestStatus":
@@ -56,6 +73,11 @@
 			case "beginAuto":
 				$ans = $client->beginLawnmowerThread();
 				print "beginLawnmowerThread " . $b[$ans] . "\n";
+				break;
+				
+			case "beginUserTracking":
+				$ans = $client->beginUserTrackingThread();
+				print "beginUserTrackingThread " . $b[$ans] . "\n";
 				break;
 				
 			case "requestNextWaypoint":

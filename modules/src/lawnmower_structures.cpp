@@ -1,4 +1,3 @@
-bool exitLawnmower = false;
 bool usingIMU = true;
 bool usingWindows = true;
 

@@ -24,7 +24,6 @@ typedef struct{		//These are in degrees now.
 	double lon;
 } Pos;
 
-extern bool exitLawnmower;
 extern bool usingIMU;
 extern bool usingWindows;
 

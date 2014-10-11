@@ -5,12 +5,9 @@
 
 #include "structures.h"
 
-void	waypointsFlightLoop(FlightBoard &, GPS &, IMU &, Logger &, std::deque<coord> &);
+void	waypointsFlightLoop(FlightBoard &, GPS &, IMU &, Buzzer &, Logger &, std::deque<coord> &);
 
 /* External variables */
-extern bool		exitProgram;
-extern int		state;
-extern int		userState;
 extern size_t	wp_it;
 
 #endif

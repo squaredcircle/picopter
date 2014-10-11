@@ -20,6 +20,7 @@
 #include "camera.h"
 #include "config_parser.h"
 #include "buzzer.h"
+#include "state.h"
 
 #include "lawnmower_control.h"
 
@@ -29,13 +30,14 @@
 using namespace std;
 using namespace cv;
 
-void run_lawnmower(FlightBoard &fb, GPS &gps, IMU &imu,/* RaspiCamCvCapture* capture,*/ Pos start, Pos end) {
+void run_lawnmower(FlightBoard &fb, GPS &gps, IMU &imu, Buzzer &buzzer, Pos start, Pos end) {
 
 	cout << "Starting to run lawnmower..." << endl;
 
 	if ((start.lat > -30) || (start.lat < -32) || (start.lon < 114) || (start.lon > 116) ||(end.lat > -30) || (end.lat < -32) || (end.lon < 114) || (end.lon > 116)) {
 		cout << "ERROR :: Locations passed are NOT IN PERTH!" << endl;
 		cout << "ERROR :: Quitting..." << endl;
+		state = 3;
 		return;
 	}
 	
@@ -54,9 +56,8 @@ void run_lawnmower(FlightBoard &fb, GPS &gps, IMU &imu,/* RaspiCamCvCapture* cap
     lawnParameters.insert("FREQUENCY", &FREQUENCY);
     lawnParameters.insert("VOLUME", &VOLUME);
     ConfigParser::loadParameters("BUZZER", &lawnParameters, CONFIG_FILE);
-
-    Buzzer* buzzer = new Buzzer();
-    buzzer->playBuzzer(DURATION, FREQUENCY, VOLUME);
+	
+    buzzer.playBuzzer(DURATION, FREQUENCY, VOLUME);
 	
 	if(imu.setup() != IMU_OK) {		//Check if IMU
         cout << "Error opening imu: Will navigate using GPS only." << endl;
@@ -118,7 +119,7 @@ void run_lawnmower(FlightBoard &fb, GPS &gps, IMU &imu,/* RaspiCamCvCapture* cap
 	cout  << "Waiting to enter autonomous mode..." << endl;
 	while(!gpio::isAutoMode()) usleep(100);	//Hexacopter waits until put into auto mode
 	cout << "Autonomous Mode has been Entered" << endl;
-    buzzer->playBuzzer(DURATION, FREQUENCY, VOLUME);
+    buzzer.playBuzzer(DURATION, FREQUENCY, VOLUME);
 
 	double yaw;
 	if (usingIMU) {
@@ -128,6 +129,7 @@ void run_lawnmower(FlightBoard &fb, GPS &gps, IMU &imu,/* RaspiCamCvCapture* cap
 		sprintf(str, "Using compass: Copter is facing %f degrees.", yaw);
 	}
 	else {
+		state = 5;
 		yaw = determineBearing(&fb, &gps, &data);	//Hexacopter determines which way it is facing
 		sprintf(str, "Bearing found with GPS: Copter is facing %f degrees.", yaw);
 	}
@@ -135,19 +137,21 @@ void run_lawnmower(FlightBoard &fb, GPS &gps, IMU &imu,/* RaspiCamCvCapture* cap
 	gps.getGPS_Data(&data);		//Hexacopter works out where it is
 	cout << "Location and Orienation determined" << endl;
 	
+	state = 10;
 	for (int i = 0; i < (int)gpsPoints.size(); i++) {
 		flyTo(&fb, &gps, &data, &imu, &compassdata, gpsPoints[i], yaw, &lawnlog, &rawgpslog,/* capture,*/ i, oval);
-		buzzer->playBuzzer(DURATION, FREQUENCY*2, VOLUME);
+		buzzer.playBuzzer(DURATION, FREQUENCY*2, VOLUME);
 		if (i == 0) {	//Are we at the first point?
 			rawgpslog.clearLog();			//Flush data in there - also removers header
 			oval = imread(OVAL_IMAGE_PATH);	//Wipe any extra lines caused by flying to first point
 		}
-		if(exitLawnmower) {
+		if(exitProgram) {
 			break;
 		}
 	}
 
-	buzzer->playBuzzer(DURATION, FREQUENCY, VOLUME);
+	state = 12;
+	buzzer.playBuzzer(DURATION, FREQUENCY, VOLUME);
 	sprintf(str, "photos/James_Oval_%d.jpg", (int)((data.time)*100));
 	imwrite(str, oval);
 	cout << "Finished Lawnmower run!" << endl;

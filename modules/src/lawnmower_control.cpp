@@ -19,13 +19,14 @@
 //#include "detectObjects.h"
 
 #include "lawnmower_structures.h"
+#include "state.h"
 
 using namespace std;
 using namespace cv;
 
 void terminateLawn(int signum) {
 	cout << "Signal " << signum << " received. Quitting lawnmower program." << endl;
-	exitLawnmower = true;
+	exitProgram = true;
 }
 
 void updatePicture(Mat oval, double latitude, double longitude, int type) {
@@ -261,7 +262,7 @@ void flyTo(FlightBoard *fbPtr, GPS *gpsPtr, GPS_Data *dataPtr, IMU *imuPtr, IMU_
 
 	cout << "Starting flight loop..." << endl;
 
-	while (!exitLawnmower && distance > WAYPOINT_RADIUS) {
+	while (!exitProgram && distance > WAYPOINT_RADIUS) {
 		setLawnCourse(&course, distance, pastDistances, bearing, yaw);
 		cout << "Course set" << endl;
 		sprintf(str, "Course set to : {%d (A), %d (E)}", course.aileron, course.elevator);
