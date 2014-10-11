@@ -86,6 +86,26 @@
 				<div id="information" class="text"></div>
 				<div id="status" class="text"></div>
 			</div>
+			<div id="tertiary-holder">
+				<div id="tertiary-menu-a">
+				</div>
+				<div id="tertiary-menu-b">
+					<div id="menu-top-c">
+						<div id="menu-top-d"></div>
+					</div>
+				</div>
+				<div id="tertiary-menu-c">
+				</div>
+				<div id="tertiary-menu-d">
+					<div id="menu-bottom-a">
+						<div id="menu-bottom-b"></div>
+					</div>
+					<div class="headline">
+						<span class="h3">Camera Feed</span>
+					</div>
+					<div id="camera-secondary"></div>
+				</div>
+			</div>
 		</div>
 		<div id="main-vertical"></div>
 		

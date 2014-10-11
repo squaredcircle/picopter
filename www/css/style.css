@@ -72,7 +72,6 @@ html, body {
 
 #menu-button-holder {
 	width:					140px;
-	height:					100%;
 	float:					left;
 	background-color:		#000;
 	margin:					0 auto;
@@ -81,6 +80,48 @@ html, body {
 #secondary-button-holder {
 	padding-left:			140px;
 	margin:					0;
+}
+
+#tertiary-holder {
+	clear:					both;
+	width:					100%;
+	background-color:		#000;
+}
+
+#tertiary-menu-a {
+	width:					140px;
+	height:					44px;
+	float:					left;
+	background-color:		#FF965B;
+	margin:					0 auto;
+	border-bottom-left-radius: 30px;
+}
+
+#tertiary-menu-b {
+	padding-left:			140px;
+	height:					44px;
+	margin:					0;
+	background-color:		#FF965B;
+	border-bottom-left-radius: 30px;
+}
+
+#tertiary-menu-c {
+	width:					40px;
+	height:					400px;
+	float:					left;
+	background-color:		#FF965B;
+	margin:					0 auto;
+	margin-top:				4px;
+	border-top-left-radius: 30px;
+}
+
+#tertiary-menu-d {
+	padding-left:			40px;
+	height:					44px;
+	margin:					0;
+	margin-top:				4px;
+	background-color:		#FF965B;
+	border-top-left-radius: 30px;
 }
 
 #menu-top-a {
@@ -92,6 +133,42 @@ html, body {
 }
 
 #menu-top-b {
+	background-color:		#000;
+	width:					100%;
+	height:					22px;
+	position:				absolute;
+	bottom:					0px;
+	border:					none;
+	border-top-left-radius: 30px;
+}
+
+#menu-top-c {
+	background-color:		#FF965B;
+	width:					100%;
+	height:					44px;
+	margin:					none;
+	position:				relative;
+}
+
+#menu-top-d {
+	background-color:		#000;
+	width:					100%;
+	height:					22px;
+	position:				absolute;
+	top:					0px;
+	border:					none;
+	border-bottom-left-radius: 30px;
+}
+
+#menu-bottom-a {
+	background-color:		#FF965B;
+	width:					100%;
+	height:					44px;
+	margin:					none;
+	position:				relative;
+}
+
+#menu-bottom-b {
 	background-color:		#000;
 	width:					100%;
 	height:					22px;
@@ -130,6 +207,13 @@ html, body {
 	width:					100%;
 	background-color:		#FF965B;
 	height:					44px;
+}
+
+.nav-e {
+	width:					100%;
+	background-color:		#FF965B;
+	height:					44px;
+	border-top-left-radius: 30px;
 }
 
 /***************************** BUTTONS */
@@ -222,6 +306,10 @@ html, body {
 		background-color:	#7F74EF;
 	}
 	
+	#tertiary-holder {
+		display:			none;
+	}
+	
 	#map-canvas{
 		height:				100%;
 	}
@@ -275,8 +363,16 @@ html, body {
 		width:				100%;
 	}
 	
+	#camera-secondary {
+		width:				100%;
+	}
+	
 	#camera-main-img {
 		width:				100%;
+	}
+	
+	#settings-camera {
+		display:			none;
 	}
 	
 	#main-vertical {

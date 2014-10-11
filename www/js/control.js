@@ -4,6 +4,10 @@ var canEditBounds = false;
 var cameraEnabled = false;
 var pathEnabled = true;
 
+(function cameraInit() {
+	url = "http://" + document.domain + ":5000/?action=stream";
+	$("#camera-secondary").html("<img id='camera-main-img' src='" + url + "'/>");
+})();
 
 function cameraMode() {
 	if (!cameraEnabled) {
