@@ -4,12 +4,13 @@
 #include "flightBoard.h"
 #include "gps_qstarz.h"
 #include "imu_euler.h"
-#include "logger.h"
-#include <deque>
 #include "navigation_structures.h"
+#include "logger.h"
+#include "display.h"
+#include <deque>
 
 
-void waypointsLoop(FlightBoard&, GPS&, IMU&, hardware_checks, Logger&, std::deque<coord>&);
+void waypointsLoop(FlightBoard&, GPS&, IMU&, hardware_checks, Logger&, Display&, std::deque<coord>&);
 
 
 extern bool exitProgram;

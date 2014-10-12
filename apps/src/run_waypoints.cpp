@@ -7,6 +7,8 @@
 #include "imu_euler.h"
 #include "logger.h"
 
+#include "display.h"
+
 #include <deque>
 #include <fstream>
 #include <sstream>
@@ -60,8 +62,11 @@ int main(int argc, char* argv[]) {
 	deque<coord> waypoints_list = deque<coord>();
 	populate_waypoints_list(&waypoints_list);
 	
+	//Start display
+	Display screen = Display(BAX_STYLE);
+	
 	//Start loop
-	waypointsLoop(fb, gps, imu, hardware_list, log, waypoints_list);
+	waypointsLoop(fb, gps, imu, hardware_list, log, screen, waypoints_list);
 	
 	//Close hardware
 	fb.stop();

@@ -14,7 +14,7 @@
 
 class Display {
 public:
-	Display(int style, std::string discription = "");
+	Display(int style = ALEX_STYLE, std::string discription = "");
 	Display(const Display&);
 	virtual ~Display(void);
 	

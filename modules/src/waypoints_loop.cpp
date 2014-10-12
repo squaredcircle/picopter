@@ -16,6 +16,8 @@
 #include <string>
 #include <cstdio>
 
+#include "display.h"
+
 
 using namespace std;
 
@@ -71,7 +73,11 @@ void loadParameters(std::string fileName) {
     ConfigParser::loadParameters("WAYPOINTS", &parameters, fileName);
 }
 
-void waypointsLoop(FlightBoard &fb, GPS &gps, IMU &imu, hardware_checks hardware_list, Logger &log, deque<coord> &waypoints_list) {
+void waypointsLoop(FlightBoard &fb, GPS &gps, IMU &imu, hardware_checks hardware_list, Logger &log, Display &display, deque<coord> &waypoints_list) {
+	
+	display.clear();
+	display.print("Starting loop", "WAYPTS");
+	
 	
 	log.clearLog();
 	char strBuf[128];
@@ -83,7 +89,19 @@ void waypointsLoop(FlightBoard &fb, GPS &gps, IMU &imu, hardware_checks hardware
 	double yaw = 0;	
 	
 	
-	if (!useimu) yaw = inferBearing(&fb, &gps);
+	if (!useimu) {
+		display.print("No IMU Detected", "WAYPTS");
+		display.print("Copter will move forwards when put into auto more", "WAYPTS");
+		display.refresh();
+		while(gpio::isAutoMode()) {
+			boost::this_thread::sleep(boost::posix_time::milliseconds(100));
+		}
+		display.clear();
+		display.print("Conducting Bearing test", "WAYPTS");
+		display.refresh();
+		
+		yaw = inferBearing(&fb, &gps);
+	}
 	
 	coord		currentCoord = {-1, -1};
 	double		distanceToNextWaypoint = -1;
@@ -147,8 +165,69 @@ void waypointsLoop(FlightBoard &fb, GPS &gps, IMU &imu, hardware_checks hardware
 			}
 			
 			
+			//print things and sound alarm
+			
+			if(display.getStyle() == BAX_STYLE) {
+				sprintf(strBuf, "State:\t %d", state);
+				display.print(strBuf);
+				
+				sprintf(strBuf, "Current coord:\t %3.4f, %3.4f", currentCoord.lat, currentCoord.lon);
+				display.print(strBuf);
+				
+				sprintf(strBuf, "Current yaw:\t %4.1f degrees", yaw);
+				display.print(strBuf);
+				
+				if (!waypoints_list.empty()) {
+					sprintf(strBuf, "Next waypoint:\t %3.4f, %3.4f", waypoints_list.front().lat, waypoints_list.front().lon);
+					display.print(strBuf);
+					
+					sprintf(strBuf, "Distance:\t %2.2f m", distanceToNextWaypoint);
+					display.print(strBuf);
+					
+					sprintf(strBuf, "Bearing:\t %4.1f m", bearingToNextWaypoint);
+					display.print(strBuf);
+				}
+			}
+				
+				
 			
 			if (pastState != state) {
+				if(display.getStyle() == ALEX_STYLE) {
+					switch (state) {
+						case 0:
+							display.print("Manual mode engaged.", "WAYPTS");
+							break;
+						case 1:
+							sprintf(strBuf, "Travelling to waypoint at %3.4f, %3.4f", waypoints_list.front().lat, waypoints_list.front().lon);
+							display.print(strBuf, "WAYPTS");
+							break;
+						case 2:
+							display.print("At waypoint.", "WAYPTS");
+							break;
+						case 3:
+							display.print("No more waypoints.", "WAYPTS");
+							break;
+						case 4:
+							display.print("All stop!", "WAYPTS");
+							break;
+						case 5:
+						default:
+							display.print("Danger, Will Robinson!", "WAYPTS");
+							break;
+					}
+					sprintf(strBuf, "In state:\t %d", state);
+					display.print(strBuf, "WAYPTS");
+					
+					sprintf(strBuf, "Facing:\t %4.1f, at coordinates (%3.4f, %3.4f)", yaw, currentCoord.lat, currentCoord.lon);
+					display.print(strBuf, "WAYPTS");
+					
+					sprintf(strBuf, "The next waypoint is at (%3.4f, %3.4f)", waypoints_list.front().lat, waypoints_list.front().lon);
+					display.print(strBuf, "WAYPTS");
+					
+					sprintf(strBuf, "It is %2.2fm away, at a bearing of %4.1f.", distanceToNextWaypoint, bearingToNextWaypoint);
+					display.print(strBuf, "WAYPTS");
+				}
+				
 				cowbell.needs_more();
 				pastState = state;
 			}
@@ -174,6 +253,10 @@ void waypointsLoop(FlightBoard &fb, GPS &gps, IMU &imu, hardware_checks hardware
 					waypoints_list.push_back(waypoints_list.front());
 					waypoints_list.pop_front();
 
+					if(display.getStyle() == BAX_STYLE) {
+						display.print("At waypoint", "WAYPTS");
+						display.refresh();
+					}
 					boost::this_thread::sleep(boost::posix_time::milliseconds(WAIT_AT_WAYPOINTS*1000));
 					
 					break;
@@ -196,7 +279,9 @@ void waypointsLoop(FlightBoard &fb, GPS &gps, IMU &imu, hardware_checks hardware
 			}
 			
 			if(!exitProgram) {
+				display.refresh();
 				boost::this_thread::sleep(boost::posix_time::milliseconds(MAIN_LOOP_DELAY));
+				display.clear();
 			}
 			
 		}
