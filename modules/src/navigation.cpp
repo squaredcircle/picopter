@@ -5,8 +5,6 @@
 #include <algorithm>
 #include <cmath>
 
-#include "gpio.h"
-
 
 /*
  *	coordToRad
@@ -53,64 +51,6 @@ double navigation::calculate_bearing(coord pos1, coord pos2) {
 }
 
 
-
-hardware_checks navigation::initialise(FlightBoard *fb, GPS *gps, IMU *imu, CAMERA_STREAM *cam) {
-	
-	hardware_checks hardware = {false, false, false, false};
-	
-	/* Initialise WiringPi */
-	gpio::startWiringPi();
-	
-	/* Initialise Flight Board */
-	if(fb->setup() != FB_OK) {
-		hardware.FB_Working = false;
-	} else {
-		fb->start();
-		hardware.FB_Working = true;
-	}
-	
-	
-	/* Initialise GPS */
-	int numTries = 0;
-	int maxTries = 900;			//~3min at 5Hz
-	int sleepTime = 200*1000;	//200ms
-	coord here;
-	
-	if(gps->setup() != GPS_OK) {
-		hardware.GPS_Working = false;
-	} else {
-		gps->start();
-		
-		//Wait for gps fix
-		here = getCoord(gps);
-		while(!checkInPerth(&here) && numTries<maxTries) {
-			numTries++;
-			here = getCoord(gps);
-			usleep(sleepTime);
-		}
-		
-		hardware.GPS_Working = (numTries != maxTries);
-	}
-	
-	/* Initialise IMU */
-	if(imu->setup() != IMU_OK) {
-		hardware.IMU_Working = false;
-	} else {
-		imu->start();
-		hardware.IMU_Working = true;
-	}
-	
-	/* Initialise CAMERA_STREAM */
-	if(cam->setup() != CAMERA_OK) {
-		hardware.CAM_Working = false;
-	} else {
-		cam->start();
-		hardware.CAM_Working = true;
-	}
-	
-	return hardware;
-}
-
 double navigation::inferBearing(FlightBoard *fb, GPS *gps, int DIRECTION_TEST_SPEED, int DIRECTION_TEST_DURATION) {
 	FB_Data stop		= {0, 0, 0, 0};
 	FB_Data forwards	= {0, DIRECTION_TEST_SPEED, 0, 0};
@@ -131,36 +71,6 @@ double navigation::inferBearing(FlightBoard *fb, GPS *gps, int DIRECTION_TEST_SP
 	yaw = calculate_bearing(direction_test_start, direction_test_end);
 	
 	return yaw;
-}
-
-
-/*
- *	getCoord
- *		Reads in a GPS data structure, and returns the coordinate in degrees. 
- */
-coord navigation::getCoord(GPS *gps) {
-	GPS_Data gps_data;
-	gps->getGPS_Data(&gps_data);
-	coord here = {gps_data.latitude, gps_data.longitude};
-	return here;
-}
-
-/*
- *	getYaw
- *		Reads in a IMU data structure, and returns the current yaw in degrees.
- */
-double navigation::getYaw(IMU *i) {
-	IMU_Data data;
-	i->getIMU_Data(&data);
-	return data.yaw;
-}
-
-/*
- *	checkInPerth
- *		Sanity check. Check if the GPS is working.
- */
-bool navigation::checkInPerth(coord *here) {
-	return(here->lat > -33 && here->lat < -31 && here->lon > 115 && here->lon < 117);
 }
 
 
@@ -205,7 +115,7 @@ velocity nav_direct::get_velocity(PID *controller, double distance, double beari
 /* More sophisticated navigation: simple (straight) path planning (intermediate waypoints) */
 
 
-void nav_path_planning::plot_path(coord start, coord end, std::deque<coord> *path, double POINT_SPACING) {
+void nav_direct::plot_path(coord start, coord end, std::deque<coord> *path, double POINT_SPACING) {
 	double distance = navigation::calculate_distance(start, end);
 	int numPoints = distance / POINT_SPACING;
 	for(int i=1; i<numPoints; i++) {
@@ -217,7 +127,7 @@ void nav_path_planning::plot_path(coord start, coord end, std::deque<coord> *pat
 	path->push_back(end);
 }
 
-void nav_path_planning::update_path(coord here, std::deque<coord> *path, double PATH_RADIUS) {
+void nav_direct::update_path(coord here, std::deque<coord> *path, double PATH_RADIUS) {
 	double distance = navigation::calculate_distance(here, path->front());
 	while(path->size() > 1 && (distance < PATH_RADIUS || distance > navigation::calculate_distance(here, path->at(1))) ) {
 		path->pop_front();
@@ -226,7 +136,7 @@ void nav_path_planning::update_path(coord here, std::deque<coord> *path, double 
 }
 
 
-velocity nav_path_planning::get_velocity(PID *controller, coord here, std::deque<coord> *path, double SPEED_LIMIT) {
+velocity nav_direct::get_velocity(PID *controller, coord here, std::deque<coord> *path, double SPEED_LIMIT) {
 	velocity v;
 	v.speed = navigation::calculate_distance(here, path->front());
 	v.speed = navigation::clipSpeed(v.speed, SPEED_LIMIT);
@@ -309,7 +219,7 @@ velocity nav_components::get_velocity(PID *x_control, PID *y_control, cartesian 
 /* Variation on above: path is a straight line, get closest point on that line
  * and PID distances perpendicular to and along line */
 
-line nav_path_line::get_path(coord start, coord end) {
+line nav_components::get_path(coord start, coord end) {
 	line l;
 	l.origin = start;
 	l.X1.x = 0;
@@ -322,7 +232,7 @@ line nav_path_line::get_path(coord start, coord end) {
 
 
 
-velocity nav_path_line::get_velocity(PID *control_perp, PID *control_para, coord here, line l, double SPEED_LIMIT) {
+velocity nav_components::get_velocity(PID *control_perp, PID *control_para, coord here, line l, double SPEED_LIMIT) {
 	cartesian H = nav_components::get_distance_components(l.origin, here);
 	cartesian P;
 	int t;

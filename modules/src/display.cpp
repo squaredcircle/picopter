@@ -65,10 +65,10 @@ void Display::refresh() {
 }	
 
 
-void Display::print(char msg[], char head[]) {
+void Display::print(std::string msg, std::string head) {
 	if(style == ALEX_STYLE) {
 		std::map<std::string, std::string>::iterator it;
-		it = colourCode.find(std::string(head));
+		it = colourCode.find(head);
 		if(it != colourCode.end()) {
 			std::cout << it->second << msg << std::endl;
 		} else {
@@ -77,22 +77,8 @@ void Display::print(char msg[], char head[]) {
 	}
 	
 	if(style == BAX_STYLE) {	
-		wprintw(msg_window, "%s\n", msg);
+		wprintw(msg_window, "%s\n", msg.c_str());
 	}
-}
-
-void Display::print(char msg[], Logger *log, char head[]) {
-	print(msg, head);
-	if(style == ALEX_STYLE) {
-		sprintf(str_buf, "%s\t%s", head, msg);
-		log->writeLogLine(str_buf);
-	} else { 
-		log->writeLogLine(msg);
-	}
-}
-
-void Display::print(std::string msg, std::string head) {
-	print(msg.c_str(), head.c_str());
 }
 
 void Display::print(std::string msg, Logger *log, std::string head) {

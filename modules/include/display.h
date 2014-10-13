@@ -21,10 +21,6 @@ public:
 	void clear();
 	void refresh();
 	
-	void print(char msg[], char head[] = "");
-	void print(char msg[], Logger*, char head[] = "");
-		
-		
 	void print(std::string msg, std::string head = "");
 	void print(std::string msg, Logger*, std::string head = "");
 	

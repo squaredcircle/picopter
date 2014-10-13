@@ -2,12 +2,12 @@
 #define __NAVIGATION_H_INCLUDED__
 
 #include "navigation_structures.h"
+#include "navigation_init.h"
 
 
 #include "flightBoard.h"
 #include "gps_qstarz.h"
 #include "imu_euler.h"
-#include "camera_stream.h"
 
 #include "PID.h"
 
@@ -16,12 +16,7 @@ namespace navigation {
 	double		calculate_distance(coord, coord);
 	double		calculate_bearing(coord, coord);
 	
-	hardware_checks	initialise(FlightBoard *fb, GPS *gps, IMU *imu, CAMERA_STREAM *cam);
-	double			inferBearing(FlightBoard *fb, GPS *gps, int DIRECTION_TEST_SPEED = 30, int DIRECTION_TEST_DURATION = 6000);
-	
-	coord		getCoord(GPS*);
-	double		getYaw(IMU*);
-	bool		checkInPerth(coord*);
+	double		inferBearing(FlightBoard *fb, GPS *gps, int DIRECTION_TEST_SPEED = 30, int DIRECTION_TEST_DURATION = 6000);
 	
 	double		clipSpeed(double speed, double SPEED_LIMIT);
 	
@@ -38,7 +33,7 @@ namespace nav_direct {
 }
 
 /* More sophisticated navigation: simple (straight) path planning (intermediate waypoints) */
-namespace nav_path_planning {
+namespace nav_direct {
 	void		plot_path(coord, coord, std::deque<coord>*, double POINT_SPACING = 1);
 	void		update_path(coord, std::deque<coord>*, double PATH_RADIUS = 1);
 	
@@ -60,7 +55,7 @@ namespace nav_components {
 
 /* Variation on above: path is a straight line, get closest point on that line
  * and PID distances perpendicular to and along line */
-namespace nav_path_line {
+namespace nav_components {
 	line		get_path(coord, coord);
 	
 	velocity	get_velocity(PID*, PID*, coord, line, double SPEED_LIMIT);
