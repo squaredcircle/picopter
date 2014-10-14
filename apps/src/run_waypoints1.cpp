@@ -1,14 +1,16 @@
 #include "waypoints_loop1.h"
-#include "navigation.h"
+
+#include "hardware.h"
 #include "navigation_structures.h"
 #include "navigation_init.h"
 
 #include "flightBoard.h"
 #include "gps_qstarz.h"
 #include "imu_euler.h"
+#include "camera_stream.h"
 #include "logger.h"
 
-#include "display.h"
+#include "state.h"
 
 #include <deque>
 #include <fstream>
@@ -19,7 +21,8 @@
 using namespace std;
 using namespace navigation;
 
-#define GPS_DATA_FILE "config/waypoints_list.txt"
+#define GPS_DATA_FILE "/home/pi/picopter/apps/config/waypoints_list.txt"
+#define CONFIG_FILE "/home/pi/picopter/apps/config/config.txt"
 
 void populate_waypoints_list(deque<coord>*);
 
@@ -27,7 +30,7 @@ void populate_waypoints_list(deque<coord>*);
 int state		= 1;
 int userState	= 1;
 bool loopWaypoints	= true;
-size_t	wp_it = 0;
+//size_t	wp_it = 0;
 
 bool exitProgram = false;
 
@@ -52,7 +55,7 @@ int main(int argc, char* argv[]) {
 	IMU imu;
 	CAMERA_STREAM cam;
 	
-	hardware_checks hardware_list = initialise(&fb, &gps, &imu, &cam);
+	hardware hardware_list = initialise(&fb, &gps, &imu, &cam);
 	//Turn off camera
 	cam.close();
 	hardware_list.CAM_Working = false;
@@ -64,11 +67,9 @@ int main(int argc, char* argv[]) {
 	deque<coord> waypoints_list = deque<coord>();
 	populate_waypoints_list(&waypoints_list);
 	
-	//Start display
-	Display screen = Display(BAX_STYLE);
 	
 	//Start loop
-	waypoints_loop1(fb, gps, imu, hardware_list, log, screen, waypoints_list);
+	waypoints_loop1(hardware_list, log, waypoints_list, CONFIG_FILE);
 	
 	//Close hardware
 	fb.stop();

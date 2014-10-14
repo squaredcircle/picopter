@@ -25,7 +25,10 @@ int main(int argc, char* argv[]) {
 
 	//Main program
 	CAMERA_STREAM cam = CAMERA_STREAM();
-	cam.setup();
+	if(cam.setup() != CAMERA_OK) {
+		cout << "No camera detected" << endl;
+		return -1;
+	}
 	cam.start();
 
 	

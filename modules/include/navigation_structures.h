@@ -21,7 +21,7 @@ typedef struct {		// Holds an (x,y) pair, in meters.  May be either a point or a
 	double y;
 } cartesian;
 
-typedef struct {		// Holds an (X1,X2) pair, in meters. And the distance between them.
+typedef struct {		// Holds an (X1,X2) pair, in meters. And the long/lat origin.
 	cartesian X1;
 	cartesian X2;
 	coord origin;
