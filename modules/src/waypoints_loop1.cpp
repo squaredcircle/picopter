@@ -38,8 +38,8 @@ using namespace navigation;
 using namespace nav_direct;
 
 /* Declare global variables */
-size_t wp_it		= 0;
-bool repeatLoop		= true;
+//size_t wp_it		= 0;
+//bool repeatLoop		= true;
 
 
 
@@ -291,4 +291,5 @@ void waypoints_loop1(hardware &hardware_list, Logger &log, deque<coord> &waypoin
 	cout << "\033[1;32m[WAYPTS]\033[0m Waypoints flight loop terminating." << endl;
 	
 	cowbell.I_got_a_fever();
+	usleep(2100*1000);
 }

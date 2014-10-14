@@ -1,34 +1,47 @@
-#include "waypoints_loop2.h"
-#include "navigation.h"
-#include "navigation_structures.h"
-#include "navigation_init.h"
+/*
+ *	waypoints_loop2.cpp
+ *	Authors: Omid, Michael Baxter, Alexander Mazur
+ *	Date:		15-10-2014
+ *	Version:	5.0
+ *		The one with simple path planning
+ */
 
-#include "PID.h"
+#include "waypoints_loop1.h"
+
+#include <iostream>
+#include <iomanip>
+#include <unistd.h>
+
+#include <deque>
+
+#include "state.h"
 
 #include "gpio.h"
 #include "flightBoard.h"
 #include "gps_qstarz.h"
 #include "imu_euler.h"
-#include "logger.h"
+#include "hardware.h"
 
+#include "logger.h"
 #include "buzzer.h"
+
+#include "navigation.h"
+#include "navigation_structures.h"
+#include "PID.h"
+
 #include "config_parser.h"
 
-#include <deque>
-#include <string>
-#include <cstdio>
-
-#include "display.h"
-
-
 using namespace std;
-
-
-/* Using navigation functions */
 using namespace navigation;
 using namespace nav_direct;
 
-/* List configurable variables */
+/* Declare global variables */
+//size_t wp_it		= 0;
+//bool repeatLoop		= true;
+
+
+
+/* Declare configurable variables and init with default value*/
 namespace waypoints_loop2_globals {
 	double SPEED_LIMIT_ = 40;
 
@@ -47,12 +60,9 @@ namespace waypoints_loop2_globals {
 	
 	FB_Data	stop = {0, 0, 0, 0};
 }
-#define dance() playBuzzer(BUZZER_DURATION, BUZZER_FREQUENCY, BUZZER_VOLUME)
-#define i_got_a_feeling() playBuzzer(2.0, 80, 60)
-
 using namespace waypoints_loop2_globals;
 
-
+/* Add configure function*/
 namespace waypoints_loop2_functions {
 	void loadParameters(std::string fileName) {
 		ConfigParser::ParamMap parameters;
@@ -72,46 +82,74 @@ namespace waypoints_loop2_functions {
 }
 using namespace waypoints_loop2_functions;
 
+/* Trololololol*/
+#define ni() playBuzzer(BUZZER_DURATION, BUZZER_FREQUENCY, BUZZER_VOLUME)
+#define ekke_ekke_ekke_ekke_ptangya_zoooooooom_boing_ni() playBuzzer(2.0, 80, 60)
 
-void waypoints_loop2(FlightBoard &fb, GPS &gps, IMU &imu, hardware_checks hardware_list, Logger &log, Display &display, deque<coord> &waypoints_list) {
-	
-	display.clear();
-	display.print("Starting loop", "WAYPTS");
-	
-	
+
+
+
+/*
+ *	flightLoop
+ *		1) Initialise copter systems
+ *		2) Wait for user allowance to fly.
+ *		3) Read in list of waypoints
+ *		4) Fly to first waypoint, wait, fly to next, etc..
+ *		5) If the end is reached, stop.
+ *		
+ *		The user may stop the flight at any time. It will continue if the user resumes. At any
+ *		point, the user may stop the current flight path and change the waypoint configuration. Upon
+ *		resuming flight, the copter will read in the new list of waypoints and start at the
+ *		beginning.
+ */
+void waypoints_loop2(hardware &hardware_list, Logger &log, deque<coord> &waypoints_list, string config_filename) {	
+	cout << "\033[1;32m[WAYPTS]\033[0m Waypoints thread initiated, travelling to the following waypoints:" << endl;
+	char str_buf[BUFSIZ];
 	log.clearLog();
-	char strBuf[128];
 	
-	Buzzer flash;
-	flash.dance();
+	//Grab references to hardware
+	FlightBoard fb	= *(hardware_list.fb);
+	GPS gps			= *(hardware_list.gps);
+	IMU imu			= *(hardware_list.imu);
 	
 	bool useimu = hardware_list.IMU_Working;
-	double yaw = 0;	
+	double yaw = 0;
 	
+	//Configure configurable variables (if file is given)
+	if(!config_filename.empty()) {
+		loadParameters(config_filename);
+	}
+	
+	//Construct PID controller
+	PID controller = PID(Kp, Ki, Kd, MAIN_LOOP_DELAY, 3, 0.95);
+	
+	//Construct buzzer
+	Buzzer knights;
+	knights.ni();
+	usleep((int)(BUZZER_DURATION*1.1)*1000*1000);
+	
+	//Print list of waypoints
+	for(size_t i = 0; i != waypoints_list.size(); i++) {
+		cout << "         " << i+1 << ": (" << waypoints_list[i].lat << ", " << waypoints_list[i].lon << ")" << endl;
+	}
+	
+	//Wait here for auto mode and conduct bearing test if necessary
+	state = 6;
+	while ( !gpio::isAutoMode() ) usleep(1*1000*1000);
 	
 	if (!useimu) {
-		display.print("No IMU Detected", "WAYPTS");
-		display.print("Copter will move forwards when put into auto more", "WAYPTS");
-		display.refresh();
-		while(gpio::isAutoMode()) {
-			boost::this_thread::sleep(boost::posix_time::milliseconds(100));
-		}
-		display.clear();
-		display.print("Conducting Bearing test", "WAYPTS");
-		display.refresh();
-		
+		knights.playBuzzer(0.25, 10, 100);
+		state = 5;
 		yaw = inferBearing(&fb, &gps);
 	}
 	
+	//Initialise loop variables
 	coord		currentCoord = {-1, -1};
-	double		distanceToNextWaypoint = -1;
-	double		bearingToNextWaypoint = -1;
-	velocity	vel = {0, 0};
+	double		distanceToNextWaypoint;
+	double		bearingToNextWaypoint;
 	FB_Data		course = {0, 0, 0, 0};
 	int			pastState = -1;
-	
-	//Initialise controller
-	PID controller = PID(Kp, Kd, Ki, MAIN_LOOP_DELAY, 3, 0.95);
+	velocity 	flightVector = {-1, -1};
 	
 	//Plot initial path
 	currentCoord = getCoord(&gps);
@@ -120,202 +158,161 @@ void waypoints_loop2(FlightBoard &fb, GPS &gps, IMU &imu, hardware_checks hardwa
 		plot_path(currentCoord, waypoints_list[wp_it], &path);
 	}
 	
+
 	try {	// Check for any errors, and stop the copter.
 		while(!exitProgram) {
 			currentCoord = getCoord(&gps);
-			if (useimu) yaw = getYaw(&imu);
 			
-			
-			if (!waypoints_list.empty()) {
-				sprintf(strBuf, "%3.6f,%3.6f,%3.6f,%3.6f\n", currentCoord.lat, currentCoord.lon, waypoints_list[wp_it].lat, waypoints_list[wp_it].lon);
-			} else {
-				sprintf(strBuf, "%3.6f,%3.6f,,\n", currentCoord.lat, currentCoord.lon);
-			}
-			log.writeLogLine(strBuf, false);
-			
-			
+			//This bit important: skip path point you go past.
 			if (!path.empty()) {
 				update_path(currentCoord, &path);
 			}
 			
-
-
-				//State system:
-				//  State 0:  Manual mode
-				//  State 1:  Fly to waypoint
-				//  State 2:  At waypoint -> wait then move on
-				//  State 3:  No more waypoints -> wait for further instructon
-				//  State 4:  All Stop -> exit program
-				//  State 5:  Error state
-
-
-
-			/* State 0: Manual mode. */
-			if (!gpio::isAutoMode()) {
-				state = 0;
-				
-			/* State 4: All stop. */
-			} else if (userState == 0) {
-				state = 4;
-				exitProgram = true;	
-				
-			/* State 5: Error. */
-			} else if (state == 5 || !navigation::checkInPerth(&currentCoord)) {
-				state = 5;
-				exitProgram = true;
 			
-			/* State 3: No more waypoints */
-			} else if (waypoints_list.empty() || wp_it == waypoints_list.size()) {
-				state = 3;
+			//Write data for Michael
+			if (!waypoints_list.empty()) {
+				sprintf(str_buf, "%3.6f,%3.6f,%3.6f,%3.6f\n", currentCoord.lat, currentCoord.lon, waypoints_list[wp_it].lat, waypoints_list[wp_it].lon);
+			} else {
+				sprintf(str_buf, "%3.6f,%3.6f,,\n", currentCoord.lat, currentCoord.lon);
+			}
+			log.writeLogLine(str_buf, false);
+			
+			
+			if(!waypoints_list.empty()) {
+				distanceToNextWaypoint = calculate_distance(currentCoord, waypoints_list[wp_it]);
+				bearingToNextWaypoint = calculate_bearing(currentCoord, waypoints_list[wp_it]);
+			}
+			
+			if (useimu) yaw = getYaw(&imu);			
+			
+
+			
+			
+			
+			
+			/* State 4: Manual mode. */
+			if (!gpio::isAutoMode()) {
+				state = 4;
 				wp_it = 0;
-				userState = 0;
 				exitProgram = true;
-				
+			/* State 0: All stop */
+			} else if (waypoints_list.empty() || wp_it == waypoints_list.size() || userState == 0 ) {
+				state = 11;
+				userState = 0;
+				wp_it = 0;
+				exitProgram = true;
+			/* State 3: Error. */
+			} else if (state == 3 || !checkInPerth(&currentCoord)) {
+				state = 3;
+				exitProgram = true;
 			/* State 2: At waypoint. */
 			} else if (distanceToNextWaypoint < WAYPOINT_RADIUS) {
 				state = 2;
-				
 			/* State 1: Travelling to waypoint. */
 			} else {
 				state = 1;
 			}
 			
-			
-			//print things and sound alarm
-			
-			if(display.getStyle() == BAX_STYLE) {
-				sprintf(strBuf, "State:\t %d", state);
-				display.print(strBuf);
-				
-				sprintf(strBuf, "Current coord:\t %3.4f, %3.4f", currentCoord.lat, currentCoord.lon);
-				display.print(strBuf);
-				
-				sprintf(strBuf, "Current yaw:\t %4.1f degrees", yaw);
-				display.print(strBuf);
-				
-				if (!waypoints_list.empty()) {
-					sprintf(strBuf, "Next waypoint:\t %3.4f, %3.4f", waypoints_list[wp_it].lat, waypoints_list[wp_it].lon);
-					display.print(strBuf);
-					
-					sprintf(strBuf, "Distance:\t %2.2f m", distanceToNextWaypoint);
-					display.print(strBuf);
-					
-					sprintf(strBuf, "Bearing:\t %4.1f m", bearingToNextWaypoint);
-					display.print(strBuf);
-				}
-			}
-				
-				
-			
+			/* Only give output if the state changes. Less spamey.. */
 			if (pastState != state) {
-				if(display.getStyle() == ALEX_STYLE) {
-					switch (state) {
-						case 0:
-							display.print("Manual mode engaged.", "WAYPTS");
-							break;
-						case 1:
-							sprintf(strBuf, "Travelling to waypoint at %3.4f, %3.4f", waypoints_list[wp_it].lat, waypoints_list[wp_it].lon);
-							display.print(strBuf, "WAYPTS");
-							break;
-						case 2:
-							display.print("At waypoint.", "WAYPTS");
-							break;
-						case 3:
-							display.print("No more waypoints.", "WAYPTS");
-							break;
-						case 4:
-							display.print("All stop!", "WAYPTS");
-							break;
-						case 5:
-						default:
-							display.print("Danger, Will Robinson!", "WAYPTS");
-							break;
-					}
-					sprintf(strBuf, "In state:\t %d", state);
-					display.print(strBuf, "WAYPTS");
-					
-					sprintf(strBuf, "Facing:\t %4.1f, at coordinates (%3.4f, %3.4f)", yaw, currentCoord.lat, currentCoord.lon);
-					display.print(strBuf, "WAYPTS");
-					
-					sprintf(strBuf, "The next waypoint is at (%3.4f, %3.4f)", waypoints_list[wp_it].lat, waypoints_list[wp_it].lon);
-					display.print(strBuf, "WAYPTS");
-					
-					sprintf(strBuf, "It is %2.2fm away, at a bearing of %4.1f.", distanceToNextWaypoint, bearingToNextWaypoint);
-					display.print(strBuf, "WAYPTS");
+				switch (state) {
+					case 0:
+						cout << "\033[1;32m[WAYPTS]\033[0m All stop." << endl;
+						break;
+					case 1:
+						cout << "\033[1;32m[WAYPTS]\033[0m Travelling to waypoint " << wp_it << ", at (" << waypoints_list[wp_it].lat << "," << waypoints_list[wp_it].lon << ")" << endl;
+						break;
+					case 2:
+						cout << "\033[1;32m[WAYPTS]\033[0m At waypoint" << wp_it << "." << endl;
+						break;
+					case 3:
+						cout << "\033[31m[WAYPTS]\033[0m Error reading GPS." << endl;
+					case 4:
+						cout << "\033[31m[WAYPTS]\033[0m Manual mode engaged." << endl;
+					break;
 				}
+				cout << "\033[1;33m[WAYPTS]\033[0m In state "		<< state << "."	<< endl;
+				cout << "\033[1;33m[WAYPTS]\033[0m Facing " << setprecision(6) << yaw << ", at coordinates (" << currentCoord.lat << ", " <<	currentCoord.lon << ")" << endl;
+
+				cout << "\033[1;33m[WAYPTS]\033[0m The next waypoint is at (" << setprecision(6) << waypoints_list[wp_it].lat << ", " << waypoints_list[wp_it].lon << ")"	<< endl;
 				
-				flash.dance();
+				cout << "\033[1;33m[WAYPTS]\033[0m It is " << setprecision(7) << distanceToNextWaypoint	<< "m away, at a bearing of " << bearingToNextWaypoint << "." << endl;
+				
 				pastState = state;
 			}
 
-
-
 			switch(state) {
-				case 0:
-					fb.setFB_Data(&stop);
+				case 0:													//Case 0:	Not in auto mode, standby
+					fb.setFB_Data(&stop);									//Stop moving
+					
+					/*
+					log.writeLogLine("\033[1;32m[WAYPTS]\033[0m Manual mode");
+					sprintf(str_buf, "[WAYPTS] Currently at %f %f.", currentCoord.lat, currentCoord.lon);
+					log.writeLogLine(str_buf);
+					*/
 					
 					break;
 				
 				case 1:
-					vel = get_velocity(&controller, currentCoord, &path, SPEED_LIMIT_);
-					setCourse(&course, vel, yaw);
-					fb.setFB_Data(&course);
+				
+					flightVector = get_velocity(&controller, currentCoord, &path, SPEED_LIMIT_);
+					setCourse(&course, flightVector, yaw);
+					fb.setFB_Data(&course);																//Give command to flight boars
 					
+					/*
+					sprintf(str_buf, "[WAYPTS] Aileron is %d, Elevator is %d", course.aileron, course.elevator);
+					log.writeLogLine(str_buf);
+					sprintf(str_buf, "[WAYPTS] Moving to next waypoint. It has latitude %f and longitude %f.", waypoints_list[wp_it].lat, waypoints_list[wp_it].lon);
+					log.writeLogLine(str_buf);
+					sprintf(str_buf, "[WAYPTS] Currently at %f %f, moving %f m at a bearing of %f degrees.", currentCoord.lat, currentCoord.lon, distanceToNextWaypoint, bearingToNextWaypoint);
+					log.writeLogLine(str_buf);
+					*/
+
 					break;
 				
 				case 2:
 					fb.setFB_Data(&stop);
+					knights.ni();
+					
+					/*
+					log.writeLogLine("\033[1;32m[WAYPTS]\033[0m Reached waypoint, stopping");
+					*/
+					
 					
 					wp_it++;
-					
-					if(loopWaypoints && wp_it == waypoints_list.size()) {
+					if(repeatLoop && wp_it == waypoints_list.size()) {
 						wp_it = 0;
 					}
 					
-					
-					if (!waypoints_list.empty()) {
+					if (wp_it != waypoints_list.size()) {
 						plot_path(currentCoord, waypoints_list[wp_it], &path);
 					}
-
-					if(display.getStyle() == BAX_STYLE) {
-						display.print("At waypoint", "WAYPTS");
-						display.refresh();
-					}
-					boost::this_thread::sleep(boost::posix_time::milliseconds(WAIT_AT_WAYPOINTS*1000));
+					
+					
+					usleep(WAIT_AT_WAYPOINTS*1000);
 					
 					controller.clear();
+					cout << "\033[1;32m[WAYPTS]\033[0m Moving to next waypoint." << endl;
 					break;
 				
 				case 3:
-					fb.setFB_Data(&stop);
-					
-				break;
-				
-				case 4:
-					fb.setFB_Data(&stop);
-					
-				break;
-				
-				case 5:
 				default:
 					fb.setFB_Data(&stop);
-					
+					/*
+					log.writeLogLine("\033[31m[WAYPTS]\033[0m Error reading GPS, stopping");
+					*/
 				break;
 			}
-			
-			if(!exitProgram) {
-				display.refresh();
-				boost::this_thread::sleep(boost::posix_time::milliseconds(MAIN_LOOP_DELAY));
-				display.clear();
-			}
-			
+			usleep(MAIN_LOOP_DELAY*1000);
+
 		}
 	} catch (...) {
+		cout << "\033[31m[WAYPTS]\033[0m Error encountered. Stopping copter." << endl;
 		fb.setFB_Data(&stop);
+		state = 3;
 	}
-	flash.i_got_a_feeling();
-
-	boost::this_thread::sleep(boost::posix_time::milliseconds(2100));
-	flash.shutup();
-	state = 11;
+	cout << "\033[1;32m[WAYPTS]\033[0m Waypoints flight loop terminating." << endl;
+	
+	knights.ekke_ekke_ekke_ekke_ptangya_zoooooooom_boing_ni();
+	usleep(2100*1000);
 }

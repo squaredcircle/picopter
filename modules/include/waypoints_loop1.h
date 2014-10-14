@@ -12,6 +12,6 @@ void	waypoints_loop1(hardware &, Logger &, std::deque<coord> &, std::string = ""
 
 /* External variables */
 extern size_t	wp_it;
-extern bool loopWaypoints;
+extern bool 	repeatLoop;
 
 #endif// __WAYPOINTS_LOOP1_H_INCLUDED__

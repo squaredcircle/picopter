@@ -1,24 +1,17 @@
 #ifndef __WAYPOINTS_LOOP2_H_INCLUDED__
 #define __WAYPOINTS_LOOP2_H_INCLUDED__
 
-#include "flightBoard.h"
-#include "gps_qstarz.h"
-#include "imu_euler.h"
-#include "navigation_structures.h"
+
+#include "hardware.h"
 #include "logger.h"
-#include "display.h"
 #include <deque>
+#include "navigation_structures.h"
+#include <string>
 
+void	waypoints_loop2(hardware &, Logger &, std::deque<coord> &, std::string = "");
 
-void waypoints_loop2(FlightBoard&, GPS&, IMU&, hardware_checks, Logger&, Display&, std::deque<coord>&);
-
-
-extern bool exitProgram;
-extern int state;
-extern int userState;
-
+/* External variables */
 extern size_t	wp_it;
-
-extern bool loopWaypoints;
+extern bool 	repeatLoop;
 
 #endif// __WAYPOINTS_LOOP2_H_INCLUDED__
