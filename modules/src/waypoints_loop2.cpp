@@ -47,8 +47,8 @@ namespace waypoints_loop2_globals {
 	
 	FB_Data	stop = {0, 0, 0, 0};
 }
-#define needs_more() playBuzzer(BUZZER_DURATION, BUZZER_FREQUENCY, BUZZER_VOLUME)
-#define I_got_a_fever() playBuzzer(2.0, 80, 60)
+#define dance() playBuzzer(BUZZER_DURATION, BUZZER_FREQUENCY, BUZZER_VOLUME)
+#define i_got_a_feeling() playBuzzer(2.0, 80, 60)
 
 using namespace waypoints_loop2_globals;
 
@@ -82,8 +82,8 @@ void waypoints_loop2(FlightBoard &fb, GPS &gps, IMU &imu, hardware_checks hardwa
 	log.clearLog();
 	char strBuf[128];
 	
-	Buzzer cowbell;
-	cowbell.needs_more();
+	Buzzer flash;
+	flash.dance();
 	
 	bool useimu = hardware_list.IMU_Working;
 	double yaw = 0;	
@@ -111,7 +111,7 @@ void waypoints_loop2(FlightBoard &fb, GPS &gps, IMU &imu, hardware_checks hardwa
 	int			pastState = -1;
 	
 	//Initialise controller
-	PID controller = PID(Kp, Kd, Ki, MAIN_LOOP_DELAY, 3, 0.9);
+	PID controller = PID(Kp, Kd, Ki, MAIN_LOOP_DELAY, 3, 0.95);
 	
 	//Plot initial path
 	currentCoord = getCoord(&gps);
@@ -244,7 +244,7 @@ void waypoints_loop2(FlightBoard &fb, GPS &gps, IMU &imu, hardware_checks hardwa
 					display.print(strBuf, "WAYPTS");
 				}
 				
-				cowbell.needs_more();
+				flash.dance();
 				pastState = state;
 			}
 
@@ -313,9 +313,9 @@ void waypoints_loop2(FlightBoard &fb, GPS &gps, IMU &imu, hardware_checks hardwa
 	} catch (...) {
 		fb.setFB_Data(&stop);
 	}
-	cowbell.I_got_a_fever();
+	flash.i_got_a_feeling();
 
 	boost::this_thread::sleep(boost::posix_time::milliseconds(2100));
-	cowbell.shutup();
+	flash.shutup();
 	state = 11;
 }

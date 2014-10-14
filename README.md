@@ -147,6 +147,7 @@ One line needs to be changed in the make file for this to work:
 
 On line 6, remove "/git/raspberrypi" and replace it with "/lib".  The line should now read:
     USERLAND_ROOT = $(HOME)/lib/userland
+    
 Ctrl-x to exit nano (y, return).
 
 Then make raspicam_cv;

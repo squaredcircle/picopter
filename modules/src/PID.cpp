@@ -89,7 +89,7 @@ void PID::setMaxIntegral(double MAX_INTEGRAL) {
 }
 
 double PID::filter(double x_0, double y_1) {
-	return alpha*(x_0 - y_1);
+	return y_1 + alpha*(x_0 - y_1);
 }
 
 void PID::constructFiniteDiffTable(double finiteDiffTable[][6]) {
