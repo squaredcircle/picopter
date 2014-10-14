@@ -2,8 +2,6 @@
 #define __NAVIGATION_H_INCLUDED__
 
 #include "navigation_structures.h"
-#include "navigation_init.h"
-
 
 #include "flightBoard.h"
 #include "gps_qstarz.h"
@@ -11,8 +9,25 @@
 
 #include "PID.h"
 
+/* Constants */
+#define PI					3.14159265359
+#define RADIUS_OF_EARTH		6364.963	//km
+
+/* Preprocessor functions */
+#define RAD2DEG(x) 			((x) * (180.0 / PI))
+#define DEG2RAD(x)			((x) * (PI / 180.0))
+#define sin2(x)				(sin(x)*sin(x))
+
+#define MIN(x, y)			(((x) < (y)) ? (x) : (y))
+#define MAX(x, y)			(((x) > (y)) ? (x) : (y))
+#define SIGNUM(x)			(((x) > 0) ? 1 : (((x) < 0) ? -1 : 0))
+
 /* Utility functions */
 namespace navigation {
+	coord		getCoord(GPS*);
+	double		getYaw(IMU*);
+	bool		checkInPerth(coord*);
+	
 	double		calculate_distance(coord, coord);
 	double		calculate_bearing(coord, coord);
 	

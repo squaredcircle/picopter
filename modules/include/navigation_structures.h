@@ -2,19 +2,6 @@
 #define __NAVIGATION_STRUCTURES_H_INCLUDED__
 
 
-/* Constants */
-#define PI					3.14159265359
-#define RADIUS_OF_EARTH		6364.963	//km
-
-/* Preprocessor functions */
-#define RAD2DEG(x) 			((x) * (180.0 / PI))
-#define DEG2RAD(x)			((x) * (PI / 180.0))
-#define sin2(x)				(sin(x)*sin(x))
-
-#define MIN(x, y)			(((x) < (y)) ? (x) : (y))
-#define MAX(x, y)			(((x) > (y)) ? (x) : (y))
-#define SIGNUM(x)			(((x) > 0) ? 1 : (((x) < 0) ? -1 : 0))
-
 /* Structures */
 typedef struct {		// Holds a (latitude,longtitude) pair, in degrees.
 	double lat;
@@ -39,15 +26,6 @@ typedef struct {		// Holds an (X1,X2) pair, in meters. And the distance between 
 	cartesian X2;
 	coord origin;
 } line;
-
-
-
-typedef struct {		// Holds an (X1,X2) pair, in meters. And the distance between them.
-	bool FB_Working;
-	bool GPS_Working;
-	bool IMU_Working;
-	bool CAM_Working;
-} hardware_checks;
 
 
 #endif// __NAVIGATION_STRUCTURES_H_INCLUDED__

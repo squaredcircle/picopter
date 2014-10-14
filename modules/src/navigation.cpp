@@ -1,5 +1,11 @@
 #include "navigation.h"
 
+#include "navigation_structures.h"
+#include "flightBoard.h"
+#include "gps_qstarz.h"
+#include "imu_euler.h"
+#include "PID.h"
+
 #include <iostream>
 #include <unistd.h>
 #include <algorithm>
@@ -20,6 +26,38 @@ coord coord2Rad(coord pos) {
 
 /*----------------------------------------------------------------------------------------------------*/
 /* Utility functions */
+
+
+
+/*
+ *	getCoord
+ *		Reads in a GPS data structure, and returns the coordinate in degrees. 
+ */
+coord navigation::getCoord(GPS *gps) {
+	GPS_Data gps_data;
+	gps->getGPS_Data(&gps_data);
+	coord here = {gps_data.latitude, gps_data.longitude};
+	return here;
+}
+
+/*
+ *	getYaw
+ *		Reads in a IMU data structure, and returns the current yaw in degrees.
+ */
+double navigation::getYaw(IMU *i) {
+	IMU_Data data;
+	i->getIMU_Data(&data);
+	return data.yaw;
+}
+
+/*
+ *	checkInPerth
+ *		Sanity check. Check if the GPS is working.
+ */
+bool navigation::checkInPerth(coord *here) {
+	return(here->lat > -33 && here->lat < -31 && here->lon > 115 && here->lon < 117);
+}
+
 
 /*
  *	calculate_distance
@@ -141,17 +179,15 @@ velocity nav_direct::get_velocity(PID *controller, coord here, std::deque<coord>
 	v.speed = navigation::calculate_distance(here, path->front());
 	v.speed = navigation::clipSpeed(v.speed, SPEED_LIMIT);
 	
-	int count = 0;
-	double weight = 0;
+	int weight = (int)(path->size());
 	double sumSines = 0;
 	double sumCosines = 0;
 	double sumWeights = 0;
 	for(std::deque<coord>::iterator it = path->begin(); it != path->end(); ++it) {
-		count++;
-		weight = 1.0/count;
 		sumSines   += weight * sin(DEG2RAD( navigation::calculate_bearing(here, *it)));
 		sumCosines += weight * cos(DEG2RAD( navigation::calculate_bearing(here, *it)));
 		sumWeights += weight;
+		weight--;
 	}
 	v.bearing = RAD2DEG( atan2(sumSines/sumWeights, sumCosines/sumWeights) );
 	
