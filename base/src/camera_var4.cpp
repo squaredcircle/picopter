@@ -61,6 +61,8 @@ int CAMERA_VAR4::setup() {
 		return -1;
 	}
 	
+	buildColours(&windowColours);
+	
 	capture = raspiCamCvCreateCameraCapture(0);
 	
 	ready = true;
@@ -140,8 +142,11 @@ void CAMERA_VAR4::processImages() {
 		cv::Mat CC = makeConnectedComponentMatrix(BW, &numComponents);
 		findObjects(CC, numComponents, &redObjectList, &windowList);
 		for(std::vector<ObjectLocation>::size_type i=0; i<redObjectList.size(); i++) {
-			CAMERA_COMMON::drawObjectMarker(image, cv::Point(redObjectList[i].x+image.cols/2, -redObjectList[i].y+image.rows/2), cv::Scalar(0, 0, 0));
-			CAMERA_COMMON::drawBox(image, cv::Point(windowList[i].x, windowList[i].y), cv::Point(windowList[i].x+windowList[i].w, windowList[i].y+windowList[i].l), cv::Scalar(255, 255, 255));
+			cv::Scalar colour = cv::Scalar(255, 255, 255);
+			if(i < windowColours.size()) {
+				colour = windowColours[i];
+			}
+			CAMERA_COMMON::drawBox(image, cv::Point(windowList[i].x, windowList[i].y), cv::Point(windowList[i].x+windowList[i].w, windowList[i].y+windowList[i].l), colour);
 		} 
 		
 		CAMERA_COMMON::drawCrosshair(image);
@@ -350,4 +355,15 @@ int CAMERA_VAR4::findObjects(cv::Mat& CC, int numComponents, std::vector<ObjectL
 		}
 	}
 	return (int)redObjects->size();
+}
+
+void CAMERA_VAR4::buildColours(std::vector<cv::Scalar> *colourList) {
+	colourList->clear();
+	colourList->push_back(cv::Scalar(0, 0, 255));
+	colourList->push_back(cv::Scalar(255, 0, 0));
+	colourList->push_back(cv::Scalar(0, 255, 255));
+	colourList->push_back(cv::Scalar(255, 0, 255));
+	colourList->push_back(cv::Scalar(255, 255, 0));
+	colourList->push_back(cv::Scalar(0, 255, 0));
+	colourList->push_back(cv::Scalar(0, 255, 0));
 }

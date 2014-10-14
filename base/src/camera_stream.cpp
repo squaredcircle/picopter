@@ -81,8 +81,11 @@ int CAMERA_STREAM::setup() {
 	}
 	
 	buildColours(&windowColours);
-	
-	capture = raspiCamCvCreateCameraCapture(0);
+	try {
+		capture = raspiCamCvCreateCameraCapture(0);
+	} catch(...) {
+		return -1;
+	}
 	
 	ready = true;
 	return 0;

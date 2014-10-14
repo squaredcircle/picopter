@@ -86,6 +86,9 @@ private:
 	
 	bool takePhotoThisCycle;
 	std::string imageFileName;
+	
+	std::vector<cv::Scalar> windowColours;
+	void buildColours(std::vector<cv::Scalar>*);
 };
 
 #endif// __CAMERA_VAR4_INCLUDED__
