@@ -72,6 +72,8 @@ namespace waypoints_loop1_functions {
 		parameters.insert("SPEED_LIMIT", &SPEED_LIMIT_);
 		parameters.insert("WAYPOINT_RADIUS", &WAYPOINT_RADIUS);
 		parameters.insert("Kp", &Kp);
+		parameters.insert("Ki", &Ki);
+		parameters.insert("Kd", &Kd);
 		parameters.insert("WAIT_AT_WAYPOINTS", &WAIT_AT_WAYPOINTS);
 		parameters.insert("MAIN_LOOP_DELAY", &MAIN_LOOP_DELAY);
 		
@@ -79,7 +81,7 @@ namespace waypoints_loop1_functions {
 		parameters.insert("BUZZER_FREQUENCY", &BUZZER_FREQUENCY);
 		parameters.insert("BUZZER_VOLUME", &BUZZER_VOLUME);
 		
-		ConfigParser::loadParameters("WAYPOINTS", &parameters, fileName);
+		ConfigParser::loadParameters("WAYPOINTS_LOOP1", &parameters, fileName);
 	}
 }
 using namespace waypoints_loop1_functions;

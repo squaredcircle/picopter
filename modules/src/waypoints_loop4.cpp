@@ -1,12 +1,12 @@
 /*
- *	waypoints_loop2.cpp
+ *	waypoints_loop4.cpp
  *	Authors: Omid, Michael Baxter, Alexander Mazur
- *	Date:		15-10-2014
+ *	Date:		17-10-2014
  *	Version:	5.0
- *		The one with simple path planning
+ *		The one with linerar interpolation path planning
  */
 
-#include "waypoints_loop2.h"
+#include "waypoints_loop4.h"
 
 #include <iostream>
 #include <iomanip>
@@ -34,6 +34,7 @@
 using namespace std;
 using namespace navigation;
 using namespace nav_direct;
+using namespace nav_components;
 
 /* Declare global variables */
 //size_t wp_it		= 0;
@@ -42,13 +43,16 @@ using namespace nav_direct;
 
 
 /* Declare configurable variables and init with default value*/
-namespace waypoints_loop2_globals {
+namespace waypoints_loop4_globals {
 	double SPEED_LIMIT_ = 40;
 
 	double WAYPOINT_RADIUS = 2.0;
-	double Kp = 8;
-	double Ki = 0;
-	double Kd = 0;
+	double Kp_PERP = 8;
+	double Ki_PERP = 0;
+	double Kd_PERP = 0;
+	double Kp_INLINE = 8;
+	double Ki_INLINE = 0;
+	double Kd_INLINE = 0;
 	int WAIT_AT_WAYPOINTS = 3;
 
 	int MAIN_LOOP_DELAY = 100;
@@ -60,18 +64,23 @@ namespace waypoints_loop2_globals {
 	
 	FB_Data	stop = {0, 0, 0, 0};
 }
-using namespace waypoints_loop2_globals;
+using namespace waypoints_loop4_globals;
 
 /* Add configure function*/
-namespace waypoints_loop2_functions {
+namespace waypoints_loop4_functions {
 	void loadParameters(std::string fileName) {
 		ConfigParser::ParamMap parameters;
 
 		parameters.insert("SPEED_LIMIT", &SPEED_LIMIT_);
 		parameters.insert("WAYPOINT_RADIUS", &WAYPOINT_RADIUS);
-		parameters.insert("Kp", &Kp);
-		parameters.insert("Ki", &Ki);
-		parameters.insert("Kd", &Kd);
+		
+		parameters.insert("Kp_PERP", &Kp_PERP);
+		parameters.insert("Ki_PERP", &Ki_PERP);
+		parameters.insert("Kd_PERP", &Kd_PERP);
+		parameters.insert("Kp_INLINE", &Kp_INLINE);
+		parameters.insert("Ki_INLINE", &Ki_INLINE);
+		parameters.insert("Kd_INLINE", &Kd_INLINE);
+		
 		parameters.insert("WAIT_AT_WAYPOINTS", &WAIT_AT_WAYPOINTS);
 		parameters.insert("MAIN_LOOP_DELAY", &MAIN_LOOP_DELAY);
 		
@@ -79,14 +88,10 @@ namespace waypoints_loop2_functions {
 		parameters.insert("BUZZER_FREQUENCY", &BUZZER_FREQUENCY);
 		parameters.insert("BUZZER_VOLUME", &BUZZER_VOLUME);
 		
-		ConfigParser::loadParameters("WAYPOINTS_LOOP2", &parameters, fileName);
+		ConfigParser::loadParameters("WAYPOINTS_LOOP4", &parameters, fileName);
 	}
 }
-using namespace waypoints_loop2_functions;
-
-/* Trololololol*/
-#define ni() playBuzzer(BUZZER_DURATION, BUZZER_FREQUENCY, BUZZER_VOLUME)
-#define ekke_ekke_ekke_ekke_ptangya_zoooooooom_boing_ni() playBuzzer(2.0, 80, 60)
+using namespace waypoints_loop4_functions;
 
 
 
@@ -104,7 +109,7 @@ using namespace waypoints_loop2_functions;
  *		resuming flight, the copter will read in the new list of waypoints and start at the
  *		beginning.
  */
-void waypoints_loop2(hardware &hardware_list, Logger &log, deque<coord> &waypoints_list, string config_filename) {	
+void waypoints_loop4(hardware &hardware_list, Logger &log, deque<coord> &waypoints_list, string config_filename) {	
 	cout << "\033[1;32m[WAYPTS]\033[0m Waypoints thread initiated, travelling to the following waypoints:" << endl;
 	char str_buf[BUFSIZ];
 	log.clearLog();
@@ -123,11 +128,12 @@ void waypoints_loop2(hardware &hardware_list, Logger &log, deque<coord> &waypoin
 	}
 	
 	//Construct PID controller
-	PID controller = PID(Kp, Ki, Kd, MAIN_LOOP_DELAY, 3, 0.95);
+	PID controller_perp   = PID(Kp_PERP, Ki_PERP, Kd_PERP, MAIN_LOOP_DELAY, 3, 0.95);
+	PID controller_inline = PID(Kp_INLINE, Ki_INLINE, Kd_INLINE, MAIN_LOOP_DELAY, 3, 0.95);
 	
 	//Construct buzzer
-	Buzzer knights;
-	knights.ni();
+	Buzzer buzzer;
+	buzzer.playBuzzer(BUZZER_DURATION, BUZZER_FREQUENCY, BUZZER_VOLUME);
 	usleep((int)(BUZZER_DURATION*1.1)*1000*1000);
 	
 	//Print list of waypoints
@@ -140,7 +146,7 @@ void waypoints_loop2(hardware &hardware_list, Logger &log, deque<coord> &waypoin
 	while ( !gpio::isAutoMode() ) usleep(1*1000*1000);
 	
 	if (!useimu) {
-		knights.playBuzzer(0.25, 10, 100);
+		buzzer.playBuzzer(0.25, 10, 100);
 		state = 5;
 		yaw = inferBearing(&fb, &gps);
 	}
@@ -155,20 +161,14 @@ void waypoints_loop2(hardware &hardware_list, Logger &log, deque<coord> &waypoin
 	
 	//Plot initial path
 	currentCoord = getCoord(&gps);
-	deque<coord> path;
+	line path;
 	if (!waypoints_list.empty()) {
-		plot_path(currentCoord, waypoints_list[wp_it], &path);
+		path = get_path(currentCoord, waypoints_list[wp_it]);
 	}
-	
 
 	try {	// Check for any errors, and stop the copter.
 		while(!exitProgram) {
 			currentCoord = getCoord(&gps);
-			
-			//This bit important: skip path point you go past.
-			if (!path.empty()) {
-				update_path(currentCoord, &path);
-			}
 			
 			
 			//Write data for Michael
@@ -185,7 +185,7 @@ void waypoints_loop2(hardware &hardware_list, Logger &log, deque<coord> &waypoin
 				bearingToNextWaypoint = calculate_bearing(currentCoord, waypoints_list[wp_it]);
 			}
 			
-			if (useimu) yaw = getYaw(&imu);			
+			if (useimu) yaw = getYaw(&imu);
 			
 
 			
@@ -257,7 +257,7 @@ void waypoints_loop2(hardware &hardware_list, Logger &log, deque<coord> &waypoin
 				
 				case 1:
 				
-					flightVector = get_velocity(&controller, currentCoord, &path, SPEED_LIMIT_);
+					flightVector = get_velocity(&controller_perp, &controller_inline, currentCoord, path, SPEED_LIMIT_);
 					setCourse(&course, flightVector, yaw);
 					fb.setFB_Data(&course);																//Give command to flight boars
 					
@@ -274,7 +274,7 @@ void waypoints_loop2(hardware &hardware_list, Logger &log, deque<coord> &waypoin
 				
 				case 2:
 					fb.setFB_Data(&stop);
-					knights.ni();
+					buzzer.playBuzzer(BUZZER_DURATION, BUZZER_FREQUENCY, BUZZER_VOLUME);
 					
 					/*
 					log.writeLogLine("\033[1;32m[WAYPTS]\033[0m Reached waypoint, stopping");
@@ -287,13 +287,13 @@ void waypoints_loop2(hardware &hardware_list, Logger &log, deque<coord> &waypoin
 					}
 					
 					if (wp_it != waypoints_list.size()) {
-						plot_path(currentCoord, waypoints_list[wp_it], &path);
+						path = get_path(currentCoord, waypoints_list[wp_it]);
 					}
-					
 					
 					usleep(WAIT_AT_WAYPOINTS*1000);
 					
-					controller.clear();
+					controller_perp.clear();
+					controller_inline.clear();
 					cout << "\033[1;32m[WAYPTS]\033[0m Moving to next waypoint." << endl;
 					break;
 				
@@ -315,6 +315,6 @@ void waypoints_loop2(hardware &hardware_list, Logger &log, deque<coord> &waypoin
 	}
 	cout << "\033[1;32m[WAYPTS]\033[0m Waypoints flight loop terminating." << endl;
 	
-	knights.ekke_ekke_ekke_ekke_ptangya_zoooooooom_boing_ni();
+	buzzer.playBuzzer(2.0, 80, 60);
 	usleep(2100*1000);
 }
