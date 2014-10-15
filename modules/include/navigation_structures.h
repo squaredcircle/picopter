@@ -21,11 +21,23 @@ typedef struct {		// Holds an (x,y) pair, in meters.  May be either a point or a
 	double y;
 } cartesian;
 
-typedef struct {		// Holds an (X1,X2) pair, in meters. And the long/lat origin.
+typedef struct {		// Parametric definition of a line in cartesian coordinates.  P(t) = a1*t + a0.
+	cartesian a1;
+	cartesian a0;
+	coord origin;
+	cartesian X0;
+	cartesian X1;
+} line;
+
+typedef struct {		// Parametric definition of a line in cartesian coordinates.  P(t) = a2*t^2 + a1*t + a0.
+	cartesian a2;
+	cartesian a1;
+	cartesian a0;
+	coord origin;
+	cartesian X0;
 	cartesian X1;
 	cartesian X2;
-	coord origin;
-} line;
+} curve;
 
 
 #endif// __NAVIGATION_STRUCTURES_H_INCLUDED__

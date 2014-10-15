@@ -76,4 +76,11 @@ namespace nav_components {
 	velocity	get_velocity(PID*, PID*, coord, line, double SPEED_LIMIT);
 }
 
+/* Again, but with parabolas */
+namespace nav_components {
+	curve		get_path(coord, coord, coord);
+	
+	velocity	get_velocity(PID*, coord, curve, double &t1, double SPEED_LIMIT);
+}
+
 #endif// __NAVIGATION_H_INCLUDED__

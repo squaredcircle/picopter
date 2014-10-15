@@ -205,8 +205,8 @@ cartesian nav_components::get_distance_components(coord here, coord there) {
 	
 	cartesian P = {0, 0};	//Coord there is transformed to Point P, relative Coord here.
 	
-	P.x = RADIUS_OF_EARTH * (there.lon - here.lon) * cos(here.lat);
-	P.y = RADIUS_OF_EARTH * (there.lat - here.lat);
+	P.x = RADIUS_OF_EARTH * 1000 * (there.lon - here.lon) * cos(here.lat);
+	P.y = RADIUS_OF_EARTH * 1000 * (there.lat - here.lat);
 	
 	return P;
 }
@@ -258,9 +258,16 @@ velocity nav_components::get_velocity(PID *x_control, PID *y_control, cartesian 
 line nav_components::get_path(coord start, coord end) {
 	line l;
 	l.origin = start;
-	l.X1.x = 0;
-	l.X1.y = 0;
-	l.X2 = nav_components::get_distance_components(l.origin, end);
+	
+	cartesian X0 = {0, 0};
+	cartesian X1 = nav_components::get_distance_components(l.origin, end);
+
+	l.a0 = X0;
+	l.a1.x = X1.x - X0.x;
+	l.a1.y = X1.y - X0.y;
+	
+	l.X0 = X0;
+	l.X1 = X1;
 	
 	return l;
 }
@@ -268,33 +275,110 @@ line nav_components::get_path(coord start, coord end) {
 
 
 
-velocity nav_components::get_velocity(PID *control_perp, PID *control_para, coord here, line l, double SPEED_LIMIT) {
+velocity nav_components::get_velocity(PID *control_perp, PID *control_inline, coord here, line l, double SPEED_LIMIT) {
 	cartesian H = nav_components::get_distance_components(l.origin, here);
-	cartesian P;
-	int t;
 	
-	double num = (   H.x - l.X1.x) * (l.X2.x - l.X1.x) + (   H.y - l.X1.y) * (l.X2.y - l.X1.y);
-	double den = (l.X2.x - l.X1.x) * (l.X2.x - l.X1.x) + (l.X2.y - l.X1.y) * (l.X2.y - l.X1.y);
+	cartesian X0 = l.X0;
+	cartesian X1 = l.X1;
+	
+	
+	double t;
+	double num = ( H.x - X0.x) * (X1.x - X0.x) + ( H.y - X0.y) * (X1.y - X0.y);
+	double den = (X1.x - X0.x) * (X1.x - X0.x) + (X1.y - X0.y) * (X1.y - X0.y);
+	if(den == 0) {
+		t=0;
+	} else {
+		t = num/den;
+	}
+	cartesian P = {l.a1.x*t + l.a0.x, l.a1.y*t + l.a0.y};
+	
+	double det = (H.y-X0.y)*(X1.x-X0.x) - (H.x-X0.x)*(X1.y-X0.y);
+	
+	double dist_perp = SIGNUM(det) * nav_components::calculate_distance(H, P);
+	double dist_inline = (1-t) * nav_components::calculate_distance(X0, X1);
+	
+	double speed_perp = control_perp->output(dist_perp, 0);
+	double speed_inline = control_inline->output(dist_inline, 0);
+	
+	velocity v;
+	v.speed = navigation::clipSpeed(sqrt(speed_perp*speed_perp + speed_inline*speed_inline), SPEED_LIMIT);
+	v.bearing = RAD2DEG( atan2(speed_perp, speed_inline) ) + nav_components::calculate_bearing(X0, X1);
+	
+	return v;
+}
+
+
+/* Again, but with parabolas */
+curve nav_components::get_path(coord start, coord mid, coord end) {
+	curve c;
+	c.origin = start;
+		
+	cartesian X0 = {0, 0};
+	cartesian X1 = nav_components::get_distance_components(c.origin, mid);
+	cartesian X2 = nav_components::get_distance_components(c.origin, end);
+	
+	double t1 = (nav_components::calculate_distance(X0, X1) + nav_components::calculate_distance(X1, X2))/nav_components::calculate_distance(X0, X1);
+	
+	
+	c.a0 = X0;
+	
+	c.a2.x = ( (X2.x-X0.x) - t1*(X1.x - X0.x) ) / ( t1 * (t1-1) );
+	c.a2.y = ( (X2.y-X0.y) - t1*(X1.y - X0.y) ) / ( t1 * (t1-1) );
+	
+	c.a1.x = X1.x - X0.x - c.a2.x;
+	c.a1.y = X1.y - X0.y - c.a2.y;
+	
+	
+	c.X0 = X0;
+	c.X1 = X1;
+	c.X2 = X2;
+	
+	return c;
+}
+
+
+
+velocity nav_components::get_velocity(PID *controller, coord here, curve c, double &t1, double SPEED_LIMIT) {
+	cartesian H = nav_components::get_distance_components(c.origin, here);
+
+	cartesian X0 = c.X0;
+	cartesian X1 = c.X1;
+	cartesian X2 = c.X2;
+	
+	double t;
+	double num = ( H.x - X0.x) * (X1.x - X0.x) + ( H.y - X0.y) * (X1.y - X0.y);
+	double den = (X1.x - X0.x) * (X1.x - X0.x) + (X1.y - X0.y) * (X1.y - X0.y);
 	if(den == 0) {
 		t=0;
 	} else {
 		t = num/den;
 	}
 	
-	P.x = l.X1.x + (l.X2.x - l.X1.x)*t;
-	P.y = l.X1.y + (l.X2.y - l.X1.y)*t;
+	cartesian P_est = {X0.x + t*(X1.x - X0.x), X0.y + t*(X1.y - X0.y)};
 	
-	double det = (H.x-l.X1.x)*(l.X2.y-l.X1.y) - (H.y-l.X1.y)*(l.X2.x-l.X1.x);
+	t1 = nav_components::calculate_distance(X0, P_est)/nav_components::calculate_distance(X0, X1);
 	
-	double dist_perp = SIGNUM(-det) * nav_components::calculate_distance(H, P);
-	double dist_para = (1-t) * nav_components::calculate_distance(l.X1, l.X2);
+	cartesian P0 = {c.a2.x*t1*t1 + c.a1.x*t1 + c.a0.x, c.a2.y*t1*t1 + c.a1.y*t1 + c.a0.y};
+	cartesian P1 = {P0.x + c.a2.x*t1 + c.a1.x, P0.y + c.a2.y*t1 + c.a1.y};
 	
-	double speed_perp = control_perp->output(dist_perp, 0);
-	double speed_para = control_para->output(dist_para, 0);
+	double det = (H.y-P0.y)*(P1.x-P0.x) - (H.x-P0.x)*(P1.y-P0.y);
+	double dist_perp = SIGNUM(det) * nav_components::calculate_distance(H, P0);
+	double speed_perp = controller->output(dist_perp, 0);
+	
+	double angle = PI + nav_components::calculate_bearing(X0, X1) - nav_components::calculate_bearing(X1, X2);
+	double dist_inline = nav_components::calculate_distance(P0, X1);
+	
+	double speed_inline;
+	if (dist_inline > 10) {
+		speed_inline = SPEED_LIMIT;
+	} else {
+		 speed_inline = SPEED_LIMIT - 3 * cos(angle/2) * (10 - dist_inline);
+	}
 	
 	velocity v;
-	v.speed = navigation::clipSpeed(sqrt(speed_perp*speed_perp + speed_para*speed_para), SPEED_LIMIT);
-	v.bearing = RAD2DEG( atan2(speed_perp, speed_para) ) + nav_components::calculate_bearing(l.X1, l.X2);
+	v.speed = navigation::clipSpeed(sqrt(speed_perp*speed_perp + speed_inline*speed_inline), SPEED_LIMIT);
+	v.bearing = RAD2DEG( atan2(speed_perp, speed_inline) ) + nav_components::calculate_bearing(P0, P1);
 	
 	return v;
 }
+
