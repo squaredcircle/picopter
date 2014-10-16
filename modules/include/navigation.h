@@ -72,15 +72,17 @@ namespace nav_components {
  * and PID distances perpendicular to and along line */
 namespace nav_components {
 	line		get_path(coord, coord);
-	
+	cartesian 	get_point(line l, double t);
+
 	velocity	get_velocity(PID*, PID*, coord, line, double SPEED_LIMIT);
 }
 
 /* Again, but with parabolas */
 namespace nav_components {
 	curve		get_path(coord, coord, coord);
-	
-	velocity	get_velocity(PID*, coord, curve, double &t1, double SPEED_LIMIT);
+	cartesian 	get_point(curve c, double t);
+
+	velocity 	get_velocity(PID *, coord, curve, int N, double MIN_SPEED, double MAX_SPEED);
 }
 
 #endif// __NAVIGATION_H_INCLUDED__

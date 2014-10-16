@@ -272,6 +272,10 @@ line nav_components::get_path(coord start, coord end) {
 	return l;
 }
 
+cartesian nav_components::get_point(line l, double t) {
+	cartesian P = {l.a1.x*t + l.a0.x, l.a1.y*t + l.a0.y};
+	return P;
+}
 
 
 
@@ -290,7 +294,7 @@ velocity nav_components::get_velocity(PID *control_perp, PID *control_inline, co
 	} else {
 		t = num/den;
 	}
-	cartesian P = {l.a1.x*t + l.a0.x, l.a1.y*t + l.a0.y};
+	cartesian P = nav_components::get_point(l, t);
 	
 	double det = (H.y-X0.y)*(X1.x-X0.x) - (H.x-X0.x)*(X1.y-X0.y);
 	
@@ -336,30 +340,36 @@ curve nav_components::get_path(coord start, coord mid, coord end) {
 	return c;
 }
 
+cartesian nav_components::get_point(curve c, double t) {
+	cartesian P = {c.a2.x*t*t + c.a1.x*t + c.a0.x, c.a2.y*t*t + c.a1.y*t + c.a0.y};
+	return P;
+}
 
 
-velocity nav_components::get_velocity(PID *controller, coord here, curve c, double &t1, double SPEED_LIMIT) {
+velocity nav_components::get_velocity(PID *controller, coord here, curve c, int N, double MIN_SPEED, double MAX_SPEED) {
 	cartesian H = nav_components::get_distance_components(c.origin, here);
 
 	cartesian X0 = c.X0;
 	cartesian X1 = c.X1;
 	cartesian X2 = c.X2;
 	
-	double t;
-	double num = ( H.x - X0.x) * (X1.x - X0.x) + ( H.y - X0.y) * (X1.y - X0.y);
-	double den = (X1.x - X0.x) * (X1.x - X0.x) + (X1.y - X0.y) * (X1.y - X0.y);
-	if(den == 0) {
-		t=0;
-	} else {
-		t = num/den;
+	double tmin = 0;
+	double tmax = 1;
+	double t = (tmax - tmin)/2;
+	
+	for(int n=0; n<N; n++) {
+		if(nav_components::calculate_distance(nav_components::get_point(c, tmin))
+			< nav_components::calculate_distance(nav_components::get_point(c, tmin)) ) {
+			
+			tmax = t;
+		} else {
+			tmin = t;
+		}
+		t = (tmax - tmin)/2;
 	}
 	
-	cartesian P_est = {X0.x + t*(X1.x - X0.x), X0.y + t*(X1.y - X0.y)};
-	
-	t1 = nav_components::calculate_distance(X0, P_est)/nav_components::calculate_distance(X0, X1);
-	
-	cartesian P0 = {c.a2.x*t1*t1 + c.a1.x*t1 + c.a0.x, c.a2.y*t1*t1 + c.a1.y*t1 + c.a0.y};
-	cartesian P1 = {P0.x + c.a2.x*t1 + c.a1.x, P0.y + c.a2.y*t1 + c.a1.y};
+	cartesian P0 = nav_components::get_point(c, t);
+	cartesian P1 = {P0.x + 2*c.a2.x*t + c.a1.x, P0.y + 2*c.a2.y*t + c.a1.y};
 	
 	double det = (H.y-P0.y)*(P1.x-P0.x) - (H.x-P0.x)*(P1.y-P0.y);
 	double dist_perp = SIGNUM(det) * nav_components::calculate_distance(H, P0);
@@ -370,13 +380,13 @@ velocity nav_components::get_velocity(PID *controller, coord here, curve c, doub
 	
 	double speed_inline;
 	if (dist_inline > 10) {
-		speed_inline = SPEED_LIMIT;
+		speed_inline = MAX_SPEED;
 	} else {
-		 speed_inline = SPEED_LIMIT - 3 * cos(angle/2) * (10 - dist_inline);
+		speed_inline = MAX_SPEED - ((MAX_SPEED - MIN_SPEED)/10) * cos(angle/2) * (10 - dist_inline);
 	}
 	
 	velocity v;
-	v.speed = navigation::clipSpeed(sqrt(speed_perp*speed_perp + speed_inline*speed_inline), SPEED_LIMIT);
+	v.speed = navigation::clipSpeed(sqrt(speed_perp*speed_perp + speed_inline*speed_inline), MAX_SPEED);
 	v.bearing = RAD2DEG( atan2(speed_perp, speed_inline) ) + nav_components::calculate_bearing(P0, P1);
 	
 	return v;
