@@ -218,7 +218,7 @@ double nav_components::calculate_distance(cartesian P) {
 
 
 double nav_components::calculate_bearing(cartesian P) {
-	double bearing = RAD2DEG( atan2(P.y, P.x) );
+	double bearing = RAD2DEG( atan2(P.x, P.y) );
 	if(bearing < 0)	bearing += 360;
 	return bearing;
 }
