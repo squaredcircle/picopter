@@ -73,6 +73,8 @@ bool			exitProgram = false;
 int				userState = -1;
 string 			state_message;
 
+string 			repeatLoop = false;
+
 bool initialise(FlightBoard *fb, GPS *gps, IMU *imu, CAMERA_STREAM *cam) {
 	cout << "\033[36m[COPTER]\033[0m Initialising." << endl;
 	

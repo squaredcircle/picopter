@@ -1,6 +1,7 @@
 #include "display.h"
 #include <unistd.h>
 
+
 int state = 0;
 int userState = 0;
 bool exitProgram = 0;

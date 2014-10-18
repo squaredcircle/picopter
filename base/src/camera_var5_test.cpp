@@ -27,8 +27,6 @@ int main(int argc, char* argv[]) {
 	cam.setup();
 	cam.start();
 	
-	ObjectLocation object_data;
-	
 	while(!exitProgram) {
 		
 		boost::this_thread::sleep(boost::posix_time::milliseconds(500));

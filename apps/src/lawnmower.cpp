@@ -11,6 +11,8 @@
 #include <imu_euler.h>
 #include <RaspiCamCV.h>
 
+#include "buzzer.h"
+
 #include "run_lawnmower.h"
 
 using namespace std;
@@ -18,6 +20,11 @@ using namespace std;
 #define GPS_DATA_FILE "/home/pi/picopter/apps/config/waypoints_list.txt"
 
 void readPosition(Pos*, int);
+
+
+
+int state = 0;
+bool exitProgram = false;
 
 int main() {
 
@@ -44,8 +51,10 @@ int main() {
 	//RaspiCamCvCapture* capture = raspiCamCvCreateCameraCapture(0);
 
 	cout << "Set-up complete" << endl;
-
-	run_lawnmower(fb, gps, imu,/* capture,*/ start, end);
+	
+	Buzzer buzzer = Buzzer();
+	
+	run_lawnmower(fb, gps, imu, buzzer, start, end);
 	//raspiCamCvReleaseCapture(&capture);
 	
 	return 0;

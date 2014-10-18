@@ -29,7 +29,31 @@ EXECUTABLES = $(patsubst src/%.cpp, bin/%, $(wildcard src/*.cpp))
 all: $(EXECUTABLES)
 
 bin/% : obj/%.o $(BASE_OBJECTS) $(MODULES_OBJECTS)
+	$(CC) $(LDFLAGS) $(INCLUDES) $(BASE_INCLUDE) $(BASE_OBJECTS) $(MODULES_INCLUDE) $(filter-out ../modules/obj/waypoints_loop%.o ../modules/obj/run_lawnmower.o ../modules/obj/lawnmower%.o, $(MODULES_OBJECTS)) $(XSENS_INCLUDES) $(XSENS_LINKS) $(RASPICAM_INCLUDES) $(RASPICAM_LINKS) $(OPEN_CV) $< -o $@
+
+bin/distance : obj/distance.o $(BASE_OBJECTS) $(MODULES_OBJECTS)
+	$(CC) $(LDFLAGS) $(INCLUDES) $(BASE_INCLUDE) $(BASE_OBJECTS) $(MODULES_INCLUDE) $(filter-out ../modules/obj/waypoints_loop%.o ../modules/obj/run_lawnmower.o, $(MODULES_OBJECTS)) $(XSENS_INCLUDES) $(XSENS_LINKS) $(RASPICAM_INCLUDES) $(RASPICAM_LINKS) $(OPEN_CV) $< -o $@
+
+bin/lawnmower : obj/lawnmower.o $(BASE_OBJECTS) $(MODULES_OBJECTS)
+	$(CC) $(LDFLAGS) $(INCLUDES) $(BASE_INCLUDE) $(BASE_OBJECTS) $(MODULES_INCLUDE) $(filter-out ../modules/obj/waypoints_loop%.o, $(MODULES_OBJECTS)) $(XSENS_INCLUDES) $(XSENS_LINKS) $(RASPICAM_INCLUDES) $(RASPICAM_LINKS) $(OPEN_CV) $< -o $@
+
+
+#don't ask me.  ask gnu make.
+bin/run_waypoints1 : obj/run_waypoints1.o $(BASE_OBJECTS) $(MODULES_OBJECTS)
 	$(CC) $(LDFLAGS) $(INCLUDES) $(BASE_INCLUDE) $(BASE_OBJECTS) $(MODULES_INCLUDE) $(MODULES_OBJECTS) $(XSENS_INCLUDES) $(XSENS_LINKS) $(RASPICAM_INCLUDES) $(RASPICAM_LINKS) $(OPEN_CV) $< -o $@
+
+bin/run_waypoints2 : obj/run_waypoints2.o $(BASE_OBJECTS) $(MODULES_OBJECTS)
+	$(CC) $(LDFLAGS) $(INCLUDES) $(BASE_INCLUDE) $(BASE_OBJECTS) $(MODULES_INCLUDE) $(MODULES_OBJECTS) $(XSENS_INCLUDES) $(XSENS_LINKS) $(RASPICAM_INCLUDES) $(RASPICAM_LINKS) $(OPEN_CV) $< -o $@
+
+bin/run_waypoints3 : obj/run_waypoints3.o $(BASE_OBJECTS) $(MODULES_OBJECTS)
+	$(CC) $(LDFLAGS) $(INCLUDES) $(BASE_INCLUDE) $(BASE_OBJECTS) $(MODULES_INCLUDE) $(MODULES_OBJECTS) $(XSENS_INCLUDES) $(XSENS_LINKS) $(RASPICAM_INCLUDES) $(RASPICAM_LINKS) $(OPEN_CV) $< -o $@
+
+bin/run_waypoints4 : obj/run_waypoints4.o $(BASE_OBJECTS) $(MODULES_OBJECTS)
+	$(CC) $(LDFLAGS) $(INCLUDES) $(BASE_INCLUDE) $(BASE_OBJECTS) $(MODULES_INCLUDE) $(MODULES_OBJECTS) $(XSENS_INCLUDES) $(XSENS_LINKS) $(RASPICAM_INCLUDES) $(RASPICAM_LINKS) $(OPEN_CV) $< -o $@
+
+bin/run_waypoints5 : obj/run_waypoints5.o $(BASE_OBJECTS) $(MODULES_OBJECTS)
+	$(CC) $(LDFLAGS) $(INCLUDES) $(BASE_INCLUDE) $(BASE_OBJECTS) $(MODULES_INCLUDE) $(MODULES_OBJECTS) $(XSENS_INCLUDES) $(XSENS_LINKS) $(RASPICAM_INCLUDES) $(RASPICAM_LINKS) $(OPEN_CV) $< -o $@
+
 
 obj/%.o :  src/%.cpp $(BASE_HEADERS) $(MODULES_HEADERS)
 	$(CC) $(CFLAGS) $(INCLUDES) $(BASE_INCLUDE) $(MODULES_INCLUDE) $(XSENS_INCLUDES) $(RASPICAM_INCLUDES) $(OPEN_CV) $< -o $@

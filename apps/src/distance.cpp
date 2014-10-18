@@ -19,6 +19,8 @@ int TITLE_HEIGHT = 4;
 void endCurses(void);
 void startCurses(void);
 
+bool exitProgram = false;
+
 int main() {
 
 	GPS gps = GPS();		//Initialises GPS

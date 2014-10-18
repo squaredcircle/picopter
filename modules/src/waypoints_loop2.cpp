@@ -35,10 +35,6 @@ using namespace std;
 using namespace navigation;
 using namespace nav_direct;
 
-/* Declare global variables */
-//size_t wp_it		= 0;
-//bool repeatLoop		= true;
-
 
 
 /* Declare configurable variables and init with default value*/
