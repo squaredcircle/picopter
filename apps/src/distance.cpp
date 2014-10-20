@@ -66,9 +66,9 @@ int main() {
 	WINDOW *msg_window = newwin(LINES - TITLE_HEIGHT -1, COLUMNS -1, TITLE_HEIGHT, 0);
 	wattron(msg_window, COLOR_PAIR(2));
 	
-	double dist, latDist, lonDist, lastUpdate;
+	double dist, latDisp, lonDisp, lastUpdate;
 	char str[BUFSIZ];
-	currentLat.lon = start.lon;
+	currentLat.lon = start.lon;	//Will always be fixed
 	currentLon.lat = start.lat;
 	lastUpdate = data.time;
 	while(true) {
@@ -84,9 +84,15 @@ int main() {
 		lastUpdate = data.time;
 
 		dist = calculate_distance(start, current);
-		latDist = calculate_distance(start, currentLat);
-		lonDist = calculate_distance(start, currentLon);
-		sprintf(str, "%f %f %f %f %d", (data.time)-startTime, latDist, lonDist, dist, data.numSatelites);
+		latDisp = calculate_distance(start, currentLat);
+		if (start.lat > currentLat.lat) {	//Are we S of where we started?
+			latDisp = -latDisp;
+		}
+		lonDisp = calculate_distance(start, currentLon);
+		if (start.lon > currentLon.lon) {	//Are we S of where we started?
+			lonDisp = -lonDisp;
+		}
+		sprintf(str, "%f %f %f %f %d", (data.time)-startTime, latDisp, lonDisp, dist, data.numSatelites);
 		distLog.writeLogLine(str, false);
 
 		wclear(msg_window);
@@ -95,8 +101,8 @@ int main() {
 		wprintw(msg_window, "Currently at \t%f\t%f\n", currentLat.lat, currentLon.lon);
 		wprintw(msg_window, "\n");
 		wprintw(msg_window, "Distance:\t\t\t%f m\n", dist);
-		wprintw(msg_window, "Latitude Distance:\t\t%f m\n", latDist);
-		wprintw(msg_window, "Longitude Distance:\t\t%f m\n", lonDist);
+		wprintw(msg_window, "Latitude Displacement:\t\t%f m\n", latDisp);
+		wprintw(msg_window, "Longitude Displacement:\t\t%f m\n", lonDisp);
 		wprintw(msg_window, "Time Difference:\t\t%f seconds\n", (data.time)-startTime);
 		wprintw(msg_window, "Number of Satellites:\t\t%d satellites\n", data.numSatelites);
 		wprintw(msg_window, "\n");

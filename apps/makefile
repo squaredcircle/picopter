@@ -7,10 +7,12 @@ LDFLAGS = -L/usr/local/lib -lwiringPi -lboost_thread -lboost_system -lncurses -l
 BASE_INCLUDE = -I../base/include
 BASE_HEADERS = $(wildcard ../base/include/*.h)
 BASE_OBJECTS = $(wildcard ../base/obj/*.o)
+BASE_OBJECTS_FILTERED = $(filter-out ../base/obj/camera_var%.o ../base/obj/flightboard_test.o , $(BASE_OBJECTS))
 
 MODULES_INCLUDE = -I../modules/include
 MODULES_HEADERS = $(wildcard ../modules/include/*.h)
-MODULES_OBJECTS = $(wildcard ../modules/obj/*.o) 
+MODULES_OBJECTS = $(wildcard ../modules/obj/*.o)
+MODULES_OBJECTS_FILTERED = $(filter-out ../modules/obj/waypoints_loop%.o, $(MODULES_OBJECTS)) 
 
 XSENS_DIR = ../../lib/Xsens
 XSENS_LINKS = -L$(XSENS_DIR) -lcmt -lpthread -lrt
@@ -32,10 +34,10 @@ bin/% : obj/%.o $(BASE_OBJECTS) $(MODULES_OBJECTS)
 	$(CC) $(LDFLAGS) $(INCLUDES) $(BASE_INCLUDE) $(BASE_OBJECTS) $(MODULES_INCLUDE) $(filter-out ../modules/obj/waypoints_loop%.o ../modules/obj/run_lawnmower.o ../modules/obj/lawnmower%.o, $(MODULES_OBJECTS)) $(XSENS_INCLUDES) $(XSENS_LINKS) $(RASPICAM_INCLUDES) $(RASPICAM_LINKS) $(OPEN_CV) $< -o $@
 
 bin/distance : obj/distance.o $(BASE_OBJECTS) $(MODULES_OBJECTS)
-	$(CC) $(LDFLAGS) $(INCLUDES) $(BASE_INCLUDE) $(BASE_OBJECTS) $(MODULES_INCLUDE) $(filter-out ../modules/obj/waypoints_loop%.o ../modules/obj/run_lawnmower.o, $(MODULES_OBJECTS)) $(XSENS_INCLUDES) $(XSENS_LINKS) $(RASPICAM_INCLUDES) $(RASPICAM_LINKS) $(OPEN_CV) $< -o $@
+	$(CC) $(LDFLAGS) $(INCLUDES) $(BASE_INCLUDE) $(BASE_OBJECTS_FILTERED) $(MODULES_INCLUDE) $(filter-out  ../modules/obj/run_lawnmower.o, $(MODULES_OBJECTS_FILTERED)) $(XSENS_INCLUDES) $(XSENS_LINKS) $(RASPICAM_INCLUDES) $(RASPICAM_LINKS) $(OPEN_CV) $< -o $@
 
 bin/lawnmower : obj/lawnmower.o $(BASE_OBJECTS) $(MODULES_OBJECTS)
-	$(CC) $(LDFLAGS) $(INCLUDES) $(BASE_INCLUDE) $(BASE_OBJECTS) $(MODULES_INCLUDE) $(filter-out ../modules/obj/waypoints_loop%.o, $(MODULES_OBJECTS)) $(XSENS_INCLUDES) $(XSENS_LINKS) $(RASPICAM_INCLUDES) $(RASPICAM_LINKS) $(OPEN_CV) $< -o $@
+	$(CC) $(LDFLAGS) $(INCLUDES) $(BASE_INCLUDE) $(BASE_OBJECTS_FILTERED) $(MODULES_INCLUDE) $(MODULES_OBJECTS_FILTERED) $(XSENS_INCLUDES) $(XSENS_LINKS) $(RASPICAM_INCLUDES) $(RASPICAM_LINKS) $(OPEN_CV) $< -o $@
 
 
 #don't ask me.  ask gnu make.
