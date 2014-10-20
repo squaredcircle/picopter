@@ -321,7 +321,7 @@ curve nav_components::get_path(coord start, coord mid, coord end) {
 	cartesian X1 = nav_components::get_distance_components(c.origin, mid);
 	cartesian X2 = nav_components::get_distance_components(c.origin, end);
 	
-	double t1 = (nav_components::calculate_distance(X0, X1) + nav_components::calculate_distance(X1, X2))/nav_components::calculate_distance(X0, X1);
+	double t1 = 1 + nav_components::calculate_distance(X1, X2)/nav_components::calculate_distance(X0, X1);
 	
 	
 	c.a0 = X0;
@@ -355,7 +355,7 @@ velocity nav_components::get_velocity(PID *controller, coord here, curve c, int 
 	
 	double tmin = 0;
 	double tmax = 1;
-	double t = (tmax - tmin)/2;
+	double t = (tmin + tmax)/2;
 	
 	for(int n=0; n<N; n++) {
 		if(nav_components::calculate_distance(nav_components::get_point(c, tmin))
@@ -365,7 +365,7 @@ velocity nav_components::get_velocity(PID *controller, coord here, curve c, int 
 		} else {
 			tmin = t;
 		}
-		t = (tmax - tmin)/2;
+		t = (tmin + tmax)/2;
 	}
 	
 	cartesian P0 = nav_components::get_point(c, t);
