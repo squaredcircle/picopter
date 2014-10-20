@@ -182,14 +182,12 @@ velocity nav_direct::get_velocity(PID *controller, coord here, std::deque<coord>
 	int weight = (int)(path->size());
 	double sumSines = 0;
 	double sumCosines = 0;
-	double sumWeights = 0;
 	for(std::deque<coord>::iterator it = path->begin(); it != path->end(); ++it) {
 		sumSines   += weight * sin(DEG2RAD( navigation::calculate_bearing(here, *it)));
 		sumCosines += weight * cos(DEG2RAD( navigation::calculate_bearing(here, *it)));
-		sumWeights += weight;
 		weight--;
 	}
-	v.bearing = RAD2DEG( atan2(sumSines/sumWeights, sumCosines/sumWeights) );
+	v.bearing = RAD2DEG( atan2(sumSines, sumCosines) );
 	
 	return v;
 }
@@ -299,7 +297,11 @@ velocity nav_components::get_velocity(PID *control_perp, PID *control_inline, co
 	double det = (H.y-X0.y)*(X1.x-X0.x) - (H.x-X0.x)*(X1.y-X0.y);
 	
 	double dist_perp = SIGNUM(det) * nav_components::calculate_distance(H, P);
-	double dist_inline = (1-t) * nav_components::calculate_distance(X0, X1);
+	double dist_inline = nav_components::calculate_distance(P, X1);
+	
+	if(t > 1) {
+		dist_inline = -dist_inline;
+	}
 	
 	double speed_perp = control_perp->output(dist_perp, 0);
 	double speed_inline = control_inline->output(dist_inline, 0);
@@ -359,7 +361,7 @@ velocity nav_components::get_velocity(PID *controller, coord here, curve c, int 
 	
 	for(int n=0; n<N; n++) {
 		if(nav_components::calculate_distance(nav_components::get_point(c, tmin))
-			< nav_components::calculate_distance(nav_components::get_point(c, tmin)) ) {
+			< nav_components::calculate_distance(nav_components::get_point(c, tmax)) ) {
 			
 			tmax = t;
 		} else {
@@ -382,7 +384,8 @@ velocity nav_components::get_velocity(PID *controller, coord here, curve c, int 
 	if (dist_inline > 10) {
 		speed_inline = MAX_SPEED;
 	} else {
-		speed_inline = MAX_SPEED - ((MAX_SPEED - MIN_SPEED)/10) * cos(angle/2) * (10 - dist_inline);
+		speed_inline = MAX_SPEED - (MAX_SPEED - MIN_SPEED) * cos(angle/2) * (1 - dist_inline/10);
+		//speed_inline = MAX_SPEED - (MAX_SPEED - MIN_SPEED) * cos(angle/2) * (0.012*dist_inline*dist_inline - 0.22*dist_inline +1);
 	}
 	
 	velocity v;

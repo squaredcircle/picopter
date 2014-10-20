@@ -13,6 +13,7 @@
 #include <iostream>
 #include <iomanip>
 #include <unistd.h>
+#include <ctime>
 
 #include <deque>
 
@@ -107,6 +108,9 @@ void waypoints_loop1(hardware &hardware_list, Logger &log, deque<coord> &waypoin
 	char str_buf[BUFSIZ];
 	log.clearLog();
 	
+	time_t start, now;
+	time(&start);
+	
 	//Grab references to hardware
 	FlightBoard fb	= *(hardware_list.fb);
 	GPS gps			= *(hardware_list.gps);
@@ -156,10 +160,11 @@ void waypoints_loop1(hardware &hardware_list, Logger &log, deque<coord> &waypoin
 			currentCoord = getCoord(&gps);
 			
 			//Write data for Michael
+			time(&now);
 			if (!waypoints_list.empty()) {
-				sprintf(str_buf, "%3.6f,%3.6f,%3.6f,%3.6f\n", currentCoord.lat, currentCoord.lon, waypoints_list[wp_it].lat, waypoints_list[wp_it].lon);
+				sprintf(str_buf, "%d,%3.6f,%3.6f,%3.6f,%3.6f", difftime(now, start), currentCoord.lat, currentCoord.lon, waypoints_list[wp_it].lat, waypoints_list[wp_it].lon);
 			} else {
-				sprintf(str_buf, "%3.6f,%3.6f,,\n", currentCoord.lat, currentCoord.lon);
+				sprintf(str_buf, "%d,%3.6f,%3.6f,,", difftime(now, start), currentCoord.lat, currentCoord.lon);
 			}
 			log.writeLogLine(str_buf, false);
 			
