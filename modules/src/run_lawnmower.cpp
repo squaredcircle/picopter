@@ -143,7 +143,7 @@ void run_lawnmower(FlightBoard &fb, GPS &gps, IMU &imu, Buzzer &buzzer, Pos star
 		buzzer.playBuzzer(DURATION, FREQUENCY*2, VOLUME);
 		if (i == 0) {	//Are we at the first point?
 			rawgpslog.clearLog();			//Flush data in there - also removers header
-			oval = imread(OVAL_IMAGE_PATH);	//Wipe any extra lines caused by flying to first point
+			//oval = imread(OVAL_IMAGE_PATH);	//Wipe any extra lines caused by flying to first point
 		}
 		if(exitProgram) {
 			break;
@@ -152,8 +152,8 @@ void run_lawnmower(FlightBoard &fb, GPS &gps, IMU &imu, Buzzer &buzzer, Pos star
 
 	state = 12;
 	buzzer.playBuzzer(DURATION, FREQUENCY, VOLUME);
-	sprintf(str, "photos/James_Oval_%d.jpg", (int)((data.time)*100));
-	imwrite(str, oval);
+	//sprintf(str, "photos/James_Oval_%d.jpg", (int)((data.time)*100));
+	//imwrite(str, oval);
 	cout << "Finished Lawnmower run!" << endl;
 	lawnlog.writeLogLine("Finished!");
 }

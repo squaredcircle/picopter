@@ -21,10 +21,9 @@ using namespace std;
 
 void readPosition(Pos*, int);
 
-
-
 int state = 0;
 bool exitProgram = false;
+//bool usingWindows = false;
 
 int main() {
 

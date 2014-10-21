@@ -1,5 +1,5 @@
 bool usingIMU = true;
-bool usingWindows = true;
+bool usingWindows = false;
 
 int SPEED_LIMIT = 35;		//Config file parameters - need to be initialised as globals
 double SWEEP_SPACING = 6;
