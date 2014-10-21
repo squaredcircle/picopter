@@ -162,9 +162,9 @@ void waypoints_loop1(hardware &hardware_list, Logger &log, deque<coord> &waypoin
 			//Write data for Michael
 			time(&now);
 			if (!waypoints_list.empty()) {
-				sprintf(str_buf, "%d,%3.6f,%3.6f,%3.6f,%3.6f", difftime(now, start), currentCoord.lat, currentCoord.lon, waypoints_list[wp_it].lat, waypoints_list[wp_it].lon);
+				sprintf(str_buf, "%.f,%3.6f,%3.6f,%3.6f,%3.6f", difftime(now, start), currentCoord.lat, currentCoord.lon, waypoints_list[wp_it].lat, waypoints_list[wp_it].lon);
 			} else {
-				sprintf(str_buf, "%d,%3.6f,%3.6f,,", difftime(now, start), currentCoord.lat, currentCoord.lon);
+				sprintf(str_buf, "%.f,%3.6f,%3.6f,,", difftime(now, start), currentCoord.lat, currentCoord.lon);
 			}
 			log.writeLogLine(str_buf, false);
 			
