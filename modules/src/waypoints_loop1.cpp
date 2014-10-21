@@ -108,13 +108,15 @@ void waypoints_loop1(hardware &hardware_list, Logger &log, deque<coord> &waypoin
 	char str_buf[BUFSIZ];
 	log.clearLog();
 	
-	time_t start, now;
+	time_t start, now, last_displayed;
 	time(&start);
+    time(&now);
+    time(&last_displayed);
 	
 	//Grab references to hardware
-	FlightBoard fb	= *(hardware_list.fb);
-	GPS gps			= *(hardware_list.gps);
-	IMU imu			= *(hardware_list.imu);
+	FlightBoard *fb	= hardware_list.fb;
+	GPS *gps		= hardware_list.gps;
+	IMU *imu		= hardware_list.imu;
 	
 	bool useimu = hardware_list.IMU_Working;
 	double yaw = 0;
@@ -139,12 +141,16 @@ void waypoints_loop1(hardware &hardware_list, Logger &log, deque<coord> &waypoin
 	
 	//Wait here for auto mode and conduct bearing test if necessary
 	state = 6;
-	while ( !gpio::isAutoMode() ) usleep(1*1000*1000);
+    cout << "\033[1;33m[WAYPTS]\033[0m Waiting for auto mode." << endl;
+	while ( !gpio::isAutoMode() ) usleep(500*1000);
+    cout << "\033[1;31m[WAYPTS]\033[0m Auto mode engaged." << endl;
 	
 	if (!useimu) {
 		cowbell.playBuzzer(0.25, 10, 100);
+        cout << "\033[1;31m[WAYPTS]\033[0m Conducting bearing test..." << endl;
 		state = 5;
-		yaw = inferBearing(&fb, &gps);
+		yaw = inferBearing(fb, gps);
+        cout << "\033[1;31m[WAYPTS]\033[0m Bearing test complete." << endl;
 	}
 	
 	//Initialise loop variables
@@ -154,10 +160,13 @@ void waypoints_loop1(hardware &hardware_list, Logger &log, deque<coord> &waypoin
 	FB_Data		course = {0, 0, 0, 0};
 	int			pastState = -1;
 	velocity 	flightVector = {-1, -1};
-
+    
+    
+    cout << "\033[1;32m[WAYPTS]\033[0m Starting main loop." << endl;
+    
 	try {	// Check for any errors, and stop the copter.
 		while(!exitProgram) {
-			currentCoord = getCoord(&gps);
+			currentCoord = getCoord(gps);
 			
 			//Write data for Michael
 			time(&now);
@@ -174,7 +183,7 @@ void waypoints_loop1(hardware &hardware_list, Logger &log, deque<coord> &waypoin
 				bearingToNextWaypoint = calculate_bearing(currentCoord, waypoints_list[wp_it]);
 			}
 			
-			if (useimu) yaw = getYaw(&imu);			
+			if (useimu) yaw = getYaw(imu);
 
 			/* State 4: Manual mode. */
 			if (!gpio::isAutoMode()) {
@@ -200,7 +209,9 @@ void waypoints_loop1(hardware &hardware_list, Logger &log, deque<coord> &waypoin
 			}
 			
 			/* Only give output if the state changes. Less spamey.. */
-			if (pastState != state) {
+            /* Edit: or if travelling to waypoint.  Print details every second */
+            
+			if (pastState != state || (state == 1 && difftime(now, last_displayed) >0.9)) {
 				switch (state) {
 					case 0:
 						cout << "\033[1;32m[WAYPTS]\033[0m All stop." << endl;
@@ -226,10 +237,11 @@ void waypoints_loop1(hardware &hardware_list, Logger &log, deque<coord> &waypoin
 				
 				pastState = state;
 			}
+            last_displayed = now;
 
 			switch(state) {
 				case 0:													//Case 0:	Not in auto mode, standby
-					fb.setFB_Data(&stop);									//Stop moving
+					fb->setFB_Data(&stop);									//Stop moving
 					
 					/*
 					log.writeLogLine("\033[1;32m[WAYPTS]\033[0m Manual mode");
@@ -242,7 +254,7 @@ void waypoints_loop1(hardware &hardware_list, Logger &log, deque<coord> &waypoin
 				case 1:
 					flightVector = get_velocity(&controller, distanceToNextWaypoint,  bearingToNextWaypoint, SPEED_LIMIT_);
 					setCourse(&course, flightVector, yaw);
-					fb.setFB_Data(&course);																//Give command to flight boars
+					fb->setFB_Data(&course);																//Give command to flight boars
 					
 					/*
 					sprintf(str_buf, "[WAYPTS] Aileron is %d, Elevator is %d", course.aileron, course.elevator);
@@ -256,7 +268,7 @@ void waypoints_loop1(hardware &hardware_list, Logger &log, deque<coord> &waypoin
 					break;
 				
 				case 2:
-					fb.setFB_Data(&stop);
+					fb->setFB_Data(&stop);
 					cowbell.needs_more();
 					
 					/*
@@ -277,7 +289,7 @@ void waypoints_loop1(hardware &hardware_list, Logger &log, deque<coord> &waypoin
 				
 				case 3:
 				default:
-					fb.setFB_Data(&stop);
+					fb->setFB_Data(&stop);
 					/*
 					log.writeLogLine("\033[31m[WAYPTS]\033[0m Error reading GPS, stopping");
 					*/
@@ -288,7 +300,7 @@ void waypoints_loop1(hardware &hardware_list, Logger &log, deque<coord> &waypoin
 		}
 	} catch (...) {
 		cout << "\033[31m[WAYPTS]\033[0m Error encountered. Stopping copter." << endl;
-		fb.setFB_Data(&stop);
+		fb->setFB_Data(&stop);
 		state = 3;
 	}
 	cout << "\033[1;32m[WAYPTS]\033[0m Waypoints flight loop terminating." << endl;

@@ -61,7 +61,7 @@ int main(int argc, char* argv[]) {
 	hardware_list.CAM_Working = false;
 	
 	//Start loging
-	Logger log = Logger("waypoints.txt");
+	Logger log = Logger("bax_waypoints3.csv");
 	
 	//Get waypoints
 	deque<coord> waypoints_list = deque<coord>();

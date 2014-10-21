@@ -1,4 +1,25 @@
-%T	CAMERA
-%F	MIN_HUE	MAX_HUE	MIN_SAT	MAX_SAT	MIN_VAL	MAX_VAL	PIXLE_THRESHOLD
-%R	320	40	95	255	95	255	5
+%T    WAYPOINTS_LOOP1
+%F    Kp  Ki  Kd  
+%R    8   0   0
+
+%T    WAYPOINTS_LOOP2
+%F    Kp  Ki  Kd  
+%R    8   0   0
+
+%T    WAYPOINTS_LOOP3
+%F    Kp  Ki  Kd  
+%R    8   0   0
+
+%T    WAYPOINTS_LOOP4
+%F    Kp_PERP    Ki_PERP    Kd_PERP
+%R    8          0          0
+%F    Kp_INLINE  Ki_INLINE  Kd_INLINE
+%R    8          0          0
+
+%T    WAYPOINTS_LOOP5
+%F    Kp_PERP    Ki_PERP    Kd_PERP
+%R    8          0          0
+%F    SPEED_LIMIT
+%R    40
+
 %E
