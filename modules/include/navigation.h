@@ -31,7 +31,7 @@ namespace navigation {
 	double		calculate_distance(coord, coord);
 	double		calculate_bearing(coord, coord);
 	
-	double		inferBearing(FlightBoard *fb, GPS *gps, int DIRECTION_TEST_SPEED = 30, int DIRECTION_TEST_DURATION = 6000);
+	double		inferBearing(FlightBoard *fb, GPS *gps, int DIRECTION_TEST_SPEED = 40, int DIRECTION_TEST_DURATION = 5000);
 	
 	double		clipSpeed(double speed, double SPEED_LIMIT);
 	

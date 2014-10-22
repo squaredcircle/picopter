@@ -47,7 +47,7 @@ namespace waypoints_loop4_globals {
 	double Kp_PERP = 8;
 	double Ki_PERP = 0;
 	double Kd_PERP = 0;
-	double Kp_INLINE = 8;
+	double Kp_INLINE = 4;
 	double Ki_INLINE = 0;
 	double Kd_INLINE = 0;
 	int WAIT_AT_WAYPOINTS = 3;
@@ -130,8 +130,8 @@ void waypoints_loop4(hardware &hardware_list, Logger &log, deque<coord> &waypoin
 	}
 	
 	//Construct PID controller
-	PID controller_perp   = PID(Kp_PERP, Ki_PERP, Kd_PERP, MAIN_LOOP_DELAY, 3, 0.95);
-	PID controller_inline = PID(Kp_INLINE, Ki_INLINE, Kd_INLINE, MAIN_LOOP_DELAY, 3, 0.95);
+	PID controller_perp   = PID(-Kp_PERP, -Ki_PERP, -Kd_PERP, MAIN_LOOP_DELAY, 3, 0.95);
+	PID controller_inline = PID(-Kp_INLINE, -Ki_INLINE, -Kd_INLINE, MAIN_LOOP_DELAY, 3, 0.95);
 	
 	//Construct buzzer
 	Buzzer buzzer;

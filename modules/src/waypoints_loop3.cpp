@@ -122,8 +122,8 @@ void waypoints_loop3(hardware &hardware_list, Logger &log, deque<coord> &waypoin
 	}
 	
 	//Construct PID controller
-	PID controller_NS = PID(Kp, Ki, Kd, MAIN_LOOP_DELAY, 3, 0.95);
-	PID controller_EW = PID(Kp, Ki, Kd, MAIN_LOOP_DELAY, 3, 0.95);
+	PID controller_NS = PID(-Kp, -Ki, -Kd, MAIN_LOOP_DELAY, 3, 0.95);
+	PID controller_EW = PID(-Kp, -Ki, -Kd, MAIN_LOOP_DELAY, 3, 0.95);
 	
 	//Construct buzzer
 	Buzzer buzzer;

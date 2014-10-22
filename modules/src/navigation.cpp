@@ -63,11 +63,11 @@ bool navigation::checkInPerth(coord *here) {
  *	calculate_distance
  *		Calculates the distance between two (latitude,longtitude) pairs.
  */
-double navigation::calculate_distance(coord pos1, coord pos2) {
-	pos1 = coord2Rad(pos1);
-	pos2 = coord2Rad(pos2);
+double navigation::calculate_distance(coord origin, coord there) {
+	origin = coord2Rad(origin);
+	there = coord2Rad(there);
 	
-	double h = sin2((pos1.lat-pos2.lat)/2) + cos(pos1.lat)*cos(pos2.lat) * sin2((pos2.lon-pos1.lon)/2);
+	double h = sin2((there.lat-origin.lat)/2) + cos(origin.lat)*cos(there.lat) * sin2((there.lon-origin.lon)/2);
 	//if(h > 1) std::cout << "Distance calculation error" << std::endl;
 	
 	return 2 * RADIUS_OF_EARTH * asin(sqrt(h)) * 1000;
@@ -78,12 +78,12 @@ double navigation::calculate_distance(coord pos1, coord pos2) {
  *		Calculates the bearing from one (latitude,longtitude) pair to another. Returns a bearing in
  *		degrees.
  */
-double navigation::calculate_bearing(coord pos1, coord pos2) {
-	pos1 = coord2Rad(pos1);
-	pos2 = coord2Rad(pos2);
+double navigation::calculate_bearing(coord origin, coord there) {
+	origin = coord2Rad(origin);
+	there = coord2Rad(there);
 	
-	double num = sin(pos2.lon - pos1.lon) * cos(pos2.lat);
-	double den = cos(pos1.lat)*sin(pos2.lat) - sin(pos1.lat)*cos(pos2.lat)*cos(pos2.lon-pos1.lon);
+	double num = sin(there.lon - origin.lon) * cos(there.lat);
+	double den = cos(origin.lat)*sin(there.lat) - sin(origin.lat)*cos(there.lat)*cos(there.lon-origin.lon);
 
 	return RAD2DEG( atan2(num, den) );
 }
@@ -197,14 +197,14 @@ velocity nav_direct::get_velocity(PID *controller, coord here, std::deque<coord>
 /*----------------------------------------------------------------------------------------------------*/
 /* Similar to above, but in terms of xy distance, rather than bearing and distance */
 
-cartesian nav_components::get_distance_components(coord here, coord there) {
-	here = coord2Rad(here);
+cartesian nav_components::get_distance_components(coord origin, coord there) {
+	origin = coord2Rad(origin);
 	there = coord2Rad(there);
 	
 	cartesian P = {0, 0};	//Coord there is transformed to Point P, relative Coord here.
 	
-	P.x = RADIUS_OF_EARTH * 1000 * (there.lon - here.lon) * cos(here.lat);
-	P.y = RADIUS_OF_EARTH * 1000 * (there.lat - here.lat);
+	P.x = RADIUS_OF_EARTH * 1000 * (there.lon - origin.lon) * cos(origin.lat);
+	P.y = RADIUS_OF_EARTH * 1000 * (there.lat - origin.lat);
 	
 	return P;
 }
@@ -221,17 +221,15 @@ double nav_components::calculate_bearing(cartesian P) {
 	return bearing;
 }
 
-double nav_components::calculate_distance(cartesian X1, cartesian X2) {
-	X2.x -= X1.x;
-	X2.y -= X1.y;
-	return calculate_distance(X2);
+double nav_components::calculate_distance(cartesian origin, cartesian there) {
+	cartesian P = {there.x - origin.x, there.y - origin.y};
+	return calculate_distance(P);
 }
 
 
-double nav_components::calculate_bearing(cartesian X1, cartesian X2) {
-	X2.x -= X1.x;
-	X2.y -= X1.y;
-	return calculate_bearing(X2);
+double nav_components::calculate_bearing(cartesian origin, cartesian there) {
+	cartesian P = {there.x - origin.x, there.y - origin.y};
+	return calculate_bearing(P);
 }
 
 
