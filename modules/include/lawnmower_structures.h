@@ -39,7 +39,7 @@ extern double DURATION;
 extern double FREQUENCY;
 extern int VOLUME;
 
-extern int HMIN;
+/*extern int HMIN;
 extern int HMAX;
 extern int SMIN;
 extern int SMAX;
@@ -51,6 +51,6 @@ extern int COLSIZE;
 extern int ROWSIZE; 
 extern int PIXELTHRESH;
 extern int DILATE_ELEMENT;
-extern int ERODE_ELEMENT;
+extern int ERODE_ELEMENT;*/
 
 #endif
