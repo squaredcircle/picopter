@@ -83,10 +83,9 @@ void populate_waypoints_list(deque<coord> *list) {
 	
 	coord waypoint;
 	ifstream waypointsFile(GPS_DATA_FILE);
-	istringstream iss;
-	string word;
 	string line;
 	while(getline(waypointsFile, line)) {
+		istringstream iss;
 		iss.str(line);
 		iss >> waypoint.lat >> waypoint.lon;
 		list->push_back(waypoint);

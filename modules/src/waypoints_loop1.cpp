@@ -86,7 +86,7 @@ using namespace waypoints_loop1_functions;
 
 /* Trololololol*/
 #define needs_more() playBuzzer(BUZZER_DURATION, BUZZER_FREQUENCY, BUZZER_VOLUME)
-#define I_got_a_fever() playBuzzer(2.0, 80, 60)
+#define I_got_a_fever() playBuzzer(1.0, 20, 60)
 
 
 
@@ -137,16 +137,16 @@ void waypoints_loop1(hardware &hardware_list, Logger &log, deque<coord> &waypoin
 	
 	//Print list of waypoints
 	for(size_t i = 0; i != waypoints_list.size(); i++) {
-		cout << "         " << i+1 << ": (" << waypoints_list[i].lat << ", " << waypoints_list[i].lon << ")" << endl;
+		cout << "         " << i+1 << ": (" << setprecision(6) << waypoints_list[i].lat << ", " << setprecision(6) << waypoints_list[i].lon << ")" << endl;
 	}
 	
 	//Wait here for auto mode and conduct bearing test if necessary
 	state = 6;
     cout << "\033[1;33m[WAYPTS]\033[0m Waiting for auto mode." << endl;
-	while ( !gpio::isAutoMode() ) usleep(500*1000);
+	while ( !gpio::isAutoMode() && !exitProgram) usleep(500*1000);
     cout << "\033[1;31m[WAYPTS]\033[0m Auto mode engaged." << endl;
 	
-	if (!useimu) {
+	if (!useimu && !exitProgram) {
 		cowbell.playBuzzer(0.25, 10, 100);
         cout << "\033[1;31m[WAYPTS]\033[0m Conducting bearing test..." << endl;
 		state = 5;

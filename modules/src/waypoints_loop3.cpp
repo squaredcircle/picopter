@@ -132,22 +132,23 @@ void waypoints_loop3(hardware &hardware_list, Logger &log, deque<coord> &waypoin
 	
 	//Print list of waypoints
 	for(size_t i = 0; i != waypoints_list.size(); i++) {
-		cout << "         " << i+1 << ": (" << waypoints_list[i].lat << ", " << waypoints_list[i].lon << ")" << endl;
+		cout << "         " << i+1 << ": (" << setprecision(6) << waypoints_list[i].lat << ", " << setprecision(6) << waypoints_list[i].lon << ")" << endl;
 	}
 	
 	//Wait here for auto mode and conduct bearing test if necessary
 	state = 6;
     cout << "\033[1;33m[WAYPTS]\033[0m Waiting for auto mode." << endl;
-	while ( !gpio::isAutoMode() ) usleep(500*1000);
+	while ( !gpio::isAutoMode() && !exitProgram) usleep(500*1000);
     cout << "\033[1;31m[WAYPTS]\033[0m Auto mode engaged." << endl;
 	
-	if (!useimu) {
+	if (!useimu && !exitProgram) {
 		buzzer.playBuzzer(0.25, 10, 100);
         cout << "\033[1;31m[WAYPTS]\033[0m Conducting bearing test..." << endl;
 		state = 5;
 		yaw = inferBearing(fb, gps);
         cout << "\033[1;31m[WAYPTS]\033[0m Bearing test complete." << endl;
 	}
+	state = 1;
 	
 	//Initialise loop variables
 	coord		currentCoord = {-1, -1};
@@ -236,8 +237,9 @@ void waypoints_loop3(hardware &hardware_list, Logger &log, deque<coord> &waypoin
 				cout << "\033[1;33m[WAYPTS]\033[0m It is " << setprecision(7) << distanceToNextWaypoint	<< "m away, at a bearing of " << bearingToNextWaypoint << "." << endl;
 				
 				pastState = state;
+				last_displayed = now;
+
 			}
-            last_displayed = now;
 
 
 			switch(state) {
@@ -309,6 +311,6 @@ void waypoints_loop3(hardware &hardware_list, Logger &log, deque<coord> &waypoin
 	}
 	cout << "\033[1;32m[WAYPTS]\033[0m Waypoints flight loop terminating." << endl;
 	
-	buzzer.playBuzzer(2.0, 80, 60);
+	buzzer.playBuzzer(1.0, 20, 60);
 	usleep(2100*1000);
 }
