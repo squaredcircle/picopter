@@ -42,6 +42,7 @@ using namespace nav_direct;
 
 /* Declare configurable variables and init with default value*/
 namespace waypoints_loop1_globals {
+	
 	double SPEED_LIMIT_ = 40;
 
 	double WAYPOINT_RADIUS = 2.0;
@@ -152,6 +153,8 @@ void waypoints_loop1(hardware &hardware_list, Logger &log, deque<coord> &waypoin
 		yaw = inferBearing(fb, gps);
         cout << "\033[1;31m[WAYPTS]\033[0m Bearing test complete." << endl;
 	}
+	state = 1;
+	
 	
 	//Initialise loop variables
 	coord		currentCoord = {-1, -1};
@@ -236,8 +239,8 @@ void waypoints_loop1(hardware &hardware_list, Logger &log, deque<coord> &waypoin
 				cout << "\033[1;33m[WAYPTS]\033[0m It is " << setprecision(7) << distanceToNextWaypoint	<< "m away, at a bearing of " << bearingToNextWaypoint << "." << endl;
 				
 				pastState = state;
+				last_displayed = now;
 			}
-            last_displayed = now;
 
 			switch(state) {
 				case 0:													//Case 0:	Not in auto mode, standby

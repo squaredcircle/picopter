@@ -29,7 +29,7 @@ void populate_waypoints_list(deque<coord>*);
 //Waypoint globals
 int state		= 1;
 int userState	= 1;
-bool repeatLoop	= true;
+bool repeatLoop	= false;
 size_t	wp_it = 0;
 
 bool exitProgram = false;
