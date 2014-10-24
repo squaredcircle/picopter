@@ -175,8 +175,9 @@ void nav_direct::update_path(coord here, std::deque<coord> *path, double PATH_RA
 
 
 velocity nav_direct::get_velocity(PID *controller, coord here, std::deque<coord> *path, double SPEED_LIMIT) {
+	double distance = navigation::calculate_distance(here, path->back());
 	velocity v;
-	v.speed = navigation::calculate_distance(here, path->front());
+	v.speed = controller->output(distance, 0);
 	v.speed = navigation::clipSpeed(v.speed, SPEED_LIMIT);
 	
 	int weight = (int)(path->size());
