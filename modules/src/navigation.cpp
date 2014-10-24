@@ -240,7 +240,7 @@ velocity nav_components::get_velocity(PID *x_control, PID *y_control, cartesian 
 	
 	velocity v;
 	v.speed = sqrt(x_speed*x_speed + y_speed*y_speed);
-	v.bearing = RAD2DEG( atan2(y_speed, x_speed) );
+	v.bearing = RAD2DEG( atan2(x_speed, y_speed) );
 	
 	v.speed = navigation::clipSpeed(v.speed, SPEED_LIMIT);
 	
