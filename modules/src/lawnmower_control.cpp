@@ -105,6 +105,7 @@ void addMidPoints(Pos start, Pos end, vector<Pos> *list) {
 		direction = -1;	//Are we going S->N instead of N->S?
 	}
 	double endDistance = calculate_distance(start, end);	//Great circle distance, but ~ straight line distance for close points
+	//cout << "POINT_SPACING " << POINT_SPACING << endl;
 	int points = (endDistance/POINT_SPACING);
 	double fraction, distance, angle;
 	for (int i = 1; i < points; i++) {
