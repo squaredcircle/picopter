@@ -164,6 +164,7 @@ void populateMainVector(vector<Pos> *list, Logger *logPtr, Pos start, Pos end) {
 
 	vector<Pos> sideA;
 	vector<Pos> sideB;
+	sweepEnds.clear();	//Clear list Alex needs for points
 	populateVector(corners[0], corners[1], &sideA);
 	populateVector(corners[2], corners[3], &sideB);
 	/*for(int i = 0; i < (int)sideA.size(); i++) {
@@ -182,15 +183,19 @@ void populateMainVector(vector<Pos> *list, Logger *logPtr, Pos start, Pos end) {
 			//sprintf(str, "%d %d- Even", i,minVectorLength);
 			//lawnlog.writeLogLine(str);
 			list->push_back(sideA[i]);
+			sweepEnds.push_back(sideA[i]);
 			addMidPoints(sideA[i], sideB[i], list);
 			list->push_back(sideB[i]);
+			sweepEnds.push_back(sideB[i]);
 		}
 		else if (i%2 == 1) {//Odd?
 			//sprintf(str, "%d %d - Odd", i, minVectorLength);
 			//lawnlog.writeLogLine(str);
 			list->push_back(sideB[i]);
+			sweepEnds.push_back(sideB[i]);
 			addMidPoints(sideB[i], sideA[i], list);
 			list->push_back(sideA[i]);
+			sweepEnds.push_back(sideB[i]);
 		}
 	}
 

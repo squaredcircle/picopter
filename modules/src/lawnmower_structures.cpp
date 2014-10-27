@@ -1,5 +1,10 @@
+#include <stdlib.h>
+#include <vector>
+#include "lawnmower_structures.h"
+
 bool usingIMU = true;
 bool usingWindows = false;
+std::vector<Pos> sweepEnds;
 
 int SPEED_LIMIT = 35;		//Config file parameters - need to be initialised as globals
 double SWEEP_SPACING = 7;
