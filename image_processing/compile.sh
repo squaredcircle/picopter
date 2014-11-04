@@ -12,4 +12,5 @@
 
 #g++ detect_red_object_cross.cpp -o detect_red_object_cross -I/home/pi/raspicam_cv -L/home/pi/raspicam_cv -lraspicamcv -L/home/pi/userland/build/lib -lmmal_core -lmmal -lmmal_util -lvcos -lbcm_host `pkg-config --cflags --libs opencv`
 
-g++ RaspiCamTest2.cpp -o RaspiCamTest2 -I/home/pi/lib/robidouille/raspicam_cv -L/home/pi/lib/robidouille/raspicam_cv -lraspicamcv -L/home/pi/lib/userland/build/lib -lmmal_core -lmmal -lmmal_util -lvcos -lbcm_host `pkg-config --cflags --libs opencv`
+g++ RaspiCamTest.cpp -o RaspiCamTest -I/home/pi/lib/robidouille/raspicam_cv -L/home/pi/lib/robidouille/raspicam_cv -lraspicamcv -L/home/pi/lib/userland/build/lib -lmmal_core -lmmal -lmmal_util -lvcos -lbcm_host `pkg-config --cflags --libs opencv` -lboost_thread -lboost_system -lpthread
+echo "done"
