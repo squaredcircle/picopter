@@ -10,7 +10,8 @@
 
 using namespace std;
 
-#include "camera_var1.h"
+
+#include "camera_var3.h"
 #include "flightBoard.h"
 #include "gpio.h"
 #include "config_parser.h"
@@ -21,8 +22,8 @@ using namespace std;
 #define GIMBAL_TOL 50       //Pixles
 
 
-#define PARAMETER_FILE "./config/camera_config.txt"
-#define TABLE_NAME "FACE_RED_OBJECT_CAMSHIFT"
+#define PARAMETER_FILE "/home/pi/picopter/apps/config/config.txt"
+#define TABLE_NAME "FACE_RED_OBJECT"
 
 int TOL_rotate = 80;			//Pixles
 double KP_rotate = 0.1;
@@ -73,8 +74,8 @@ int main(int argc, char* argv[]) {
 	FB_Data course = {0, 0, 0, 0};
 	FB_Data stop = {0, 0, 0, 0};
 	
-	CAMERA_VAR1 cam = CAMERA_VAR1();
-	if(cam.setup("./config/camera_config.txt") != CAMERA_OK) {
+	CAMERA_VAR3 cam = CAMERA_VAR3();
+	if(cam.setup(PARAMETER_FILE) != CAMERA_OK) {
 		cout << "Error setting up camera." << endl;
         fb.stop();
 		return -1;
