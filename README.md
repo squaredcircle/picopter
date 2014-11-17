@@ -176,7 +176,7 @@ The compiler usually complains about some 'cdecl' attribute.  It's fine to ignor
 ---------------------------------------------
 12.  Install picopter
 ---------------------------------------------
-Yo! Champ in the making.  Almost there.  There's just a few more things to do before you're very own picopter is out there, stalking unsuspecting red bucket lids.
+Yo! Champ in the making.  Almost there.  There's just a few more things to do before your very own picopter is out there, stalking unsuspecting red bucket lids.
 
     cd ~
     git clone git://github.com/crazyoldmans/picopter.git
